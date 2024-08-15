@@ -5,6 +5,8 @@ export interface ToolboxSettings {
 	passwordCreator: boolean;
 	passwordCreatorMixedContent: string;
 	passwordCreatorLength: number;
+
+	polysemy: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -12,6 +14,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 	passwordCreatorMixedContent:
 		"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@$%^&*()_+",
 	passwordCreatorLength: 16,
+	polysemy: true,
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -63,5 +66,20 @@ export class ToolboxSettingTab extends PluginSettingTab {
 					})
 			);
 		}
+
+		new Setting(containerEl)
+			.setName("🔗 多义笔记转跳")
+			.setDesc(
+				'在笔记属性里添加 to 字段，例如 to: "[[filename or path]]"'
+			)
+			.addToggle((cd) =>
+				cd
+					.setValue(this.plugin.settings.polysemy)
+					.onChange(async (value) => {
+						this.plugin.settings.polysemy = value;
+						await this.plugin.saveSettings();
+						this.display();
+					})
+			);
 	}
 }

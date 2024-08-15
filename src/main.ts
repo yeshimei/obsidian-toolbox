@@ -5,6 +5,7 @@ import {
 	DEFAULT_SETTINGS,
 	ToolboxSettingTab,
 } from "./settings";
+import { basename } from "path";
 
 export default class Toolbox extends Plugin {
 	timer: number;
@@ -12,6 +13,11 @@ export default class Toolbox extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new ToolboxSettingTab(this.app, this));
+		this.registerEvent(
+			this.app.workspace.on("file-open", (file) => {
+				this.polysemy(file);
+			})
+		);
 		this.settings.passwordCreator &&
 			this.addCommand({
 				id: "密码创建器",
@@ -27,6 +33,32 @@ export default class Toolbox extends Plugin {
 		).join("");
 		window.navigator.clipboard.writeText(pass);
 		this.notice("密码已复制至剪切板！");
+	}
+
+	polysemy(file: TFile) {
+		const to = this.app.metadataCache.getFileCache(file)?.frontmatter?.to;
+		if (to) {
+			let filename = to.match(/\[\[(.*)\]\]/)?.[1];
+			let files = this.app.vault.getMarkdownFiles();
+
+			let targetFile = files.find(
+				({ basename, path, extension }) =>
+					basename === filename ||
+					path.replace("." + extension, "") === filename
+			);
+			console.log(targetFile);
+
+			if (targetFile) {
+				const LastOpenFiles = this.app.workspace.getLastOpenFiles();
+				if (LastOpenFiles[1] !== file.path) {
+					const view = this.app.workspace.getLeaf(true);
+					view.openFile(targetFile);
+					this.notice(
+						`《${file.basename}》是一篇多义笔记，已转跳至《${filename}》 `
+					);
+				}
+			}
+		}
 	}
 
 	pick<T>(arr: T[], n: number = 1, repeat = false): T[] {
