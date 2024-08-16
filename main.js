@@ -27,17 +27,49 @@ __export(main_exports, {
   default: () => Toolbox
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian2 = require("obsidian");
+
+// src/Panel.ts
+var import_obsidian = require("obsidian");
+var Panel = class extends import_obsidian.Modal {
+  constructor(app, title, content, buttonText, onSubmit) {
+    super(app);
+    this.onSubmit = onSubmit;
+    this.title = title;
+    this.content = content;
+    this.buttonText = buttonText;
+  }
+  onOpen() {
+    const { contentEl, titleEl } = this;
+    titleEl.setText(this.title);
+    contentEl.setText(this.content);
+    new import_obsidian.Setting(contentEl).addButton(
+      (btn) => btn.setButtonText(this.buttonText).setCta().onClick(() => {
+        this.close();
+        this.onSubmit(this.result);
+      })
+    );
+  }
+  onClose() {
+    let { contentEl } = this;
+    contentEl.empty();
+  }
+};
+
+// src/main.ts
+var import_obsidian3 = require("obsidian");
 
 // src/settings.ts
-var import_obsidian = require("obsidian");
+var import_obsidian2 = require("obsidian");
 var DEFAULT_SETTINGS = {
   passwordCreator: true,
   passwordCreatorMixedContent: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@$%^&*()_+",
   passwordCreatorLength: 16,
-  polysemy: true
+  polysemy: true,
+  footnoteRenumbering: true,
+  searchForWords: true,
+  searchForWordsSaveFolder: "\u8BCD\u8BED"
 };
-var ToolboxSettingTab = class extends import_obsidian.PluginSettingTab {
+var ToolboxSettingTab = class extends import_obsidian2.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -46,7 +78,7 @@ var ToolboxSettingTab = class extends import_obsidian.PluginSettingTab {
     let { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h2", { text: this.plugin.manifest.name });
-    new import_obsidian.Setting(containerEl).setName("\u{1F511} \u5BC6\u7801\u521B\u5EFA\u5668").addToggle(
+    new import_obsidian2.Setting(containerEl).setName("\u{1F511} \u5BC6\u7801\u521B\u5EFA\u5668").addToggle(
       (cd) => cd.setValue(this.plugin.settings.passwordCreator).onChange(async (value) => {
         this.plugin.settings.passwordCreator = value;
         await this.plugin.saveSettings();
@@ -54,7 +86,7 @@ var ToolboxSettingTab = class extends import_obsidian.PluginSettingTab {
       })
     );
     if (this.plugin.settings.passwordCreator) {
-      new import_obsidian.Setting(containerEl).setName("\u4ECE\u54EA\u4E9B\u5B57\u7B26\u4E2D\u968F\u673A\u751F\u6210\u5BC6\u7801\uFF1F").addText(
+      new import_obsidian2.Setting(containerEl).setName("\u4ECE\u6307\u5B9A\u5B57\u7B26\u96C6\u4E2D\u968F\u673A\u751F\u6210\u5BC6\u7801").addText(
         (cd) => cd.setValue(
           "" + this.plugin.settings.passwordCreatorMixedContent
         ).onChange(async (value) => {
@@ -62,14 +94,14 @@ var ToolboxSettingTab = class extends import_obsidian.PluginSettingTab {
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian.Setting(containerEl).setName("\u751F\u6210\u5BC6\u7801\u7684\u957F\u5EA6\uFF1F").addText(
+      new import_obsidian2.Setting(containerEl).setName("\u751F\u6210\u5BC6\u7801\u7684\u957F\u5EA6").addText(
         (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorLength).onChange(async (value) => {
           this.plugin.settings.passwordCreatorLength = Number(value);
           await this.plugin.saveSettings();
         })
       );
     }
-    new import_obsidian.Setting(containerEl).setName("\u{1F517} \u591A\u4E49\u7B14\u8BB0\u8F6C\u8DF3").setDesc(
+    new import_obsidian2.Setting(containerEl).setName("\u{1F517} \u591A\u4E49\u7B14\u8BB0\u8F6C\u8DF3").setDesc(
       '\u5728\u7B14\u8BB0\u5C5E\u6027\u91CC\u6DFB\u52A0 to \u5B57\u6BB5\uFF0C\u4F8B\u5982 to: "[[filename or path]]"'
     ).addToggle(
       (cd) => cd.setValue(this.plugin.settings.polysemy).onChange(async (value) => {
@@ -78,16 +110,43 @@ var ToolboxSettingTab = class extends import_obsidian.PluginSettingTab {
         this.display();
       })
     );
+    new import_obsidian2.Setting(containerEl).setName("\u{1F3F7}\uFE0F \u811A\u6CE8\u91CD\u7F16\u53F7").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async (value) => {
+        this.plugin.settings.footnoteRenumbering = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+    new import_obsidian2.Setting(containerEl).setName("\u{1F50E} \u67E5\u8BCD").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.searchForWords).onChange(async (value) => {
+        this.plugin.settings.searchForWords = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+    if (this.plugin.settings.searchForWords) {
+      new import_obsidian2.Setting(containerEl).setName("\u751F\u8BCD\u4FDD\u5B58\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").setDesc(
+        "\u5728\u6307\u5B9A\u6587\u4EF6\u5939\u5185\u521B\u5EFA\u4E00\u4E2A md \u6587\u4EF6\uFF0C\u6587\u4EF6\u540D\u4E3A\u9009\u62E9\u7684\u8BCD\u8BED\u540D\uFF0C\u5185\u5BB9\u5305\u542B\u67E5\u8BE2\u5230\u7684\u62FC\u97F3\u548C\u542B\u4E49"
+      ).addText(
+        (cd) => cd.setValue(
+          "" + this.plugin.settings.searchForWordsSaveFolder
+        ).onChange(async (value) => {
+          this.plugin.settings.searchForWordsSaveFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+    }
   }
 };
 
 // src/main.ts
-var Toolbox = class extends import_obsidian2.Plugin {
+var Toolbox = class extends import_obsidian3.Plugin {
   async onload() {
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
     this.registerEvent(
       this.app.workspace.on("file-open", (file) => {
+        this.currentFile = file;
         this.polysemy(file);
       })
     );
@@ -96,6 +155,49 @@ var Toolbox = class extends import_obsidian2.Plugin {
       name: "\u5BC6\u7801\u521B\u5EFA\u5668",
       callback: () => this.passwordCreator()
     });
+    this.settings.footnoteRenumbering && this.addCommand({
+      id: "\u811A\u6CE8\u91CD\u7F16\u53F7",
+      name: "\u811A\u6CE8\u91CD\u7F16\u53F7",
+      callback: () => this.footnoteRenumbering()
+    });
+    this.settings.searchForWords && this.addCommand({
+      id: "\u67E5\u8BCD",
+      icon: "search",
+      name: "\u67E5\u8BCD",
+      editorCallback: (editor) => this.searchForWords(editor)
+    });
+  }
+  async searchForWords(editor) {
+    var _a;
+    let word = editor.getSelection();
+    const html = await this.requestUrlToHTML(
+      "https://www.zdic.net/hans/" + word
+    );
+    const jnr = html.querySelector(".jnr");
+    const pinyin = ((_a = html.querySelector(".ciif .dicpy")) == null ? void 0 : _a.textContent) || "";
+    new Panel(
+      this.app,
+      `${word} ${pinyin}`,
+      jnr || "\u7A7A\u7A7A\u5982\u4E5F",
+      "\u5199\u751F\u8BCD",
+      async () => {
+        const meanings = this.removeDuplicates(
+          Array.from(jnr.querySelectorAll(".cino, .encs")).map(
+            (el) => el.parentNode.textContent
+          )
+        ).map((text) => this.filterChineseAndPunctuation(text)).map((text) => this.trimNonChineseChars(text)).map((text) => text.replace(";", "\uFF1B")).join("\uFF1B") + "\u3002";
+        const content = `${word}\`/${pinyin}/\`\uFF1A${meanings}`;
+        const filepath = this.settings.searchForWordsSaveFolder + "/" + word + ".md";
+        let file = this.app.vault.getFileByPath(filepath);
+        if (file) {
+          new import_obsidian3.Notice("\u751F\u8BCD\u5DF2\u5B58\u5728");
+        } else {
+          file = await this.app.vault.create(filepath, content);
+        }
+        editor.replaceSelection(`[[${word}]]`);
+        this.app.workspace.getLeaf(true).openFile(file);
+      }
+    ).open();
   }
   passwordCreator() {
     const pass = this.pick(
@@ -103,7 +205,19 @@ var Toolbox = class extends import_obsidian2.Plugin {
       this.settings.passwordCreatorLength
     ).join("");
     window.navigator.clipboard.writeText(pass);
-    this.notice("\u5BC6\u7801\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
+    new import_obsidian3.Notice("\u5BC6\u7801\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
+  }
+  async footnoteRenumbering() {
+    let context = await this.app.vault.read(this.currentFile);
+    let i1 = 1;
+    let i2 = 1;
+    context = context.replace(/\[\^(\d+)\][^:]/g, function(a) {
+      return a.replace(/\d+/, String(i1++));
+    }).replace(/\[\^(\d+)\]:/g, function(a) {
+      return a.replace(/\d+/, String(i2++));
+    });
+    await this.app.vault.modify(this.currentFile, context);
+    new import_obsidian3.Notice(`\u5DF2\u4E3A${i1 - 1}\u4E2A\u811A\u6CE8\u91CD\u65B0\u7F16\u53F7`);
   }
   polysemy(file) {
     var _a, _b, _c;
@@ -114,20 +228,37 @@ var Toolbox = class extends import_obsidian2.Plugin {
       let targetFile = files.find(
         ({ basename, path, extension }) => basename === filename || path.replace("." + extension, "") === filename
       );
-      console.log(targetFile);
       if (targetFile) {
         const LastOpenFiles = this.app.workspace.getLastOpenFiles();
         if (LastOpenFiles[1] !== file.path) {
           const view = this.app.workspace.getLeaf(true);
           view.openFile(targetFile);
-          this.notice(
+          new import_obsidian3.Notice(
             `\u300A${file.basename}\u300B\u662F\u4E00\u7BC7\u591A\u4E49\u7B14\u8BB0\uFF0C\u5DF2\u8F6C\u8DF3\u81F3\u300A${filename}\u300B `
           );
         }
       }
     }
   }
-  pick(arr, n = 1, repeat = false) {
+  async requestUrlToHTML(url) {
+    const content = await (0, import_obsidian3.requestUrl)(url);
+    const div = document.createElement("div");
+    div.innerHTML = content.text;
+    return div;
+  }
+  filterChineseAndPunctuation(str) {
+    const regex = /[\u4e00-\u9fa5。，、；;]/g;
+    return str.match(regex).join("");
+  }
+  trimNonChineseChars(str) {
+    return str.replace(/^[^\u4e00-\u9fa5]+|[^\u4e00-\u9fa5]+$/g, "");
+  }
+  removeDuplicates(arr) {
+    return arr.filter(
+      (item, index) => arr.indexOf(item) === index
+    );
+  }
+  pick(arr, n = 1, repeat = true) {
     if (n >= arr.length) {
       return arr;
     }
@@ -135,7 +266,7 @@ var Toolbox = class extends import_obsidian2.Plugin {
     let picked = /* @__PURE__ */ new Set();
     for (let i = 0; i < n; i++) {
       let index = Math.floor(Math.random() * arr.length);
-      if (repeat) {
+      if (!repeat) {
         while (picked.has(index)) {
           index = Math.floor(Math.random() * arr.length);
         }
@@ -144,12 +275,6 @@ var Toolbox = class extends import_obsidian2.Plugin {
       result.push(arr[index]);
     }
     return result;
-  }
-  notice(text) {
-    new import_obsidian2.Notice(text);
-  }
-  openFile(path) {
-    return this.app.vault.getAbstractFileByPath(path);
   }
   async loadSettings() {
     this.settings = Object.assign(

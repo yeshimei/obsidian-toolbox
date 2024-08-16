@@ -7,6 +7,10 @@ export interface ToolboxSettings {
 	passwordCreatorLength: number;
 
 	polysemy: boolean;
+	footnoteRenumbering: boolean;
+
+	searchForWords: boolean;
+	searchForWordsSaveFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -15,6 +19,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 		"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@$%^&*()_+",
 	passwordCreatorLength: 16,
 	polysemy: true,
+	footnoteRenumbering: true,
+	searchForWords: true,
+	searchForWordsSaveFolder: "词语",
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -42,7 +49,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
 
 		if (this.plugin.settings.passwordCreator) {
 			new Setting(containerEl)
-				.setName("从哪些字符中随机生成密码？")
+				.setName("从指定字符集中随机生成密码")
 				.addText((cd) =>
 					cd
 						.setValue(
@@ -56,7 +63,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
 						})
 				);
 
-			new Setting(containerEl).setName("生成密码的长度？").addText((cd) =>
+			new Setting(containerEl).setName("生成密码的长度").addText((cd) =>
 				cd
 					.setValue("" + this.plugin.settings.passwordCreatorLength)
 					.onChange(async (value) => {
@@ -81,5 +88,44 @@ export class ToolboxSettingTab extends PluginSettingTab {
 						this.display();
 					})
 			);
+
+		new Setting(containerEl).setName("🏷️ 脚注重编号").addToggle((cd) =>
+			cd
+				.setValue(this.plugin.settings.footnoteRenumbering)
+				.onChange(async (value) => {
+					this.plugin.settings.footnoteRenumbering = value;
+					await this.plugin.saveSettings();
+					this.display();
+				})
+		);
+
+		new Setting(containerEl).setName("🔎 查词").addToggle((cd) =>
+			cd
+				.setValue(this.plugin.settings.searchForWords)
+				.onChange(async (value) => {
+					this.plugin.settings.searchForWords = value;
+					await this.plugin.saveSettings();
+					this.display();
+				})
+		);
+
+		if (this.plugin.settings.searchForWords) {
+			new Setting(containerEl)
+				.setName("生词保存至哪个文件夹")
+				.setDesc(
+					"在指定文件夹内创建一个 md 文件，文件名为选择的词语名，内容包含查询到的拼音和含义"
+				)
+				.addText((cd) =>
+					cd
+						.setValue(
+							"" + this.plugin.settings.searchForWordsSaveFolder
+						)
+						.onChange(async (value) => {
+							this.plugin.settings.searchForWordsSaveFolder =
+								value;
+							await this.plugin.saveSettings();
+						})
+				);
+		}
 	}
 }
