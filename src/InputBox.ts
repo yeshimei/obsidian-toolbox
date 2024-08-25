@@ -22,7 +22,7 @@ export class InputBox extends Modal {
 		const { contentEl } = this;
 
 		new Setting(contentEl).setDesc(this.text);
-		new Setting(contentEl).addText((text) =>
+		new Setting(contentEl).addTextArea((text) =>
 			text.onChange((value) => {
 				this.result = value;
 			})

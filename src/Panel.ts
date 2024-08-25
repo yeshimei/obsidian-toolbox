@@ -1,39 +1,49 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Editor, Modal, Setting } from "obsidian";
 
 export class Panel extends Modal {
-	result: string;
 	title: string;
+	editor: Editor;
 	content: any;
-	buttonText: string;
-	onSubmit: (result: string) => void;
+	onSubmit: () => void;
+	onSubmit2: () => void;
 
 	constructor(
 		app: App,
+		editor: Editor,
 		title: string,
 		content: any,
-		buttonText: string,
-		onSubmit: (result: string) => void
+		onSubmit: () => void,
+		onSubmit2: () => void
 	) {
 		super(app);
-		this.onSubmit = onSubmit;
+		this.editor = editor;
 		this.title = title;
 		this.content = content;
-		this.buttonText = buttonText;
+		this.onSubmit = onSubmit;
+		this.onSubmit2 = onSubmit2;
 	}
 
 	onOpen() {
 		const { contentEl, titleEl } = this;
 		titleEl.setText(this.title);
 		contentEl.setText(this.content);
-		// new Setting(contentEl).setDesc(this.text);
-
 		new Setting(contentEl).addButton((btn) =>
 			btn
-				.setButtonText(this.buttonText)
+				.setButtonText("写生词")
 				.setCta()
 				.onClick(() => {
 					this.close();
-					this.onSubmit(this.result);
+					this.onSubmit();
+				})
+		);
+
+		new Setting(contentEl).addButton((btn) =>
+			btn
+				.setButtonText("写卡片")
+				.setCta()
+				.onClick(() => {
+					this.close();
+					this.onSubmit2();
 				})
 		);
 	}
@@ -41,5 +51,6 @@ export class Panel extends Modal {
 	onClose() {
 		let { contentEl } = this;
 		contentEl.empty();
+		this.editor.blur();
 	}
 }
