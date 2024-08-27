@@ -887,6 +887,7 @@ var Toolbox = class extends import_obsidian5.Plugin {
       this.app.workspace.on("file-open", (file) => {
         this.startTime = Date.now();
         const viewEl = document.querySelector(".cm-scroller");
+        const mobileNavbar = document.querySelector(".mobile-navbar-actions");
         this.polysemy(file);
         viewEl.ontouchstart = (evt) => {
           if (evt.touches.length === 2) {
@@ -894,6 +895,7 @@ var Toolbox = class extends import_obsidian5.Plugin {
             this.readDataTracking(viewEl, file);
           }
         };
+        mobileNavbar && (mobileNavbar.onclick = () => this.flip());
         viewEl.onscroll = this.debounce(() => this.readDataTracking(viewEl, file));
         viewEl.onclick = (evt) => this.showComment(evt);
       })

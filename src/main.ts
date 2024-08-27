@@ -16,6 +16,7 @@ export default class Toolbox extends Plugin {
       this.app.workspace.on('file-open', file => {
         this.startTime = Date.now();
         const viewEl = document.querySelector('.cm-scroller') as HTMLElement;
+        const mobileNavbar = document.querySelector('.mobile-navbar-actions') as HTMLElement;
         this.polysemy(file); // 多义笔记转跳
         viewEl.ontouchstart = evt => {
           if (evt.touches.length === 2) {
@@ -23,6 +24,7 @@ export default class Toolbox extends Plugin {
             this.readDataTracking(viewEl, file); // 跟踪阅读时长
           }
         };
+        mobileNavbar && (mobileNavbar.onclick = () => this.flip()); // 点击移动端底部的 navbar 翻页
         viewEl.onscroll = this.debounce(() => this.readDataTracking(viewEl, file));
         viewEl.onclick = evt => this.showComment(evt); // 点击划线时在通知里显示评论
       })
