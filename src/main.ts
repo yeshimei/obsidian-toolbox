@@ -1,32 +1,33 @@
 import { Panel } from './Panel';
 import { Confirm } from './Confirm';
 import { InputBox } from './InputBox';
-import { Plugin, Editor, Notice, TFile, requestUrl, MarkdownView, moment, htmlToMarkdown } from 'obsidian';
+import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { getBlock, uniqueBy } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $ } from './helpers';
 import { md5 } from 'js-md5';
+import { PanelExhibition } from './PanelExhibition';
+
+const SOURCE_VIEW_CLASS = '.cm-scroller';
+const MASK_CLASS = '.__mask';
+const MOBILE_HEADER_CLASS = '.view-action';
+const MOBILE_NAVBAR_CLASS = '.mobile-navbar-actions';
+const COMMENT_CLASS = '.__comment';
+const OUT_LINK_CLASS = '.cm-underline';
 
 export default class Toolbox extends Plugin {
   settings: ToolboxSettings;
   startTime: number;
   async onload() {
+    // 加载插件设置页面
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
     this.registerEvent(
       this.app.workspace.on('file-open', file => {
         this.startTime = Date.now();
-        const viewEl = document.querySelector('.cm-scroller') as HTMLElement;
-        const mobileNavbar = document.querySelector('.mobile-navbar-actions') as HTMLElement;
+        const sourceView = $(SOURCE_VIEW_CLASS);
         this.polysemy(file); // 多义笔记转跳
-        viewEl.ontouchstart = evt => {
-          if (evt.touches.length === 2) {
-            this.flip(); // 翻页
-            this.readDataTracking(viewEl, file); // 跟踪阅读时长
-          }
-        };
-        mobileNavbar && (mobileNavbar.onclick = () => this.flip()); // 点击移动端底部的 navbar 翻页
-        viewEl.onscroll = this.debounce(() => this.readDataTracking(viewEl, file));
-        viewEl.onclick = evt => this.showComment(evt); // 点击划线时在通知里显示评论
+        this.adjustPageStyle(file, sourceView); // 阅读页面
+        this.mask(sourceView, file); // 点击遮罩层翻页
       })
     );
 
@@ -40,7 +41,7 @@ export default class Toolbox extends Plugin {
       this.addCommand({
         id: '脚注重编号',
         name: '脚注重编号',
-        callback: () => this.footnoteRenumbering()
+        editorCallback: (editor, view) => this.footnoteRenumbering(view.file)
       });
     this.settings.searchForWords &&
       this.addCommand({
@@ -54,9 +55,9 @@ export default class Toolbox extends Plugin {
         id: '翻页',
         name: '翻页',
         icon: 'chevron-down',
-        callback: () => this.flip()
+        editorCallback: (editor, view) => this.flip(view.file)
       });
-    this.settings.drawALine &&
+    this.settings.highlight &&
       this.addCommand({
         id: '划线',
         name: '划线',
@@ -72,21 +73,82 @@ export default class Toolbox extends Plugin {
         callback: () =>
           this.app.vault
             .getMarkdownFiles()
-            .filter(file => file.path.indexOf(this.settings.readDataTrackingFolder) > -1)
-            .filter(file => this.hasTag(file, 'book'))
-            .forEach(file => this.syncNote(file))
+            .filter(file => this.hasReadingPage(file))
+            .forEach(file => debounce(this.syncNote)(file))
       });
   }
 
-  showComment(evt: MouseEvent) {
-    const target = evt.target as HTMLElement;
-    if (target.hasClass('__comment')) {
-      const { comment, date } = target.dataset;
-      new Notice(comment ? `${comment}${date ? '\n\n' + date : ''}` : '空空如也');
+  mask(el: HTMLElement, file: TFile) {
+    if (!this.settings.flip) return;
+    let timer: number, xStart: number, xEnd: number;
+    let mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
+    if (this.hasReadingPage(file)) {
+      const th = $(MOBILE_HEADER_CLASS)?.offsetHeight || 0;
+      const bh = $(MOBILE_NAVBAR_CLASS)?.offsetHeight || 0;
+      mask.style.position = 'fixed';
+      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
+      mask.style.left = '0';
+      mask.style.width = '100%';
+      mask.style.height = el.clientHeight - th - bh + 'px';
+      mask.style.backgroundColor = 'transparent';
+      mask.style.zIndex = '1'; // 最小值，使侧边栏等保持正确层级
+      mask.show();
+
+      mask.ontouchstart = e => {
+        timer = window.setTimeout(() => mask.hide(), 500);
+        xStart = e.touches[0].pageX;
+      };
+      mask.ontouchend = e => {
+        window.clearTimeout(timer);
+        xEnd = e.changedTouches[0].pageX;
+        // 左由滑打开对应的侧边栏
+        if (xEnd - xStart > 10) {
+          this.flip(file, true);
+        } else if (xEnd - xStart < -10) {
+          this.flip(file);
+        }
+      };
+      mask.onclick = async e => {
+        const x = e.clientX;
+        const y = e.clientY;
+        mask.hide();
+        const target = document.elementFromPoint(x, y) as HTMLElement;
+        mask.show();
+        // 点击划线，显示其评论
+        if (target.hasClass(COMMENT_CLASS.slice(1))) {
+          const text = target.textContent;
+          const { comment, date } = target.dataset;
+          new PanelExhibition(this.app, '评论', comment ? createElement('p', `${comment}${date ? '</br></br><i>' + date + '</i>' : ''}`) : '空空如也').open();
+        }
+        // 点击双链，显示其内容
+        else if (target.hasClass(OUT_LINK_CLASS.slice(1))) {
+          target.click();
+          const text = target.textContent.split('|').shift();
+          const file = this.getFileByShort(text);
+          new PanelExhibition(this.app, text, file ? createElement('p', await this.app.vault.read(file)) : '空空如也', file && (() => this.app.workspace.getLeaf(false).openFile(file))).open();
+        } else {
+          this.flip(file);
+        }
+      };
+      // 移动端软键盘收起时，隐藏遮罩层，反之亦然
+      const originalHeight = window.innerHeight;
+      window.onresize = () => (window.innerHeight === originalHeight ? mask.show() : mask.hide());
+    } else {
+      mask.hide();
+      mask.onclick = mask.ontouchstart = mask.ontouchend = window.onresize = null;
+    }
+  }
+
+  adjustPageStyle(file: TFile, el: HTMLElement) {
+    if (this.settings.readingPageStyles && this.hasReadingPage(file)) {
+      el.style.fontSize = this.settings.fontSize + 'px';
+    } else {
+      el.style.fontSize = 'unset';
     }
   }
 
   async syncNote(file: TFile) {
+    if (!this.settings.readingNotes) return;
     let markdown = await this.app.vault.read(file);
     let highlights = 0;
     let thinks = 0;
@@ -153,18 +215,18 @@ export default class Toolbox extends Plugin {
   }
 
   highlight(editor: Editor, file: TFile) {
+    if (!this.settings.highlight) return;
     let text = editor.getSelection();
-    let blockId = getBlock(this.app, editor, file);
     new InputBox(this.app, text, '写想法', async res => {
-      res = `<span class="__comment cm-highlight" data-comment="${res || ''}" data-id="${blockId}" data-date="${this.today(true)}">${text}</span>`;
+      let blockId = getBlock(this.app, editor, file);
+      res = `<span class="__comment cm-highlight" data-comment="${res || ''}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
     }).open();
   }
 
   readDataTracking(el: Element, file: TFile) {
-    let { readingProgress = 0, readingDate, completionDate, tags } = this.app.metadataCache.getFileCache(file).frontmatter || {};
-    tags = Array.isArray(tags) ? tags : [tags];
-    if (!file || file.extension !== 'md' || !tags.includes('book') || !this.settings.readDataTracking) return;
+    if (!this.settings.readDataTracking || !this.hasReadingPage(file)) return;
+    let { readingProgress = 0, readingDate, completionDate } = this.app.metadataCache.getFileCache(file)?.frontmatter || {};
     this.app.fileManager.processFrontMatter(file, frontmatter => {
       if (readingDate && !completionDate) {
         // 阅读进度
@@ -174,24 +236,25 @@ export default class Toolbox extends Plugin {
         frontmatter.readingTime += Math.min(this.settings.readDataTrackingTimeout, Date.now() - this.startTime);
         this.startTime = Date.now();
         // 格式化的阅读时长
-        frontmatter.readingTimeFormat = this.msTo(frontmatter.readingTime);
+        frontmatter.readingTimeFormat = msTo(frontmatter.readingTime);
       }
       // 是否未读
       if (!readingDate) {
         new Confirm(this.app, `《${file.basename}》未过读，是否标记在读？`, res => {
-          res && this.updateFrontmatter(file, 'readingDate', this.today());
+          res && this.updateFrontmatter(file, 'readingDate', today());
         }).open();
       }
       // 是否读完
       if (readingProgress >= 100 && !completionDate) {
-        new Confirm(this.app, `《${file.basename}》进度 100%，是否标记读完？`, res => res && this.updateFrontmatter(file, 'completionDate', this.today())).open();
+        new Confirm(this.app, `《${file.basename}》进度 100%，是否标记读完？`, res => res && this.updateFrontmatter(file, 'completionDate', today())).open();
       }
     });
   }
 
   async searchForWords(editor: Editor) {
+    if (!this.settings.searchForWords) return;
     let word = editor.getSelection();
-    const html = await this.requestUrlToHTML('https://www.zdic.net/hans/' + word);
+    const html = await requestUrlToHTML('https://www.zdic.net/hans/' + word);
     const jnr = html.querySelector('.jnr');
     const pinyin =
       html.querySelector('.ciif .dicpy')?.textContent ||
@@ -199,23 +262,22 @@ export default class Toolbox extends Plugin {
         .map(el => el.textContent)
         .join('|') ||
       '';
-    const html2 = await this.requestUrlToHTML('https://baike.baidu.com/item/' + word);
+    const html2 = await requestUrlToHTML('https://baike.baidu.com/item/' + word);
     const JSummary = html2.querySelector('.J-summary');
     const div = document.createElement('div');
-    div.appendChild(this.createElement('h1', '汉典'));
-    div.appendChild(jnr || this.createElement('p', '空空如也'));
-    div.appendChild(this.createElement('h1', '百度百科'));
-    div.appendChild(JSummary || this.createElement('p', '空空如也'));
+    div.appendChild(createElement('h1', '汉典'));
+    div.appendChild(jnr || createElement('p', '空空如也'));
+    div.appendChild(createElement('h1', '百度百科'));
+    div.appendChild(JSummary || createElement('p', '空空如也'));
     new Panel(
       this.app,
-      editor,
       `${word} ${pinyin}`,
       div || '空空如也',
       async () => {
         const meanings =
-          this.removeDuplicates(Array.from(jnr.querySelectorAll('.cino, .encs')).map(el => el.parentNode.textContent))
-            .map(text => this.filterChineseAndPunctuation(text))
-            .map(text => this.trimNonChineseChars(text))
+          removeDuplicates(Array.from(jnr.querySelectorAll('.cino, .encs')).map(el => el.parentNode.textContent))
+            .map(text => filterChineseAndPunctuation(text))
+            .map(text => trimNonChineseChars(text))
             .map(text => text.replace(';', '；'))
             .join('；') || htmlToMarkdown(jnr.textContent);
         const content = `${word}\`/${pinyin}/\`：${meanings}。`;
@@ -247,13 +309,14 @@ export default class Toolbox extends Plugin {
   }
 
   passwordCreator() {
-    const pass = this.pick(this.settings.passwordCreatorMixedContent.split(''), this.settings.passwordCreatorLength).join('');
+    if (!this.settings.passwordCreator) return;
+    const pass = pick(this.settings.passwordCreatorMixedContent.split(''), this.settings.passwordCreatorLength).join('');
     window.navigator.clipboard.writeText(pass);
     new Notice('密码已复制至剪切板！');
   }
 
-  async footnoteRenumbering() {
-    const file = this.getView()?.file;
+  async footnoteRenumbering(file: TFile) {
+    if (!this.settings.footnoteRenumbering) return;
     let context = await this.app.vault.read(file);
 
     let i1 = 1;
@@ -272,80 +335,25 @@ export default class Toolbox extends Plugin {
   }
 
   polysemy(file: TFile) {
-    const to = this.app.metadataCache.getFileCache(file)?.frontmatter?.to;
-    if (to) {
-      let filename = to.match(/\[\[(.*)\]\]/)?.[1];
-      let files = this.app.vault.getMarkdownFiles();
-
-      let targetFile = files.find(({ basename, path, extension }) => basename === filename || path.replace('.' + extension, '') === filename);
-
-      if (targetFile) {
-        const LastOpenFiles = this.app.workspace.getLastOpenFiles();
-        if (LastOpenFiles[1] !== file.path) {
-          const view = this.app.workspace.getLeaf(true);
-          view.openFile(targetFile);
-          new Notice(`《${file.basename}》是一篇多义笔记，已转跳至《${filename}》 `);
-        }
-      }
-    }
+    if (!this.settings.polysemy) return;
+    const to = this.getMetadata(file, 'to');
+    if (!to) return;
+    let filename = to.match(/\[\[(.*)\]\]/)?.[1];
+    if (!filename) return;
+    let targetFile = this.getFileByShort(filename);
+    if (!targetFile) return;
+    const LastOpenFiles = this.app.workspace.getLastOpenFiles();
+    if (LastOpenFiles[1] === file.path) return;
+    const view = this.app.workspace.getLeaf(true);
+    view.openFile(targetFile);
+    new Notice(`《${file.basename}》是一篇多义笔记，已转跳至《${filename}》 `);
   }
 
-  async requestUrlToHTML(url: string) {
-    const content = await requestUrl(url);
-    const div = document.createElement('div');
-    div.innerHTML = content.text;
-    return div;
-  }
-
-  createElement(t: string, text: string) {
-    const el = document.createElement(t);
-    el.innerText = text;
-    return el;
-  }
-
-  filterChineseAndPunctuation(str: string) {
-    const regex = /[\u4e00-\u9fa5。，、；;]/g;
-    return str.match(regex).join('');
-  }
-
-  trimNonChineseChars(str: string) {
-    return str.replace(/^[^\u4e00-\u9fa5]+|[^\u4e00-\u9fa5]+$/g, '');
-  }
-
-  removeDuplicates<T>(arr: T[]) {
-    return arr.filter((item: T, index: number) => arr.indexOf(item) === index);
-  }
-
-  pick<T>(arr: T[], n: number = 1, repeat = true): T[] {
-    if (n >= arr.length) {
-      return arr;
-    }
-    let result: T[] = [];
-    let picked: Set<number> = new Set();
-    for (let i = 0; i < n; i++) {
-      let index = Math.floor(Math.random() * arr.length);
-      if (!repeat) {
-        while (picked.has(index)) {
-          index = Math.floor(Math.random() * arr.length);
-        }
-        picked.add(index);
-      }
-
-      result.push(arr[index]);
-    }
-    return result;
-  }
-
-  flip() {
-    if (!this.settings.flip) return;
-    const el = document.querySelector('.cm-scroller');
-    el.scrollTop += el.clientHeight + this.settings.fileCorrect;
-  }
-
-  pageUp(editor: Editor) {
-    if (!this.settings.flip) return;
-    const { top, clientHeight } = editor.getScrollInfo();
-    editor.scrollTo(0, top - clientHeight + this.settings.fileCorrect);
+  flip(file: TFile, over = false) {
+    if (!this.settings.flip || !this.hasReadingPage(file)) return;
+    const el = $(SOURCE_VIEW_CLASS);
+    el.scrollTop = over ? el.scrollTop - el.clientHeight - this.settings.fileCorrect : el.scrollTop + el.clientHeight + this.settings.fileCorrect;
+    this.readDataTracking(el, file);
   }
 
   updateFrontmatter(file: TFile, key: string, value: string | number) {
@@ -354,42 +362,41 @@ export default class Toolbox extends Plugin {
     });
   }
 
-  msTo(t: number) {
-    let duration = moment.duration(t, 'milliseconds');
-    let hours = duration.hours();
-    let minutes = duration.minutes();
-    let seconds = duration.seconds();
-    return `${hours ? hours + 'h' : ''}${minutes ? minutes + 'm' : ''}${seconds ? seconds + 's' : ''}`;
-  }
-
   updateMetadata(file: TFile, outlinks: number, highlights: number, thinks: number) {
     this.updateFrontmatter(file, 'outlinks', outlinks);
     this.updateFrontmatter(file, 'highlights', highlights);
     this.updateFrontmatter(file, 'thinks', thinks);
   }
 
-  today(more = false) {
-    return moment().format('YYYY-MM-DD' + (more ? ' hh:mm:ss' : ''));
-  }
-
   getView() {
     return this.app.workspace.getActiveViewOfType(MarkdownView);
   }
 
-  debounce(fn: Function, delay: number = 500) {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    return function (...args: any[]) {
-      if (timer) {
-        clearTimeout(timer); // 清除之前的定时器
-      }
-      timer = setTimeout(() => {
-        fn(...args); // 在延迟后执行传入的函数
-      }, delay);
-    };
+  getEditor() {
+    return this.getView()?.editor;
+  }
+
+  getFileByShort(filename: string) {
+    return this.app.vault.getMarkdownFiles().find(({ basename, path, extension }) => basename === filename || path.replace('.' + extension, '') === filename);
+  }
+
+  getMetadata(file: TFile, key: string) {
+    return this.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
+  }
+
+  hasReadingPage(file: TFile) {
+    return file && file.extension === 'md' && this.hasTag(file, 'book') && this.hasRootFolder(file, this.settings.readDataTrackingFolder);
+  }
+
+  hasRootFolder(file: TFile, folderName: string) {
+    const args = file.path.split('/');
+    return args.length > 1 && args.shift() === folderName;
   }
 
   hasTag(file: TFile, name: string) {
-    return this.app.metadataCache.getFileCache(file)?.frontmatter?.tags?.contains(name);
+    let tags = this.app.metadataCache.getFileCache(file)?.frontmatter?.tags || [];
+    Array.isArray(tags) || (tags = [tags]);
+    return tags.includes(name);
   }
 
   async loadSettings() {
