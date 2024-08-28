@@ -1,4 +1,4 @@
-import { App, Editor, Modal, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Setting } from 'obsidian';
 
 export class Panel extends Modal {
   title: string;
@@ -40,6 +40,7 @@ export class Panel extends Modal {
   }
 
   onClose() {
+    this.app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur()
     let { contentEl } = this;
     contentEl.empty();
   }

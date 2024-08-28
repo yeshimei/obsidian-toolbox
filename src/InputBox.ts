@@ -1,4 +1,4 @@
-import { App, Editor, Modal, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Setting } from 'obsidian';
 
 export class InputBox extends Modal {
   result: string;
@@ -34,6 +34,7 @@ export class InputBox extends Modal {
   }
 
   onClose() {
+    this.app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur();
     let { contentEl } = this;
     contentEl.empty();
   }
