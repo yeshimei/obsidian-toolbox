@@ -30,6 +30,8 @@ export interface ToolboxSettings {
 
   readingPageStyles: boolean;
   fontSize: number;
+
+  blockReference: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -57,7 +59,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   frontmatter: true,
 
   readingPageStyles: true,
-  fontSize: 36
+  fontSize: 36,
+
+  blockReference: true
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -249,5 +253,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
     }
+
+    new Setting(containerEl)
+      .setName('📌 块引用')
+      .setDesc('获取光标所在行（块）的双链，方便复制到地方使用')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.blockReference).onChange(async value => {
+          this.plugin.settings.blockReference = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
   }
 }

@@ -46,6 +46,13 @@ export default class Toolbox extends Plugin {
         name: '脚注重编号',
         editorCallback: (editor, view) => this.footnoteRenumbering(view.file)
       });
+    this.settings.blockReference &&
+      this.addCommand({
+        id: '块引用',
+        name: '块引用',
+        icon: 'blocks',
+        editorCallback: (editor, view) => this.blockReference(editor, view.file)
+      });
     this.settings.searchForWords &&
       this.addCommand({
         id: '查词',
@@ -79,6 +86,13 @@ export default class Toolbox extends Plugin {
             .filter(file => this.hasReadingPage(file))
             .forEach(file => this.syncNote(file))
       });
+  }
+
+  blockReference(editor: Editor, file: TFile) {
+    if (!this.settings.blockReference) return;
+    let blockId = getBlock(this.app, editor, file);
+    window.navigator.clipboard.writeText(`[[${file.path.replace('.' + file.extension, '')}#^${blockId}|${file.basename}]]`);
+    new Notice('块引用已复制至剪切板！');
   }
 
   mask(el: HTMLElement, file: TFile) {
