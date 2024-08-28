@@ -18,6 +18,7 @@ export interface ToolboxSettings {
   readDataTracking: boolean;
   readDataTrackingFolder: string;
   readDataTrackingTimeout: number;
+  readDataTrackingDelayTime: number;
 
   highlight: boolean;
 
@@ -45,6 +46,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   readDataTracking: true,
   readDataTrackingFolder: '书库',
   readDataTrackingTimeout: 300 * 1000,
+  readDataTrackingDelayTime: 3 * 1000,
 
   highlight: true,
 
@@ -139,6 +141,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
         .addText(cd =>
           cd.setValue('' + this.plugin.settings.readDataTrackingTimeout).onChange(async value => {
             this.plugin.settings.readDataTrackingTimeout = Number(value);
+            await this.plugin.saveSettings();
+          })
+        );
+
+      new Setting(containerEl)
+        .setName('跟踪数据延迟更新')
+        .setDesc('在某些老旧水墨屏设备或者单文件体积过大，每次更新跟踪数据都会导致翻页明显滞后，设置延迟以大幅提升翻页流畅性')
+        .addText(text =>
+          text.setValue('' + this.plugin.settings.readDataTrackingDelayTime).onChange(async value => {
+            this.plugin.settings.readDataTrackingDelayTime = Number(value);
             await this.plugin.saveSettings();
           })
         );

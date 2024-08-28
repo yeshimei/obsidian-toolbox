@@ -15,12 +15,14 @@ const COMMENT_CLASS = '.__comment';
 const OUT_LINK_CLASS = '.cm-underline';
 
 export default class Toolbox extends Plugin {
+  debounceReadDataTracking: Function;
   settings: ToolboxSettings;
   startTime: number;
   async onload() {
     // 加载插件设置页面
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
+    this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.registerEvent(
       this.app.workspace.on('file-open', file => {
         this.startTime = Date.now();
@@ -74,7 +76,7 @@ export default class Toolbox extends Plugin {
           this.app.vault
             .getMarkdownFiles()
             .filter(file => this.hasReadingPage(file))
-            .forEach(file => debounce(this.syncNote)(file))
+            .forEach(file => this.syncNote(file))
       });
   }
 
@@ -101,7 +103,6 @@ export default class Toolbox extends Plugin {
       mask.ontouchend = e => {
         window.clearTimeout(timer);
         xEnd = e.changedTouches[0].pageX;
-        // 左由滑打开对应的侧边栏
         if (xEnd - xStart > 10) {
           this.flip(file, true);
         } else if (xEnd - xStart < -10) {
@@ -353,7 +354,7 @@ export default class Toolbox extends Plugin {
     if (!this.settings.flip || !this.hasReadingPage(file)) return;
     const el = $(SOURCE_VIEW_CLASS);
     el.scrollTop = over ? el.scrollTop - el.clientHeight - this.settings.fileCorrect : el.scrollTop + el.clientHeight + this.settings.fileCorrect;
-    this.readDataTracking(el, file);
+    this.debounceReadDataTracking(el, file);
   }
 
   updateFrontmatter(file: TFile, key: string, value: string | number) {

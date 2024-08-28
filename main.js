@@ -690,6 +690,7 @@ var DEFAULT_SETTINGS = {
   readDataTracking: true,
   readDataTrackingFolder: "\u4E66\u5E93",
   readDataTrackingTimeout: 300 * 1e3,
+  readDataTrackingDelayTime: 3 * 1e3,
   highlight: true,
   readingNotes: true,
   readingNotesToFolder: "\u4E66\u5E93/\u8BFB\u4E66\u7B14\u8BB0",
@@ -760,6 +761,12 @@ var ToolboxSettingTab = class extends import_obsidian4.PluginSettingTab {
       new import_obsidian4.Setting(containerEl).setName("\u8D85\u65F6").setDesc(`\u8D85\u8FC7\u4E00\u6BB5\u65F6\u95F4\u672A\u7FFB\u9875\u5C06\u6682\u505C\u8DDF\u8E2A\u9605\u8BFB\u65F6\u957F\uFF0C\u4EE5\u83B7\u5F97\u66F4\u51C6\u786E\u7684\u6570\u636E\u3002`).addText(
         (cd) => cd.setValue("" + this.plugin.settings.readDataTrackingTimeout).onChange(async (value) => {
           this.plugin.settings.readDataTrackingTimeout = Number(value);
+          await this.plugin.saveSettings();
+        })
+      );
+      new import_obsidian4.Setting(containerEl).setName("\u8DDF\u8E2A\u6570\u636E\u5EF6\u8FDF\u66F4\u65B0").setDesc("\u5728\u67D0\u4E9B\u8001\u65E7\u6C34\u58A8\u5C4F\u8BBE\u5907\u6216\u8005\u5355\u6587\u4EF6\u4F53\u79EF\u8FC7\u5927\uFF0C\u6BCF\u6B21\u66F4\u65B0\u8DDF\u8E2A\u6570\u636E\u90FD\u4F1A\u5BFC\u81F4\u7FFB\u9875\u660E\u663E\u6EDE\u540E\uFF0C\u8BBE\u7F6E\u5EF6\u8FDF\u4EE5\u5927\u5E45\u63D0\u5347\u7FFB\u9875\u6D41\u7545\u6027").addText(
+        (text) => text.setValue("" + this.plugin.settings.readDataTrackingDelayTime).onChange(async (value) => {
+          this.plugin.settings.readDataTrackingDelayTime = Number(value);
           await this.plugin.saveSettings();
         })
       );
@@ -996,6 +1003,7 @@ var Toolbox = class extends import_obsidian7.Plugin {
   async onload() {
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
+    this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.registerEvent(
       this.app.workspace.on("file-open", (file) => {
         this.startTime = Date.now();
@@ -1037,7 +1045,7 @@ var Toolbox = class extends import_obsidian7.Plugin {
       id: "\u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0",
       name: "\u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0",
       icon: "activity",
-      callback: () => this.app.vault.getMarkdownFiles().filter((file) => this.hasReadingPage(file)).forEach((file) => debounce(this.syncNote)(file))
+      callback: () => this.app.vault.getMarkdownFiles().filter((file) => this.hasReadingPage(file)).forEach((file) => this.syncNote(file))
     });
   }
   mask(el, file) {
@@ -1296,7 +1304,7 @@ var Toolbox = class extends import_obsidian7.Plugin {
       return;
     const el = $(SOURCE_VIEW_CLASS);
     el.scrollTop = over ? el.scrollTop - el.clientHeight - this.settings.fileCorrect : el.scrollTop + el.clientHeight + this.settings.fileCorrect;
-    this.readDataTracking(el, file);
+    this.debounceReadDataTracking(el, file);
   }
   updateFrontmatter(file, key, value) {
     this.app.fileManager.processFrontMatter(file, (frontmatter) => {
