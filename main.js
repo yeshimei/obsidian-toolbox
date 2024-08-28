@@ -911,8 +911,8 @@ function today(more = false) {
   return (0, import_obsidian5.moment)().format("YYYY-MM-DD" + (more ? " hh:mm:ss" : ""));
 }
 function msTo(t) {
-  let duration = import_obsidian5.moment.duration(t, "milliseconds");
-  let hours = duration.hours();
+  let duration = import_obsidian5.moment.duration(t);
+  let hours = Math.floor(duration.asHours());
   let minutes = duration.minutes();
   let seconds = duration.seconds();
   return `${hours ? hours + "h" : ""}${minutes ? minutes + "m" : ""}${seconds ? seconds + "s" : ""}`;

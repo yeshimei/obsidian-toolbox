@@ -79,8 +79,8 @@ export function today(more = false) {
 }
 
 export function msTo(t: number) {
-  let duration = moment.duration(t, 'milliseconds');
-  let hours = duration.hours();
+  let duration = moment.duration(t);
+  let hours = Math.floor(duration.asHours());
   let minutes = duration.minutes();
   let seconds = duration.seconds();
   return `${hours ? hours + 'h' : ''}${minutes ? minutes + 'm' : ''}${seconds ? seconds + 's' : ''}`;

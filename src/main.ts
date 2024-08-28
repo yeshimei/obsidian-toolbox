@@ -17,6 +17,7 @@ const OUT_LINK_CLASS = '.cm-underline';
 export default class Toolbox extends Plugin {
   debounceReadDataTracking: Function;
   settings: ToolboxSettings;
+
   startTime: number;
   async onload() {
     // 加载插件设置页面
