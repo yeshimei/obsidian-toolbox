@@ -32,6 +32,9 @@ export interface ToolboxSettings {
   fontSize: number;
 
   blockReference: boolean;
+
+  searchForPlants: boolean;
+  searchForPlantsFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -61,7 +64,10 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   readingPageStyles: true,
   fontSize: 36,
 
-  blockReference: true
+  blockReference: true,
+
+  searchForPlants: true,
+  searchForPlantsFolder: '卡片盒/归档'
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -264,5 +270,25 @@ export class ToolboxSettingTab extends PluginSettingTab {
           this.display();
         })
       );
+
+    new Setting(containerEl)
+      .setName('🌻 查植物')
+      .setDesc('')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.searchForPlants).onChange(async value => {
+          this.plugin.settings.searchForPlants = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+    if (this.plugin.settings.readDataTracking) {
+      new Setting(containerEl).setName('放至哪个文件夹').addText(cd =>
+        cd.setValue('' + this.plugin.settings.searchForPlantsFolder).onChange(async value => {
+          this.plugin.settings.searchForPlantsFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+    }
   }
 }

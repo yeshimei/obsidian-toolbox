@@ -1,11 +1,12 @@
 import { PanelSearchForWord } from './PanelSearchForWord';
 import { Confirm } from './Confirm';
 import { PanelHighlight } from './PanelHighlight';
-import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown } from 'obsidian';
+import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $ } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
+import { PanelSearchForPlants } from './PanelSearchForPlants';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -60,6 +61,13 @@ export default class Toolbox extends Plugin {
         name: '查词',
         editorCallback: editor => this.searchForWords(editor)
       });
+    this.settings.searchForPlants &&
+      this.addCommand({
+        id: '查植物',
+        name: '查植物',
+        icon: 'flower-2',
+        callback: () => this.searchForPlants()
+      });
     this.settings.flip &&
       this.addCommand({
         id: '翻页',
@@ -86,6 +94,51 @@ export default class Toolbox extends Plugin {
             .filter(file => this.hasReadingPage(file))
             .forEach(file => this.syncNote(file))
       });
+  }
+
+  async searchForPlants() {
+    if (!this.settings.searchForPlants) return;
+    new PanelSearchForPlants(this.app, async (name: string) => {
+      const html = await requestUrlToHTML('https://www.iplant.cn/info/' + name);
+      const id = html.querySelector('.barcodeimg img').getAttr('src').split('=').pop();
+      const latinName = html.querySelector('#sptitlel')?.textContent;
+      let alias = html.querySelector('.infomore>div')?.firstChild?.textContent;
+      let other = html.querySelector('.infomore>.spantxt')?.textContent;
+
+      if (latinName.trim() === '' && other) {
+        new Notice(`${name}？您是否在找 ${other}`);
+        return;
+      }
+
+      if (id === '') {
+        new Notice(`${name}？您可能输入错误或植物智不存在相关植物`);
+        return;
+      }
+
+      if (alias.indexOf('俗名') > -1) {
+        alias = alias.split('、').join('\n - ').replace('俗名：', '\n - ');
+      } else {
+        alias = ' ';
+      }
+
+      const classsys = extractChineseParts(JSON.parse(await request(`https://www.iplant.cn/ashx/getspinfos.ashx?spid=${id}&type=classsys`)).classsys.find((text: string) => Object.keys(plantClassificationSystem).some(name => text.indexOf(name) > -1)));
+
+      const plantIntelligence = await request(`https://www.iplant.cn/ashx/getfrps.ashx?key=${latinName.split(' ').join('+')}`);
+      const lifestyleForm = plantIntelligence ? htmlToMarkdown(JSON.parse(plantIntelligence).frpsdesc).replace(/^[^\n]*\n[^\n]*\n[^\n]*\n/, '') : '《植物智》未收录。';
+
+      const content = `---\n中文名: ${name}\n拉丁学名: ${latinName}\n别名: ${alias}\n${classsys}\n识别特征: \n---\n${lifestyleForm}`;
+
+      console.log(content);
+
+      const filepath = '卡片盒/归档/' + name + '.md';
+      let file = this.app.vault.getFileByPath(filepath) || this.app.vault.getFileByPath('卡片盒/' + name + '.md');
+      if (file) {
+        new Notice('查询的植物笔记已存在');
+      } else {
+        file = await this.app.vault.create(filepath, content);
+      }
+      this.app.workspace.getLeaf(true).openFile(file);
+    }).open();
   }
 
   blockReference(editor: Editor, file: TFile) {

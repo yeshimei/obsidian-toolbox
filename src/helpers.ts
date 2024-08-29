@@ -1,5 +1,31 @@
 import { App, Editor, TFile, moment, requestUrl } from 'obsidian';
 
+export const plantClassificationSystem: any = {
+  被子植物分类系统: `界: 植物界 \n门: 被子植物门`,
+  裸子植物分类系统: `界: 植物界 \n门: 裸子植物门`,
+  石松类和蕨类植物分类系统: `界: 植物界 \n门: 蕨类植物门`,
+  苔藓植物分类系统: `界: 植物界 \n门: 苔藓植物门`
+};
+
+export function extractChineseParts(inputString: string) {
+  const chineseParts = inputString.match(/[\u4e00-\u9fa5]+/g).reverse();
+  const yamlObject: any = {};
+  const sy = chineseParts.shift();
+  const keys = ['亚门', '纲', '亚纲', '超目', '科', '属'];
+  for (let i = 0; i < keys.length; i++) {
+    yamlObject[keys[i]] = chineseParts.find(text => text.indexOf(keys[i]) > -1) || '';
+  }
+  yamlObject['目'] = chineseParts.find(text => text.slice(-1) === '目' && text.slice(-2) !== '超目') || '';
+  return `${plantClassificationSystem[sy]}
+亚门: ${yamlObject['亚门']}
+纲: ${yamlObject['纲']}
+亚纲: ${yamlObject['亚纲']}
+超目: ${yamlObject['超目']}
+科: ${yamlObject['科']}
+目: ${yamlObject['目']}
+属: ${yamlObject['属']}`;
+}
+
 export function $(className: string) {
   return document.querySelector(className) as HTMLElement;
 }
