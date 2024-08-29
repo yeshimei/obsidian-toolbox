@@ -1,4 +1,9 @@
-import { App, Editor, TFile, moment, requestUrl } from 'obsidian';
+import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
+
+export function blur(app: App) {
+  app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur();
+  getSelection().removeAllRanges();
+}
 
 export const plantClassificationSystem: any = {
   被子植物分类系统: `界: 植物界 \n门: 被子植物门`,

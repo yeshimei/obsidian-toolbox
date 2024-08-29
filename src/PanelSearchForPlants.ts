@@ -28,7 +28,6 @@ export class PanelSearchForPlants extends Modal {
   }
 
   onClose() {
-    this.app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur();
     let { contentEl } = this;
     contentEl.empty();
   }

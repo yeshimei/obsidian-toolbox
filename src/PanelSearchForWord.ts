@@ -1,4 +1,5 @@
 import { App, MarkdownView, Modal, Setting } from 'obsidian';
+import { blur } from './helpers';
 
 export class PanelSearchForWord extends Modal {
   title: string;
@@ -40,7 +41,7 @@ export class PanelSearchForWord extends Modal {
   }
 
   onClose() {
-    this.app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur();
+    blur(this.app);
     let { contentEl } = this;
     contentEl.empty();
   }

@@ -3,7 +3,7 @@ import { Confirm } from './Confirm';
 import { PanelHighlight } from './PanelHighlight';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
@@ -201,7 +201,14 @@ export default class Toolbox extends Plugin {
       };
       // 移动端软键盘收起时，隐藏遮罩层，反之亦然
       const originalHeight = window.innerHeight;
-      window.onresize = () => (window.innerHeight === originalHeight ? mask.show() : mask.hide());
+      window.onresize = () => {
+        if (window.innerHeight === originalHeight) {
+          mask.show();
+          blur(this.app)
+        } else {
+          mask.hide();
+        }
+      };
     } else {
       mask.hide();
       mask.onclick = mask.ontouchstart = mask.ontouchend = window.onresize = null;
