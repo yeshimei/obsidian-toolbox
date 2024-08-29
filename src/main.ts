@@ -1,6 +1,6 @@
-import { Panel } from './Panel';
+import { PanelSearchForWord } from './PanelSearchForWord';
 import { Confirm } from './Confirm';
-import { InputBox } from './InputBox';
+import { PanelHighlight } from './PanelHighlight';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
 import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $ } from './helpers';
@@ -233,7 +233,7 @@ export default class Toolbox extends Plugin {
   highlight(editor: Editor, file: TFile) {
     if (!this.settings.highlight) return;
     let text = editor.getSelection();
-    new InputBox(this.app, text, '写想法', async res => {
+    new PanelHighlight(this.app, text, '写想法', async res => {
       let blockId = getBlock(this.app, editor, file);
       res = `<span class="__comment cm-highlight" data-comment="${res || ''}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
@@ -285,7 +285,7 @@ export default class Toolbox extends Plugin {
     div.appendChild(jnr || createElement('p', '空空如也'));
     div.appendChild(createElement('h1', '百度百科'));
     div.appendChild(JSummary || createElement('p', '空空如也'));
-    new Panel(
+    new PanelSearchForWord(
       this.app,
       `${word} ${pinyin}`,
       div || '空空如也',

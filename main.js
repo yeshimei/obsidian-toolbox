@@ -580,9 +580,9 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 
-// src/Panel.ts
+// src/PanelSearchForWord.ts
 var import_obsidian = require("obsidian");
-var Panel = class extends import_obsidian.Modal {
+var PanelSearchForWord = class extends import_obsidian.Modal {
   constructor(app, title, content, onSubmit, onSubmit2) {
     super(app);
     this.title = title;
@@ -644,9 +644,9 @@ var Confirm = class extends import_obsidian2.Modal {
   }
 };
 
-// src/InputBox.ts
+// src/PanelHighlight.ts
 var import_obsidian3 = require("obsidian");
-var InputBox = class extends import_obsidian3.Modal {
+var PanelHighlight = class extends import_obsidian3.Modal {
   constructor(app, text, buttonText, onSubmit) {
     super(app);
     this.onSubmit = onSubmit;
@@ -1206,7 +1206,7 @@ var Toolbox = class extends import_obsidian7.Plugin {
     if (!this.settings.highlight)
       return;
     let text = editor.getSelection();
-    new InputBox(this.app, text, "\u5199\u60F3\u6CD5", async (res) => {
+    new PanelHighlight(this.app, text, "\u5199\u60F3\u6CD5", async (res) => {
       let blockId = getBlock(this.app, editor, file);
       res = `<span class="__comment cm-highlight" data-comment="${res || ""}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
@@ -1251,7 +1251,7 @@ var Toolbox = class extends import_obsidian7.Plugin {
     div.appendChild(jnr || createElement("p", "\u7A7A\u7A7A\u5982\u4E5F"));
     div.appendChild(createElement("h1", "\u767E\u5EA6\u767E\u79D1"));
     div.appendChild(JSummary || createElement("p", "\u7A7A\u7A7A\u5982\u4E5F"));
-    new Panel(
+    new PanelSearchForWord(
       this.app,
       `${word} ${pinyin}`,
       div || "\u7A7A\u7A7A\u5982\u4E5F",

@@ -1,6 +1,6 @@
-import { App, Editor, MarkdownView, Modal, Setting } from 'obsidian';
+import { App, MarkdownView, Modal, Setting } from 'obsidian';
 
-export class InputBox extends Modal {
+export class PanelHighlight extends Modal {
   result: string;
   text: string;
   buttonText: string;
