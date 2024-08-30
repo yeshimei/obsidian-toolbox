@@ -35,6 +35,8 @@ export interface ToolboxSettings {
 
   searchForPlants: boolean;
   searchForPlantsFolder: string;
+
+  encryption: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -67,7 +69,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   blockReference: true,
 
   searchForPlants: true,
-  searchForPlantsFolder: '卡片盒/归档'
+  searchForPlantsFolder: '卡片盒/归档',
+
+  encryption: true
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -292,5 +296,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
     }
+
+    new Setting(containerEl)
+      .setName('🎲 笔记加密')
+      .setDesc('本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.encryption).onChange(async value => {
+          this.plugin.settings.encryption = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
   }
 }

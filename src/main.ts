@@ -3,7 +3,7 @@ import { Confirm } from './Confirm';
 import { PanelHighlight } from './PanelHighlight';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, encryptString, decryptString, imageToBase64 } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
@@ -33,6 +33,7 @@ export default class Toolbox extends Plugin {
         readingPageStyles: false
       });
     }
+
     this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.registerEvent(
       this.app.workspace.on('file-open', file => {
@@ -43,6 +44,18 @@ export default class Toolbox extends Plugin {
         this.mask(sourceView, file); // 点击遮罩层翻页
       })
     );
+
+    this.addCommand({
+      id: '加密笔记',
+      name: '加密笔记',
+      editorCallback: (editor, view) => this.encrypt(view.file)
+    });
+
+    this.addCommand({
+      id: '解密笔记',
+      name: '解密笔记',
+      editorCallback: (editor, view) => this.decrypt(view.file)
+    });
 
     this.settings.passwordCreator &&
       this.addCommand({
@@ -105,6 +118,24 @@ export default class Toolbox extends Plugin {
       });
   }
 
+  async encrypt(file: TFile) {
+    if (!this.settings.encryption) return;
+    new PanelHighlight(this.app, '请输入加密密码。（❗️❗️❗️请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。另外，除了加密笔记中的文本部分外，还对笔记中所有以 wiki 链接的图片进行加密并且会覆盖原图，也请做好备份❗️❗️❗️）', '加密', async pass => {
+      if (!pass) return;
+      await imageToBase64(this.app, file, 'convert', pass);
+      this.app.vault.modify(file, encryptString(await this.app.vault.read(file), pass));
+    }).open();
+  }
+
+  async decrypt(file: TFile) {
+    if (!this.settings.encryption) return;
+    new PanelHighlight(this.app, '请输入解密密码。', '解密', async pass => {
+      if (!pass) return;
+      this.app.vault.modify(file, decryptString(await this.app.vault.read(file), pass));
+      await imageToBase64(this.app, file, 'restore', pass);
+    }).open();
+  }
+
   async searchForPlants() {
     if (!this.settings.searchForPlants) return;
     new PanelSearchForPlants(this.app, async (name: string) => {
@@ -136,8 +167,6 @@ export default class Toolbox extends Plugin {
       const lifestyleForm = plantIntelligence ? htmlToMarkdown(JSON.parse(plantIntelligence).frpsdesc).replace(/^[^\n]*\n[^\n]*\n[^\n]*\n/, '') : '《植物智》未收录。';
 
       const content = `---\n中文名: ${name}\n拉丁学名: ${latinName}\n别名: ${alias}\n${classsys}\n识别特征: \n---\n${lifestyleForm}`;
-
-      console.log(content);
 
       const filepath = '卡片盒/归档/' + name + '.md';
       let file = this.app.vault.getFileByPath(filepath) || this.app.vault.getFileByPath('卡片盒/' + name + '.md');
@@ -244,7 +273,7 @@ export default class Toolbox extends Plugin {
     // 出链
     if (this.settings.outLink && links) {
       content += '\n\n# 出链\n\n';
-      uniqueBy(links, 'link').forEach(({ link }) => (content += `[[${link}|${link.split('/').pop()}]] / `));
+      uniqueBy(links, (link: any) => link.link).forEach(({ link }) => (content += `[[${link}|${link.split('/').pop()}]] / `));
       content = content.slice(0, -3);
       outlinks = links.length;
     }

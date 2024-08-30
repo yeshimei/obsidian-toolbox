@@ -1,5 +1,67 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
+export async function imageToBase64(app: App, file: TFile, action: 'convert' | 'restore', pass: string) {
+  const content = await app.vault.read(file);
+  const imageRegex = /\[\[(.*?\.(png|jpg|jpeg|gif|bmp|svg))\]\]/g;
+  let links = content.match(imageRegex) as string[];
+  if (links) {
+    links = unique(links).map(text => text.slice(2, -2));
+    for (let link of links) {
+      const file = app.metadataCache.getFirstLinkpathDest(link, '');
+      if (action === 'convert') {
+        const arrayBuffer = await app.vault.adapter.readBinary(file.path);
+        const base64 = arrayBufferToBase64(arrayBuffer);
+        app.vault.modify(file, base64);
+      } else if (action === 'restore') {
+        const base64 = await app.vault.read(file);
+        if (base64) {
+          const bytes = convertBase64ToImage(base64);
+          await app.vault.adapter.writeBinary(file.path, bytes);
+        }
+      }
+    }
+  }
+}
+
+function arrayBufferToBase64(buffer: any) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+}
+
+function convertBase64ToImage(base64: string) {
+  const binaryString = window.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+export function encryptString(str: string, password: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  let encrypted = '';
+  for (let i = 0; i < data.length; i++) {
+    encrypted += String.fromCharCode(data[i] ^ password.charCodeAt(i % password.length));
+  }
+  return btoa(encrypted);
+}
+
+export function decryptString(encodedStr: string, password: string) {
+  const decoder = new TextDecoder();
+  let str = atob(encodedStr);
+  let decrypted = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    decrypted[i] = str.charCodeAt(i) ^ password.charCodeAt(i % password.length);
+  }
+  return decoder.decode(decrypted);
+}
 export function blur(app: App) {
   app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur();
   getSelection().removeAllRanges();
@@ -33,10 +95,6 @@ export function extractChineseParts(inputString: string) {
 
 export function $(className: string) {
   return document.querySelector(className) as HTMLElement;
-}
-
-export function $$(className: string) {
-  return Array.from(document.querySelectorAll(className)) as HTMLElement[];
 }
 
 export function ensureMakHide() {
@@ -117,25 +175,30 @@ export function msTo(t: number) {
   return `${hours ? hours + 'h' : ''}${minutes ? minutes + 'm' : ''}${seconds ? seconds + 's' : ''}`;
 }
 
-export function uniqueBy<T, K extends keyof T>(arr: T[], key: K): T[] {
-  const map = new Map<T[K], T>();
+export function unique<T>(arr: T[]): T[] {
+  return [...new Set(arr)];
+}
+
+export function uniqueBy<T, U>(arr: T[], key: (item: T) => U): T[] {
+  const seen = new Set<U>();
   return arr.filter(item => {
-    return map.has(item[key]) ? false : map.set(item[key], item);
+    const keyValue = key(item);
+    return seen.has(keyValue) ? false : seen.add(keyValue);
   });
 }
 
 export function getBlock(app: App, editor: Editor, file: TFile) {
   const cursor = editor.getCursor('to');
   const fileCache = app.metadataCache.getFileCache(file);
-  let block: any = ((fileCache === null || fileCache === void 0 ? void 0 : fileCache.sections) || []).find(section => {
+  let block: any = ((fileCache === null || fileCache === void 0 ? void 0 : fileCache.sections) || []).find((section: { position: { start: { line: number }; end: { line: number } } }) => {
     return section.position.start.line <= cursor.line && section.position.end.line >= cursor.line;
   });
   if ((block === null || block === void 0 ? void 0 : block.type) === 'list') {
-    block = ((fileCache === null || fileCache === void 0 ? void 0 : fileCache.listItems) || []).find(item => {
+    block = ((fileCache === null || fileCache === void 0 ? void 0 : fileCache.listItems) || []).find((item: { position: { start: { line: number }; end: { line: number } } }) => {
       return item.position.start.line <= cursor.line && item.position.end.line >= cursor.line;
     });
   } else if ((block === null || block === void 0 ? void 0 : block.type) === 'heading') {
-    block = fileCache.headings.find(heading => {
+    block = fileCache.headings.find((heading: { position: { start: { line: any } } }) => {
       return heading.position.start.line === block.position.start.line;
     });
   }
