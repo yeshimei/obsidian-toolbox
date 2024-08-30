@@ -10,7 +10,7 @@ import { PanelSearchForPlants } from './PanelSearchForPlants';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
-const MOBILE_HEADER_CLASS = '.view-action';
+const MOBILE_HEADER_CLASS = '.view-header';
 const MOBILE_NAVBAR_CLASS = '.mobile-navbar-actions';
 const COMMENT_CLASS = '.__comment';
 const OUT_LINK_CLASS = '.cm-underline';
@@ -27,6 +27,7 @@ export default class Toolbox extends Plugin {
     if (!Platform.isMobile) {
       Object.assign(this.settings, {
         flip: false,
+        fullScreenMode: false,
         readDataTracking: false,
         highlight: false,
         readingNotes: false,
@@ -37,6 +38,7 @@ export default class Toolbox extends Plugin {
     this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.registerEvent(
       this.app.workspace.on('file-open', file => {
+        // document.body.onclick = evt => new Notice((evt.target as HTMLLIElement).className);
         this.startTime = Date.now();
         const sourceView = $(SOURCE_VIEW_CLASS);
         this.polysemy(file); // 多义笔记转跳
@@ -189,15 +191,22 @@ export default class Toolbox extends Plugin {
   mask(el: HTMLElement, file: TFile) {
     if (!this.settings.flip) return;
     let timer: number, xStart: number, xEnd: number;
+    const t = $(MOBILE_HEADER_CLASS);
+    const b = $(MOBILE_NAVBAR_CLASS);
     let mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
     if (this.hasReadingPage(file)) {
-      const th = $(MOBILE_HEADER_CLASS)?.offsetHeight || 0;
-      const bh = $(MOBILE_NAVBAR_CLASS)?.offsetHeight || 0;
+      if (this.settings.fullScreenMode) {
+        t.hide();
+        b.hide();
+      }
+      const th = t.offsetHeight || 0;
+      const bh = b.offsetHeight || 0;
       mask.style.position = 'fixed';
       mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
       mask.style.left = '0';
       mask.style.width = '100%';
       mask.style.height = el.clientHeight - th - bh + 'px';
+      // mask.style.backgroundColor = 'rgba(255,0,0,0.5)';
       mask.style.backgroundColor = 'transparent';
       mask.style.zIndex = '1'; // 最小值，使侧边栏等保持正确层级
       mask.show();
@@ -250,6 +259,8 @@ export default class Toolbox extends Plugin {
     } else {
       mask.hide();
       mask.onclick = mask.ontouchstart = mask.ontouchend = window.onresize = null;
+      t.show();
+      b.show();
     }
   }
 

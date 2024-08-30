@@ -896,6 +896,7 @@ var DEFAULT_SETTINGS = {
   searchForWords: true,
   flip: true,
   fileCorrect: -35,
+  fullScreenMode: false,
   readDataTracking: true,
   readDataTrackingFolder: "\u4E66\u5E93",
   readDataTrackingTimeout: 300 * 1e3,
@@ -1000,6 +1001,13 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
           })
         );
       }
+      new import_obsidian5.Setting(containerEl).setName("\u{1F917} \u5168\u5C4F\u6A21\u5F0F").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.fullScreenMode).onChange(async (value) => {
+          this.plugin.settings.fullScreenMode = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
       new import_obsidian5.Setting(containerEl).setName("\u{1F50E} \u67E5\u8BCD").addToggle(
         (cd) => cd.setValue(this.plugin.settings.searchForWords).onChange(async (value) => {
           this.plugin.settings.searchForWords = value;
@@ -1070,7 +1078,7 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.display();
       })
     );
-    new import_obsidian5.Setting(containerEl).setName("\u{1F33B} \u67E5\u690D\u7269").setDesc("").addToggle(
+    new import_obsidian5.Setting(containerEl).setName("\u{1F3F5}\uFE0F \u67E5\u690D\u7269").setDesc("").addToggle(
       (cd) => cd.setValue(this.plugin.settings.searchForPlants).onChange(async (value) => {
         this.plugin.settings.searchForPlants = value;
         await this.plugin.saveSettings();
@@ -1085,7 +1093,7 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         })
       );
     }
-    new import_obsidian5.Setting(containerEl).setName("\u{1F3B2} \u7B14\u8BB0\u52A0\u5BC6").setDesc("\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002").addToggle(
+    new import_obsidian5.Setting(containerEl).setName("\u{1F512} \u7B14\u8BB0\u52A0\u5BC6").setDesc("\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002").addToggle(
       (cd) => cd.setValue(this.plugin.settings.encryption).onChange(async (value) => {
         this.plugin.settings.encryption = value;
         await this.plugin.saveSettings();
@@ -1156,7 +1164,7 @@ var PanelSearchForPlants = class extends import_obsidian7.Modal {
 // src/main.ts
 var SOURCE_VIEW_CLASS = ".cm-scroller";
 var MASK_CLASS = ".__mask";
-var MOBILE_HEADER_CLASS = ".view-action";
+var MOBILE_HEADER_CLASS = ".view-header";
 var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
@@ -1167,6 +1175,7 @@ var Toolbox = class extends import_obsidian8.Plugin {
     if (!import_obsidian8.Platform.isMobile) {
       Object.assign(this.settings, {
         flip: false,
+        fullScreenMode: false,
         readDataTracking: false,
         highlight: false,
         readingNotes: false,
@@ -1312,14 +1321,19 @@ ${lifestyleForm}`;
     new import_obsidian8.Notice("\u5757\u5F15\u7528\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
   }
   mask(el, file) {
-    var _a, _b;
     if (!this.settings.flip)
       return;
     let timer, xStart, xEnd;
+    const t = $(MOBILE_HEADER_CLASS);
+    const b = $(MOBILE_NAVBAR_CLASS);
     let mask = $(MASK_CLASS) || document.body.appendChild(createElement("div", "", MASK_CLASS.slice(1)));
     if (this.hasReadingPage(file)) {
-      const th = ((_a = $(MOBILE_HEADER_CLASS)) == null ? void 0 : _a.offsetHeight) || 0;
-      const bh = ((_b = $(MOBILE_NAVBAR_CLASS)) == null ? void 0 : _b.offsetHeight) || 0;
+      if (this.settings.fullScreenMode) {
+        t.hide();
+        b.hide();
+      }
+      const th = t.offsetHeight || 0;
+      const bh = b.offsetHeight || 0;
       mask.style.position = "fixed";
       mask.style.bottom = bh + 10 + "px";
       mask.style.left = "0";
@@ -1372,6 +1386,8 @@ ${lifestyleForm}`;
     } else {
       mask.hide();
       mask.onclick = mask.ontouchstart = mask.ontouchend = window.onresize = null;
+      t.show();
+      b.show();
     }
   }
   adjustPageStyle(file, el) {

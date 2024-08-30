@@ -15,6 +15,8 @@ export interface ToolboxSettings {
   flip: boolean;
   fileCorrect: number;
 
+  fullScreenMode: boolean;
+
   readDataTracking: boolean;
   readDataTrackingFolder: string;
   readDataTrackingTimeout: number;
@@ -49,6 +51,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   flip: true,
   fileCorrect: -35,
+
+  fullScreenMode: false,
 
   readDataTracking: true,
   readDataTrackingFolder: '书库',
@@ -191,6 +195,14 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
       }
 
+      new Setting(containerEl).setName('🤗 全屏模式').addToggle(cd =>
+        cd.setValue(this.plugin.settings.fullScreenMode).onChange(async value => {
+          this.plugin.settings.fullScreenMode = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
       new Setting(containerEl).setName('🔎 查词').addToggle(cd =>
         cd.setValue(this.plugin.settings.searchForWords).onChange(async value => {
           this.plugin.settings.searchForWords = value;
@@ -278,7 +290,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('🌻 查植物')
+      .setName('🏵️ 查植物')
       .setDesc('')
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.searchForPlants).onChange(async value => {
@@ -298,7 +310,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
     }
 
     new Setting(containerEl)
-      .setName('🎲 笔记加密')
+      .setName('🔒 笔记加密')
       .setDesc('本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。')
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.encryption).onChange(async value => {
