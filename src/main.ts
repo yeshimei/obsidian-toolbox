@@ -3,7 +3,7 @@ import { Confirm } from './Confirm';
 import { PanelHighlight } from './PanelHighlight';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, encryptString, decryptString, imageToBase64 } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, encryptString, decryptString, imageToBase64, codeBlockParamParse } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
@@ -44,6 +44,7 @@ export default class Toolbox extends Plugin {
         this.polysemy(file); // 多义笔记转跳
         this.adjustPageStyle(file, sourceView); // 阅读页面
         this.mask(sourceView, file); // 点击遮罩层翻页
+        this.gallery(); // 画廊
       })
     );
 
@@ -118,6 +119,22 @@ export default class Toolbox extends Plugin {
             .filter(file => this.hasReadingPage(file))
             .forEach(file => this.syncNote(file))
       });
+  }
+
+  gallery() {
+    if (!this.settings.gallery) return;
+    this.registerMarkdownCodeBlockProcessor('gallery', (source, el, ctx) => {
+      const { path } = codeBlockParamParse(source);
+
+      if (path) {
+        const files = this.app.vault
+          .getFiles()
+          .filter(file => new RegExp(`^${path}`).test(file.path))
+          .filter(file => ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'].includes(file.extension));
+        const content = files.map(file => this.app.vault.adapter.getResourcePath(file.path)).reduce((res, ret) => (res += `<img alt="" src="${ret}">`), '');
+        el.innerHTML = content;
+      }
+    });
   }
 
   async encrypt(file: TFile) {

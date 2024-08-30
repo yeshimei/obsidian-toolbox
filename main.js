@@ -585,6 +585,12 @@ var import_obsidian2 = require("obsidian");
 
 // src/helpers.ts
 var import_obsidian = require("obsidian");
+function codeBlockParamParse(source, separator = "=") {
+  return source.split("\n").filter((row) => row.length > 0).map((row) => row.split(separator)).reduce((res, ret) => {
+    res[ret[0]] = ret[1];
+    return res;
+  }, {});
+}
 async function imageToBase64(app, file, action, pass) {
   const content = await app.vault.read(file);
   const imageRegex = /\[\[(.*?\.(png|jpg|jpeg|gif|bmp|svg))\]\]/g;
@@ -912,7 +918,8 @@ var DEFAULT_SETTINGS = {
   blockReference: true,
   searchForPlants: true,
   searchForPlantsFolder: "\u5361\u7247\u76D2/\u5F52\u6863",
-  encryption: true
+  encryption: true,
+  gallery: true
 };
 var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
   constructor(app, plugin) {
@@ -1100,6 +1107,13 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.display();
       })
     );
+    new import_obsidian5.Setting(containerEl).setName("\u{1F4F8} \u753B\u5ECA").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.gallery).onChange(async (value) => {
+        this.plugin.settings.gallery = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
   }
 };
 
@@ -1190,6 +1204,7 @@ var Toolbox = class extends import_obsidian8.Plugin {
         this.polysemy(file);
         this.adjustPageStyle(file, sourceView);
         this.mask(sourceView, file);
+        this.gallery();
       })
     );
     this.addCommand({
@@ -1247,6 +1262,18 @@ var Toolbox = class extends import_obsidian8.Plugin {
       name: "\u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0",
       icon: "activity",
       callback: () => this.app.vault.getMarkdownFiles().filter((file) => this.hasReadingPage(file)).forEach((file) => this.syncNote(file))
+    });
+  }
+  gallery() {
+    if (!this.settings.gallery)
+      return;
+    this.registerMarkdownCodeBlockProcessor("gallery", (source, el, ctx) => {
+      const { path } = codeBlockParamParse(source);
+      if (path) {
+        const files = this.app.vault.getFiles().filter((file) => new RegExp(`^${path}`).test(file.path)).filter((file) => ["png", "jpg", "jpeg", "gif", "bmp", "svg"].includes(file.extension));
+        const content = files.map((file) => this.app.vault.adapter.getResourcePath(file.path)).reduce((res, ret) => res += `<img alt="" src="${ret}">`, "");
+        el.innerHTML = content;
+      }
     });
   }
   async encrypt(file) {

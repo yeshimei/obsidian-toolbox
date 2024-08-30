@@ -1,5 +1,16 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
+export function codeBlockParamParse(source: string, separator = '=') {
+  return source
+    .split('\n')
+    .filter(row => row.length > 0)
+    .map(row => row.split(separator))
+    .reduce((res: any, ret) => {
+      res[ret[0]] = ret[1];
+      return res;
+    }, {});
+}
+
 export async function imageToBase64(app: App, file: TFile, action: 'convert' | 'restore', pass: string) {
   const content = await app.vault.read(file);
   const imageRegex = /\[\[(.*?\.(png|jpg|jpeg|gif|bmp|svg))\]\]/g;

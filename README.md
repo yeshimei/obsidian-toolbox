@@ -49,3 +49,8 @@
 
 支持桌面端和移动端。
 
+# 画廊
+
+```gallery
+path=CONFIG/GALLERY/影集/LIVE
+```

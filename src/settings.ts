@@ -39,6 +39,8 @@ export interface ToolboxSettings {
   searchForPlantsFolder: string;
 
   encryption: boolean;
+
+  gallery: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -75,7 +77,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   searchForPlants: true,
   searchForPlantsFolder: '卡片盒/归档',
 
-  encryption: true
+  encryption: true,
+
+  gallery: true
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -319,5 +323,13 @@ export class ToolboxSettingTab extends PluginSettingTab {
           this.display();
         })
       );
+
+    new Setting(containerEl).setName('📸 画廊').addToggle(cd =>
+      cd.setValue(this.plugin.settings.gallery).onChange(async value => {
+        this.plugin.settings.gallery = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
   }
 }
