@@ -1,7 +1,7 @@
 import { PanelSearchForWord } from './PanelSearchForWord';
 import { Confirm } from './Confirm';
 import { PanelHighlight } from './PanelHighlight';
-import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request } from 'obsidian';
+import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
 import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur } from './helpers';
 import { md5 } from 'js-md5';
@@ -18,12 +18,21 @@ const OUT_LINK_CLASS = '.cm-underline';
 export default class Toolbox extends Plugin {
   debounceReadDataTracking: Function;
   settings: ToolboxSettings;
-
   startTime: number;
   async onload() {
     // 加载插件设置页面
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
+    // 阅读相关仅允许在移动端使用
+    if (!Platform.isMobile) {
+      Object.assign(this.settings, {
+        flip: false,
+        readDataTracking: false,
+        highlight: false,
+        readingNotes: false,
+        readingPageStyles: false
+      });
+    }
     this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.registerEvent(
       this.app.workspace.on('file-open', file => {
@@ -204,7 +213,7 @@ export default class Toolbox extends Plugin {
       window.onresize = () => {
         if (window.innerHeight === originalHeight) {
           mask.show();
-          blur(this.app)
+          blur(this.app);
         } else {
           mask.hide();
         }

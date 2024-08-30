@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, Platform, PluginSettingTab, Setting } from 'obsidian';
 import Toolbox from './main';
 
 export interface ToolboxSettings {
@@ -126,138 +126,140 @@ export class ToolboxSettingTab extends PluginSettingTab {
       })
     );
 
-    new Setting(containerEl)
-      .setName('🕐 阅读数据跟踪')
-      .setDesc('阅读进度、时长，未读以及读完')
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.readDataTracking).onChange(async value => {
-          this.plugin.settings.readDataTracking = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    if (this.plugin.settings.readDataTracking) {
-      new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
-        cd.setValue('' + this.plugin.settings.readDataTrackingFolder).onChange(async value => {
-          this.plugin.settings.readDataTrackingFolder = value;
-          await this.plugin.saveSettings();
-        })
-      );
-
+    if (Platform.isMobile) {
       new Setting(containerEl)
-        .setName('超时')
-        .setDesc(`超过一段时间未翻页将暂停跟踪阅读时长，以获得更准确的数据。`)
-        .addText(cd =>
-          cd.setValue('' + this.plugin.settings.readDataTrackingTimeout).onChange(async value => {
-            this.plugin.settings.readDataTrackingTimeout = Number(value);
-            await this.plugin.saveSettings();
-          })
-        );
-
-      new Setting(containerEl)
-        .setName('跟踪数据延迟更新')
-        .setDesc('在某些老旧水墨屏设备或者单文件体积过大，每次更新跟踪数据都会导致翻页明显滞后，设置延迟以大幅提升翻页流畅性')
-        .addText(text =>
-          text.setValue('' + this.plugin.settings.readDataTrackingDelayTime).onChange(async value => {
-            this.plugin.settings.readDataTrackingDelayTime = Number(value);
-            await this.plugin.saveSettings();
-          })
-        );
-    }
-
-    new Setting(containerEl)
-      .setName('👇🏼 翻页')
-      .setDesc('点击下翻，左滑下翻，右滑上翻，长按0.5s进入编辑模式，收起软键盘进入阅读模式')
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.flip).onChange(async value => {
-          this.plugin.settings.flip = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    if (this.plugin.settings.flip) {
-      new Setting(containerEl).setName('修正值').addText(cd =>
-        cd.setValue('' + this.plugin.settings.fileCorrect).onChange(async value => {
-          this.plugin.settings.fileCorrect = Number(value);
-          await this.plugin.saveSettings();
-        })
-      );
-    }
-
-    new Setting(containerEl).setName('🔎 查词').addToggle(cd =>
-      cd.setValue(this.plugin.settings.searchForWords).onChange(async value => {
-        this.plugin.settings.searchForWords = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-
-    new Setting(containerEl).setName('✏️ 划线').addToggle(cd =>
-      cd.setValue(this.plugin.settings.highlight).onChange(async value => {
-        this.plugin.settings.highlight = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-
-    new Setting(containerEl).setName('📙 同步读书笔记').addToggle(cd =>
-      cd.setValue(this.plugin.settings.readingNotes).onChange(async value => {
-        this.plugin.settings.readingNotes = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-
-    if (this.plugin.settings.readingNotes) {
-      new Setting(containerEl).setName('同步至哪个文件夹').addText(cd =>
-        cd.setValue('' + this.plugin.settings.readingNotesToFolder).onChange(async value => {
-          this.plugin.settings.readingNotesToFolder = value;
-          await this.plugin.saveSettings();
-        })
-      );
-
-      new Setting(containerEl).setName('同步出链').addToggle(cd =>
-        cd.setValue(this.plugin.settings.outLink).onChange(async value => {
-          this.plugin.settings.outLink = value;
-          await this.plugin.saveSettings();
-        })
-      );
-
-      new Setting(containerEl)
-        .setName('同步元字段')
-        .setDesc('添加划线，想法和出链数量元字段')
+        .setName('🕐 阅读数据跟踪')
+        .setDesc('阅读进度、时长，未读以及读完')
         .addToggle(cd =>
-          cd.setValue(this.plugin.settings.frontmatter).onChange(async value => {
-            this.plugin.settings.frontmatter = value;
+          cd.setValue(this.plugin.settings.readDataTracking).onChange(async value => {
+            this.plugin.settings.readDataTracking = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+
+      if (this.plugin.settings.readDataTracking) {
+        new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
+          cd.setValue('' + this.plugin.settings.readDataTrackingFolder).onChange(async value => {
+            this.plugin.settings.readDataTrackingFolder = value;
             await this.plugin.saveSettings();
           })
         );
 
-      new Setting(containerEl).setName('添加块id').addToggle(cd =>
-        cd.setValue(this.plugin.settings.blockId).onChange(async value => {
-          this.plugin.settings.blockId = value;
+        new Setting(containerEl)
+          .setName('超时')
+          .setDesc(`超过一段时间未翻页将暂停跟踪阅读时长，以获得更准确的数据。`)
+          .addText(cd =>
+            cd.setValue('' + this.plugin.settings.readDataTrackingTimeout).onChange(async value => {
+              this.plugin.settings.readDataTrackingTimeout = Number(value);
+              await this.plugin.saveSettings();
+            })
+          );
+
+        new Setting(containerEl)
+          .setName('跟踪数据延迟更新')
+          .setDesc('在某些老旧水墨屏设备或者单文件体积过大，每次更新跟踪数据都会导致翻页明显滞后，设置延迟以大幅提升翻页流畅性')
+          .addText(text =>
+            text.setValue('' + this.plugin.settings.readDataTrackingDelayTime).onChange(async value => {
+              this.plugin.settings.readDataTrackingDelayTime = Number(value);
+              await this.plugin.saveSettings();
+            })
+          );
+      }
+
+      new Setting(containerEl)
+        .setName('👇🏼 翻页')
+        .setDesc('点击下翻，左滑下翻，右滑上翻，长按0.5s进入编辑模式，收起软键盘进入阅读模式')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.flip).onChange(async value => {
+            this.plugin.settings.flip = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+
+      if (this.plugin.settings.flip) {
+        new Setting(containerEl).setName('修正值').addText(cd =>
+          cd.setValue('' + this.plugin.settings.fileCorrect).onChange(async value => {
+            this.plugin.settings.fileCorrect = Number(value);
+            await this.plugin.saveSettings();
+          })
+        );
+      }
+
+      new Setting(containerEl).setName('🔎 查词').addToggle(cd =>
+        cd.setValue(this.plugin.settings.searchForWords).onChange(async value => {
+          this.plugin.settings.searchForWords = value;
           await this.plugin.saveSettings();
+          this.display();
         })
       );
-    }
 
-    new Setting(containerEl).setName('🎈 阅读页面').addToggle(cd =>
-      cd.setValue(this.plugin.settings.readingPageStyles).onChange(async value => {
-        this.plugin.settings.readingPageStyles = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-
-    if (this.plugin.settings.readingPageStyles) {
-      new Setting(containerEl).setName('字体大小').addText(cd =>
-        cd.setValue('' + this.plugin.settings.fontSize).onChange(async value => {
-          this.plugin.settings.fontSize = Number(value);
+      new Setting(containerEl).setName('✏️ 划线').addToggle(cd =>
+        cd.setValue(this.plugin.settings.highlight).onChange(async value => {
+          this.plugin.settings.highlight = value;
           await this.plugin.saveSettings();
+          this.display();
         })
       );
+
+      new Setting(containerEl).setName('📙 同步读书笔记').addToggle(cd =>
+        cd.setValue(this.plugin.settings.readingNotes).onChange(async value => {
+          this.plugin.settings.readingNotes = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+      if (this.plugin.settings.readingNotes) {
+        new Setting(containerEl).setName('同步至哪个文件夹').addText(cd =>
+          cd.setValue('' + this.plugin.settings.readingNotesToFolder).onChange(async value => {
+            this.plugin.settings.readingNotesToFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+
+        new Setting(containerEl).setName('同步出链').addToggle(cd =>
+          cd.setValue(this.plugin.settings.outLink).onChange(async value => {
+            this.plugin.settings.outLink = value;
+            await this.plugin.saveSettings();
+          })
+        );
+
+        new Setting(containerEl)
+          .setName('同步元字段')
+          .setDesc('添加划线，想法和出链数量元字段')
+          .addToggle(cd =>
+            cd.setValue(this.plugin.settings.frontmatter).onChange(async value => {
+              this.plugin.settings.frontmatter = value;
+              await this.plugin.saveSettings();
+            })
+          );
+
+        new Setting(containerEl).setName('添加块id').addToggle(cd =>
+          cd.setValue(this.plugin.settings.blockId).onChange(async value => {
+            this.plugin.settings.blockId = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
+
+      new Setting(containerEl).setName('🎈 阅读页面').addToggle(cd =>
+        cd.setValue(this.plugin.settings.readingPageStyles).onChange(async value => {
+          this.plugin.settings.readingPageStyles = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+      if (this.plugin.settings.readingPageStyles) {
+        new Setting(containerEl).setName('字体大小').addText(cd =>
+          cd.setValue('' + this.plugin.settings.fontSize).onChange(async value => {
+            this.plugin.settings.fontSize = Number(value);
+            await this.plugin.saveSettings();
+          })
+        );
+      }
     }
 
     new Setting(containerEl)
