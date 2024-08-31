@@ -11,68 +11,6 @@ export function codeBlockParamParse(source: string, separator = '=') {
     }, {});
 }
 
-export async function imageToBase64(app: App, file: TFile, action: 'convert' | 'restore', pass: string) {
-  const content = await app.vault.read(file);
-  const imageRegex = /\[\[(.*?\.(png|jpg|jpeg|gif|bmp|svg))\]\]/g;
-  let links = content.match(imageRegex) as string[];
-  if (links) {
-    links = unique(links).map(text => text.slice(2, -2));
-    for (let link of links) {
-      const file = app.metadataCache.getFirstLinkpathDest(link, '');
-      if (action === 'convert') {
-        const arrayBuffer = await app.vault.adapter.readBinary(file.path);
-        const base64 = arrayBufferToBase64(arrayBuffer);
-        app.vault.modify(file, base64);
-      } else if (action === 'restore') {
-        const base64 = await app.vault.read(file);
-        if (base64) {
-          const bytes = convertBase64ToImage(base64);
-          await app.vault.adapter.writeBinary(file.path, bytes);
-        }
-      }
-    }
-  }
-}
-
-function arrayBufferToBase64(buffer: any) {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return window.btoa(binary);
-}
-
-function convertBase64ToImage(base64: string) {
-  const binaryString = window.atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
-
-export function encryptString(str: string, password: string) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(str);
-  let encrypted = '';
-  for (let i = 0; i < data.length; i++) {
-    encrypted += String.fromCharCode(data[i] ^ password.charCodeAt(i % password.length));
-  }
-  return btoa(encrypted);
-}
-
-export function decryptString(encodedStr: string, password: string) {
-  const decoder = new TextDecoder();
-  let str = atob(encodedStr);
-  let decrypted = new Uint8Array(str.length);
-  for (let i = 0; i < str.length; i++) {
-    decrypted[i] = str.charCodeAt(i) ^ password.charCodeAt(i % password.length);
-  }
-  return decoder.decode(decrypted);
-}
 export function blur(app: App) {
   app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur();
   getSelection().removeAllRanges();

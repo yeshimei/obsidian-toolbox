@@ -3,10 +3,11 @@ import { Confirm } from './Confirm';
 import { PanelHighlight } from './PanelHighlight';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, encryptString, decryptString, imageToBase64, codeBlockParamParse } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
+import { decrypt, encrypt, imageToBase64 } from './Aes';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -174,18 +175,26 @@ export default class Toolbox extends Plugin {
 
   async encrypt(file: TFile) {
     if (!this.settings.encryption) return;
-    new PanelHighlight(this.app, '请输入加密密码。（❗️❗️❗️请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。另外，除了加密笔记中的文本部分外，还对笔记中所有以 wiki 链接的图片进行加密并且会覆盖原图，也请做好备份❗️❗️❗️）', '加密', async pass => {
-      if (!pass) return;
-      await imageToBase64(this.app, file, 'convert', pass);
-      this.app.vault.modify(file, encryptString(await this.app.vault.read(file), pass));
+    new PanelHighlight(this.app, '请输入加密密码。（❗️❗️❗️请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。即将加密笔记中所有（wiki 链接形式）的图片并覆盖原图（请做好备份）以及所有文字❗️❗️❗️）', '加密', async pass => {
+      const content = await this.app.vault.read(file);
+      if (!pass || !content) return;
+      new Confirm(this.app, `请确认，加密密码为 ${pass} `, async res => {
+        if (!res) return;
+        new Confirm(this.app, `请最后一次确认，加密密码为 ${pass} `, async res2 => {
+          if (!res) return;
+          await imageToBase64(this.app, file, 'convert', pass);
+          this.app.vault.modify(file, '%%' + (await encrypt(content, pass)) + '%%');
+        }).open();
+      }).open();
     }).open();
   }
 
   async decrypt(file: TFile) {
     if (!this.settings.encryption) return;
     new PanelHighlight(this.app, '请输入解密密码。', '解密', async pass => {
-      if (!pass) return;
-      this.app.vault.modify(file, decryptString(await this.app.vault.read(file), pass));
+      const content = await this.app.vault.read(file);
+      if (!pass || !content) return;
+      this.app.vault.modify(file, await decrypt(content.slice(2, -2), pass));
       await imageToBase64(this.app, file, 'restore', pass);
     }).open();
   }
