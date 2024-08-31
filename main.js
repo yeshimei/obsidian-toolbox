@@ -913,6 +913,7 @@ var DEFAULT_SETTINGS = {
   outLink: true,
   blockId: true,
   frontmatter: true,
+  reviewOfReadingNotes: true,
   readingPageStyles: true,
   fontSize: 36,
   blockReference: true,
@@ -1078,6 +1079,13 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         );
       }
     }
+    new import_obsidian5.Setting(containerEl).setName("\u{1F4D6} \u8BFB\u4E66\u7B14\u8BB0\u56DE\u987E").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.reviewOfReadingNotes).onChange(async (value) => {
+        this.plugin.settings.reviewOfReadingNotes = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
     new import_obsidian5.Setting(containerEl).setName("\u{1F4CC} \u5757\u5F15\u7528").setDesc("\u83B7\u53D6\u5149\u6807\u6240\u5728\u884C\uFF08\u5757\uFF09\u7684\u53CC\u94FE\uFF0C\u65B9\u4FBF\u590D\u5236\u5230\u5730\u65B9\u4F7F\u7528").addToggle(
       (cd) => cd.setValue(this.plugin.settings.blockReference).onChange(async (value) => {
         this.plugin.settings.blockReference = value;
@@ -1205,6 +1213,7 @@ var Toolbox = class extends import_obsidian8.Plugin {
         this.adjustPageStyle(file, sourceView);
         this.mask(sourceView, file);
         this.gallery();
+        this.reviewOfReadingNotes();
       })
     );
     this.addCommand({
@@ -1267,11 +1276,35 @@ var Toolbox = class extends import_obsidian8.Plugin {
   gallery() {
     if (!this.settings.gallery)
       return;
-    this.registerMarkdownCodeBlockProcessor("gallery", (source, el, ctx) => {
+    this.registerMarkdownCodeBlockProcessor("t-gallery", (source, el, ctx) => {
       const { path } = codeBlockParamParse(source);
       if (path) {
         const files = this.app.vault.getFiles().filter((file) => new RegExp(`^${path}`).test(file.path)).filter((file) => ["png", "jpg", "jpeg", "gif", "bmp", "svg"].includes(file.extension));
         const content = files.map((file) => this.app.vault.adapter.getResourcePath(file.path)).reduce((res, ret) => res += `<img alt="" src="${ret}">`, "");
+        el.innerHTML = content;
+      }
+    });
+  }
+  reviewOfReadingNotes() {
+    if (!this.settings.reviewOfReadingNotes)
+      return;
+    this.registerMarkdownCodeBlockProcessor("t-review", async (source, el, ctx) => {
+      const { count } = codeBlockParamParse(source);
+      if (count) {
+        let highlights = [];
+        const files = this.app.vault.getMarkdownFiles().filter((file) => new RegExp(`^${this.settings.readingNotesToFolder}`).test(file.path));
+        for (let file of files) {
+          const highlight = (await this.app.vault.cachedRead(file)).match(/\[.+?\]\(.*\)/g);
+          if (highlight)
+            highlights = highlights.concat(highlight.map((h) => ({ text: h, file })));
+        }
+        const content = pick(highlights, count, false).reduce((res, ret) => {
+          const [a, b, c] = /\[(.*)\]\((.*)\)/g.exec(ret.text);
+          res += `<div data-callout-metadata="" data-callout-fold="" data-callout="quote" class="callout"><div class="callout-title" dir="auto"><div class="callout-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-quote"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg></div><div class="callout-title-inner"><a class="internal-link" data-href="${ret.file.path}" href="${ret.file.path}" target="_blank" rel="noopener">\u300A${ret.file.basename}\u300B</a> </div></div><div class="callout-content">
+<p dir="auto"><a class="internal-link" data-href="${c}" href="${c}" target="_blank" rel="noopener">${b.slice(9)}</a></p>
+</div></div>`;
+          return res;
+        }, "");
         el.innerHTML = content;
       }
     });

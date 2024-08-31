@@ -51,6 +51,18 @@
 
 # 画廊
 
-```gallery
-path=CONFIG/GALLERY/影集/LIVE
+```bash
+# ```t-gallery
+# path=CONFIG/GALLERY/影集/LIVE
+# ```
 ```
+
+# 读书笔记回顾
+
+```bash
+# ```t-review
+# count=1
+# ```
+```
+
+![](./resource/Screenshot_2024-08-31-09-20-48-209_md.obsidian.jpg)

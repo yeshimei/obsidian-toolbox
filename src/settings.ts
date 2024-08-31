@@ -30,6 +30,8 @@ export interface ToolboxSettings {
   blockId: boolean;
   frontmatter: boolean;
 
+  reviewOfReadingNotes: boolean;
+
   readingPageStyles: boolean;
   fontSize: number;
 
@@ -68,6 +70,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   outLink: true,
   blockId: true,
   frontmatter: true,
+
+  reviewOfReadingNotes: true,
 
   readingPageStyles: true,
   fontSize: 36,
@@ -281,6 +285,14 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
       }
     }
+
+    new Setting(containerEl).setName('📖 读书笔记回顾').addToggle(cd =>
+      cd.setValue(this.plugin.settings.reviewOfReadingNotes).onChange(async value => {
+        this.plugin.settings.reviewOfReadingNotes = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
 
     new Setting(containerEl)
       .setName('📌 块引用')

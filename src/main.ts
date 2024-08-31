@@ -45,6 +45,7 @@ export default class Toolbox extends Plugin {
         this.adjustPageStyle(file, sourceView); // 阅读页面
         this.mask(sourceView, file); // 点击遮罩层翻页
         this.gallery(); // 画廊
+        this.reviewOfReadingNotes(); // 读书笔记回顾
       })
     );
 
@@ -123,7 +124,7 @@ export default class Toolbox extends Plugin {
 
   gallery() {
     if (!this.settings.gallery) return;
-    this.registerMarkdownCodeBlockProcessor('gallery', (source, el, ctx) => {
+    this.registerMarkdownCodeBlockProcessor('t-gallery', (source, el, ctx) => {
       const { path } = codeBlockParamParse(source);
 
       if (path) {
@@ -132,6 +133,30 @@ export default class Toolbox extends Plugin {
           .filter(file => new RegExp(`^${path}`).test(file.path))
           .filter(file => ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'].includes(file.extension));
         const content = files.map(file => this.app.vault.adapter.getResourcePath(file.path)).reduce((res, ret) => (res += `<img alt="" src="${ret}">`), '');
+        el.innerHTML = content;
+      }
+    });
+  }
+
+  reviewOfReadingNotes() {
+    if (!this.settings.reviewOfReadingNotes) return;
+    this.registerMarkdownCodeBlockProcessor('t-review', async (source, el, ctx) => {
+      const { count } = codeBlockParamParse(source);
+
+      if (count) {
+        let highlights: string[] = [];
+        const files = this.app.vault.getMarkdownFiles().filter(file => new RegExp(`^${this.settings.readingNotesToFolder}`).test(file.path));
+        for (let file of files) {
+          const highlight = (await this.app.vault.cachedRead(file)).match(/\[.+?\]\(.*\)/g) as any;
+          if (highlight) highlights = highlights.concat(highlight.map((h: any) => ({ text: h, file })));
+        }
+        const content = pick(highlights, count, false).reduce((res, ret: any) => {
+          const [a, b, c] = /\[(.*)\]\((.*)\)/g.exec(ret.text);
+          res += `<div data-callout-metadata="" data-callout-fold="" data-callout="quote" class="callout"><div class="callout-title" dir="auto"><div class="callout-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-quote"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg></div><div class="callout-title-inner"><a class="internal-link" data-href="${ret.file.path}" href="${ret.file.path}" target="_blank" rel="noopener">《${ret.file.basename}》</a> </div></div><div class="callout-content">
+<p dir="auto"><a class="internal-link" data-href="${c}" href="${c}" target="_blank" rel="noopener">${b.slice(9)}</a></p>
+</div></div>`;
+          return res;
+        }, '');
         el.innerHTML = content;
       }
     });
