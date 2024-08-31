@@ -42,10 +42,20 @@ export default class Toolbox extends Plugin {
         this.startTime = Date.now();
         const sourceView = $(SOURCE_VIEW_CLASS);
         this.polysemy(file); // 多义笔记转跳
-        this.adjustPageStyle(file, sourceView); // 阅读页面
+        this.adjustPageStyle(sourceView, file); // 阅读页面
         this.mask(sourceView, file); // 点击遮罩层翻页
         this.gallery(); // 画廊
         this.reviewOfReadingNotes(); // 读书笔记回顾
+      })
+    );
+
+    // 预览与编辑模式切换的处理
+    this.registerEvent(
+      this.app.workspace.on('layout-change', () => {
+        const sourceView = $(SOURCE_VIEW_CLASS);
+        const file = this.getView().file;
+        this.adjustPageStyle(sourceView, file);
+        this.mask(sourceView, file);
       })
     );
 
@@ -306,7 +316,7 @@ export default class Toolbox extends Plugin {
     }
   }
 
-  adjustPageStyle(file: TFile, el: HTMLElement) {
+  adjustPageStyle(el: HTMLElement, file: TFile) {
     if (this.settings.readingPageStyles && this.hasReadingPage(file)) {
       el.style.fontSize = this.settings.fontSize + 'px';
     } else {
@@ -552,7 +562,7 @@ export default class Toolbox extends Plugin {
   }
 
   hasReadingPage(file: TFile) {
-    return file && file.extension === 'md' && this.hasTag(file, 'book') && this.hasRootFolder(file, this.settings.readDataTrackingFolder);
+    return file && file.extension === 'md' && this.hasTag(file, 'book') && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && this.getView().getMode() === 'source';
   }
 
   hasRootFolder(file: TFile, folderName: string) {
