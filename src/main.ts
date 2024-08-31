@@ -34,6 +34,7 @@ export default class Toolbox extends Plugin {
         readingNotes: false,
         readingPageStyles: false
       });
+      this.saveSettings();
     }
 
     this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
@@ -251,7 +252,7 @@ export default class Toolbox extends Plugin {
 
   mask(el: HTMLElement, file: TFile) {
     if (!this.settings.flip) return;
-    let timer: number, xStart: number, xEnd: number;
+    let timer: number, timer2: number, xStart: number, xEnd: number;
     const t = $(MOBILE_HEADER_CLASS);
     const b = $(MOBILE_NAVBAR_CLASS);
     let mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
@@ -271,13 +272,27 @@ export default class Toolbox extends Plugin {
       mask.style.backgroundColor = 'transparent';
       mask.style.zIndex = '1'; // 最小值，使侧边栏等保持正确层级
       mask.show();
-
+      // 长按 2.5s 打开或关闭全屏模式
       mask.ontouchstart = e => {
         timer = window.setTimeout(() => mask.hide(), 500);
+        timer2 = window.setTimeout(() => {
+          if (this.settings.fullScreenMode) {
+            t.show();
+            b.show();
+            new Notice('已关闭全屏模式');
+          } else {
+            t.hide();
+            b.hide();
+            new Notice('已开启全屏模式');
+          }
+          this.settings.fullScreenMode = !this.settings.fullScreenMode;
+          this.saveSettings();
+        }, 2500);
         xStart = e.touches[0].pageX;
       };
       mask.ontouchend = e => {
         window.clearTimeout(timer);
+        window.clearTimeout(timer2);
         xEnd = e.changedTouches[0].pageX;
         if (xEnd - xStart > 10) {
           this.flip(file, true);

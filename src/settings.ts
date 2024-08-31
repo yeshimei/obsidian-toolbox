@@ -203,13 +203,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
       }
 
-      new Setting(containerEl).setName('🤗 全屏模式').addToggle(cd =>
-        cd.setValue(this.plugin.settings.fullScreenMode).onChange(async value => {
-          this.plugin.settings.fullScreenMode = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
+      new Setting(containerEl)
+        .setName('🤗 全屏模式')
+        .setDesc('长按 2.5s 打开或关闭全屏模式')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.fullScreenMode).onChange(async value => {
+            this.plugin.settings.fullScreenMode = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
 
       new Setting(containerEl).setName('🔎 查词').addToggle(cd =>
         cd.setValue(this.plugin.settings.searchForWords).onChange(async value => {
