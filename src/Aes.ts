@@ -1,13 +1,13 @@
-import { App, Notice, TFile } from 'obsidian';
-import { isImageUrl, unique } from './helpers';
+import { Notice } from 'obsidian';
 import { md5 } from 'js-md5';
+import { isNoteEncrypt } from './helpers';
 
 export async function encrypt(text: string, pass: string): Promise<string> {
-  const args = text.split('%');
-  if (args.length === 2) {
-    new Notice('当前笔记已加密');
+  if (isNoteEncrypt(text)) {
+    new Notice('笔记已加密');
     return;
   }
+
   if (!text || !pass) return;
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
@@ -37,16 +37,15 @@ export async function encrypt(text: string, pass: string): Promise<string> {
 }
 
 export async function decrypt(encryptedText: string, pass: string): Promise<string> {
-  const args = encryptedText.split('%');
-
-  if (args[0] === md5(pass)) {
-    encryptedText = args[1];
-  } else {
-    if (args.length === 2) {
-      new Notice('解密失败，可能密码有误或加密数据被篡改。');
+  if (isNoteEncrypt(encryptedText)) {
+    if (encryptedText.slice(0, 32) === md5(pass)) {
+      encryptedText = encryptedText.slice(32 + 1); /** md5 长度加上一个分隔符 */
     } else {
-      new Notice('当前笔记已解密');
+      new Notice('密码错误');
+      return;
     }
+  } else {
+    new Notice('笔记已解密');
     return;
   }
   if (!encryptedText || !pass) return;

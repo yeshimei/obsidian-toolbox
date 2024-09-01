@@ -53,6 +53,7 @@ export interface ToolboxSettings {
 
   encryption: boolean;
   encryptionQuick: boolean;
+  encryptionPopUp: boolean;
 
   gallery: boolean;
 }
@@ -99,6 +100,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   encryption: true,
   encryptionQuick: false,
+  encryptionPopUp: true,
 
   gallery: true
 };
@@ -357,12 +359,23 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.encryption) {
+      // new Setting(containerEl)
+      //   .setName('快捷模式')
+      //   .setDesc('在每次加密笔记时同步文档属性 encryptionId 生成标记。开启此选项后，每次启动 obsidian，首次解密笔记的密码将暂时记录在内存中，之后每次打开具有相同标记的加密笔记都将自动解密，关闭具有相同标记的解密笔记时自动加密')
+      //   .addToggle(cd =>
+      //     cd.setValue(this.plugin.settings.encryptionQuick).onChange(async value => {
+      //       this.plugin.settings.encryptionQuick = value;
+      //       await this.plugin.saveSettings();
+      //       this.display();
+      //     })
+      //   );
+
       new Setting(containerEl)
-        .setName('快捷模式')
-        .setDesc('在每次加密笔记时同步文档属性 encryptionId 生成标记。开启此选项后，每次启动 obsidian，首次解密笔记的密码将暂时记录在内存中，之后每次打开具有相同标记的加密笔记都将自动解密，关闭具有相同标记的解密笔记时自动加密')
+        .setName('弹窗')
+        .setDesc('打开加密笔记时，弹出解密笔记输入框')
         .addToggle(cd =>
-          cd.setValue(this.plugin.settings.encryptionQuick).onChange(async value => {
-            this.plugin.settings.encryptionQuick = value;
+          cd.setValue(this.plugin.settings.encryptionPopUp).onChange(async value => {
+            this.plugin.settings.encryptionPopUp = value;
             await this.plugin.saveSettings();
             this.display();
           })

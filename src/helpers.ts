@@ -1,6 +1,14 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
-export function isEncrypt(str: string) {
+export function getBasename(path: string): string {
+  return path.split('/').pop() || path;
+}
+
+export function isNoteEncrypt(str: string) {
+  return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str);
+}
+
+export function isImageEncrypt(str: string) {
   return /^[a-z0-9:%]+$/.test(str);
 }
 

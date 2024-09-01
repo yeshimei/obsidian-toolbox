@@ -3,7 +3,7 @@ import { Confirm } from './Confirm';
 import { PanelHighlight } from './InputBox';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, arrayBufferToBase64 } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImageUrl, isEncrypt } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImageUrl, isImageEncrypt, isNoteEncrypt, getBasename } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
@@ -28,6 +28,9 @@ export default class Toolbox extends Plugin {
     // 加载插件设置页面
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
+    // 注册代码块
+    this.gallery(); // 画廊
+    this.reviewOfReadingNotes(); // 读书笔记回顾
     // 阅读相关仅允许在移动端使用
     if (!Platform.isMobile) {
       Object.assign(this.settings, {
@@ -50,8 +53,11 @@ export default class Toolbox extends Plugin {
         this.polysemy(file); // 多义笔记转跳
         this.adjustPageStyle(sourceView, file); // 阅读页面
         this.mask(sourceView, file); // 点击遮罩层翻页
-        this.gallery(); // 画廊
-        this.reviewOfReadingNotes(); // 读书笔记回顾
+
+        // 打开加密笔记时，弹出解密笔记输入框
+        this.autoEncryptPopUp(file);
+        // 加密笔记后隐藏其内容，防止意外改动
+        this.toggleEncrypt(file);
         // // 加密笔记的快捷模式
         // if (this.settings.encryptionQuick) {
         //   // 自动解密当前打开的加密笔记
@@ -88,6 +94,7 @@ export default class Toolbox extends Plugin {
         const file = this.getView().file;
         this.adjustPageStyle(sourceView, file);
         this.mask(sourceView, file);
+        this.toggleEncrypt(file);
       })
     );
 
@@ -168,7 +175,6 @@ export default class Toolbox extends Plugin {
     if (!this.settings.gallery) return;
     this.registerMarkdownCodeBlockProcessor('t-gallery', (source, el, ctx) => {
       const { path } = codeBlockParamParse(source);
-
       if (path) {
         const files = this.app.vault
           .getFiles()
@@ -205,27 +211,45 @@ export default class Toolbox extends Plugin {
   }
 
   async enc(file: TFile, pass: string, convert = true) {
-    if (!this.settings.encryption) return;
+    if (!this.settings.encryption || !pass) return;
     const content = await this.app.vault.read(file);
-    if (!pass || !content) return;
-    const id = md5(pass);
+    if (!content) return;
     const links = await this.imageToBase64(file, pass, convert);
     const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
-    await this.app.vault.modify(file, decryptContent || content);
+    decryptContent && (await this.app.vault.modify(file, decryptContent));
     this.settings.plugins.encryption[file.path] = {
-      id: id,
+      id: md5(pass),
       encrypted: !!decryptContent,
       links
     };
-    // this.encryptionPassCache[id] = {
-    //   pass
-    // };
+    this.toggleEncrypt(file);
     await this.saveSettings();
+  }
+
+  async toggleEncrypt(file: TFile) {
+    const content = await this.app.vault.read(file);
+    const editorViewLine = $('.markdown-source-view .cm-content');
+    const previewViewLine = $('.markdown-preview-view p[dir="auto"]');
+
+    if (isNoteEncrypt(content)) {
+      editorViewLine?.hide();
+      previewViewLine?.hide();
+    } else {
+      editorViewLine?.show();
+      previewViewLine?.show();
+    }
+  }
+
+  async autoEncryptPopUp(file: TFile) {
+    const content = await this.app.vault.read(file);
+    if (this.settings.encryptionPopUp && isNoteEncrypt(content)) {
+      await this.decryptPopUp(file);
+    }
   }
 
   async encryptPopUp(file: TFile) {
     if (!this.settings.encryption) return;
-    new PanelHighlight(this.app, '加密笔记', '请输入加密密码。（❗️❗️❗️请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。即将加密笔记中所有（wiki 链接形式）的图片并覆盖原图（请做好备份）以及所有文字❗️❗️❗️）', '确定', async pass => {
+    new PanelHighlight(this.app, '加密笔记', '请输入密码。（请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。将加密笔记中的文字及图片，加密后的图片覆盖原图，也请做好备份）', '确定', async pass => {
       new Confirm(this.app, `请确认，加密密码为 ${pass} `, async res => {
         if (!res) return;
         new Confirm(this.app, `请最后一次确认，加密密码为 ${pass} `, async res2 => {
@@ -238,36 +262,48 @@ export default class Toolbox extends Plugin {
 
   async decryptPopUp(file: TFile) {
     if (!this.settings.encryption) return;
-    new PanelHighlight(this.app, '解密笔记', '请输入解密密码。', '确定', async pass => this.enc(file, pass, false)).open();
+    new PanelHighlight(this.app, '解密笔记', '请输入密码。', '确定', async pass => {
+      this.enc(file, pass, false);
+    }).open();
   }
 
   async imageToBase64(file: TFile, pass: string, convert = true) {
-    const args = (await this.app.vault.read(file)).split('%');
-    let links = (args.length === 1 ? Object.keys(this.app.metadataCache.resolvedLinks[file.path]).filter(isImageUrl) : this.settings.plugins.encryption[file.path]?.links) || [];
+    let links;
+    const rawContent = await this.app.vault.read(file);
+    // 如果笔记已加密，从插件数据获取图像路径，否则获取笔记中的图像路径
+    if (isNoteEncrypt(rawContent)) {
+      links = this.settings.plugins.encryption[file.path]?.links || [];
+      if (rawContent.slice(0, 32) !== md5(pass)) return links;
+    } else {
+      links = Object.keys(this.app.metadataCache.resolvedLinks[file.path]).filter(isImageUrl);
+    }
+
     try {
       for (let link of links) {
-        const file = this.app.metadataCache.getFirstLinkpathDest(link, '');
+        const file = this.app.vault.getAbstractFileByPath(link) as TFile;
         if (convert) {
           const arrayBuffer = await this.app.vault.adapter.readBinary(file.path);
           const content = await this.app.vault.read(file);
           let base64 = arrayBufferToBase64(arrayBuffer);
-          if (isEncrypt(content)) {
-            args.length === 1 && new Notice(`${link} 已加密`);
+          if (isImageEncrypt(content)) {
+            // 只在未加密笔记时，提醒此通知
+            isNoteEncrypt(rawContent) || new Notice(`${getBasename(link)} 已加密`);
           } else {
             this.app.vault.modify(file, await encrypt(base64, pass));
           }
         } else {
           const base64 = await this.app.vault.read(file);
-          if (isEncrypt(base64)) {
+          if (isImageEncrypt(base64)) {
             const bytes = convertBase64ToImage(await decrypt(base64, pass));
             await this.app.vault.adapter.writeBinary(file.path, bytes);
           } else {
-            new Notice(`${link} 未加密`);
+            new Notice(`${getBasename(link)} 已解密`);
           }
         }
       }
     } catch (e) {
-      new Notice(e);
+      // 从插件获取图像路径，有可能被删除，导致解密失败，故捕捉异常
+      new Notice('警告：笔记中可能存在已损坏图像，也有可能被移动或删除，请排查');
     }
 
     return links;
