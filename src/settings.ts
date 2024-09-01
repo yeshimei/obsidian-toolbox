@@ -56,6 +56,8 @@ export interface ToolboxSettings {
   encryptionPopUp: boolean;
 
   gallery: boolean;
+
+  cleanClipboardContent: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -102,7 +104,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   encryptionQuick: false,
   encryptionPopUp: true,
 
-  gallery: true
+  gallery: true,
+
+  cleanClipboardContent: true
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -389,5 +393,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
         this.display();
       })
     );
+
+    new Setting(containerEl)
+      .setName('✂️ 剪切板文本格式化')
+      .setDesc('删除换行，空格和其他空白字符。英文单词之间，英文和中文之间保留一个空格')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async value => {
+          this.plugin.settings.cleanClipboardContent = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
   }
 }

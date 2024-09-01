@@ -72,14 +72,23 @@ export default class Toolbox extends Plugin {
     );
 
     this.addCommand({
+      id: '剪切板文本格式化',
+      name: '剪切板文本格式化',
+      icon: 'clipboard-check',
+      editorCallback: (editor, view) => this.cleanClipboardContent(editor)
+    });
+
+    this.addCommand({
       id: '加密笔记',
       name: '加密笔记',
+      icon: 'lock',
       editorCallback: (editor, view) => this.encryptPopUp(view.file)
     });
 
     this.addCommand({
       id: '解密笔记',
       name: '解密笔记',
+      icon: 'lock-open',
       editorCallback: (editor, view) => this.decryptPopUp(view.file)
     });
 
@@ -87,12 +96,14 @@ export default class Toolbox extends Plugin {
       this.addCommand({
         id: '密码创建器',
         name: '密码创建器',
+        icon: 'key-round',
         callback: () => this.passwordCreator()
       });
     this.settings.footnoteRenumbering &&
       this.addCommand({
         id: '脚注重编号',
         name: '脚注重编号',
+        icon: 'footprints',
         editorCallback: (editor, view) => this.footnoteRenumbering(view.file)
       });
     this.settings.blockReference &&
@@ -105,8 +116,8 @@ export default class Toolbox extends Plugin {
     this.settings.searchForWords &&
       this.addCommand({
         id: '查词',
-        icon: 'search',
         name: '查词',
+        icon: 'search',
         editorCallback: editor => this.searchForWords(editor)
       });
     this.settings.searchForPlants &&
@@ -142,6 +153,19 @@ export default class Toolbox extends Plugin {
             .filter(file => this.hasReadingPage(file))
             .forEach(file => this.syncNote(file))
       });
+  }
+
+  async cleanClipboardContent(editor: Editor) {
+    const text = await navigator.clipboard.readText();
+    const cleaned = text
+      .replace(/\s+/g, ' ')
+      .replace(/(\w)\s+(\w)/g, '$1 $2')
+      .replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, '$1$2')
+      .replace(/([\u4e00-\u9fa5])(\w)/g, '$1 $2')
+      .replace(/(\w)([\u4e00-\u9fa5])/g, '$1 $2')
+      .trim();
+
+    editor.replaceRange(cleaned, editor.getCursor());
   }
 
   gallery() {

@@ -877,7 +877,8 @@ var DEFAULT_SETTINGS = {
   encryption: true,
   encryptionQuick: false,
   encryptionPopUp: true,
-  gallery: true
+  gallery: true,
+  cleanClipboardContent: true
 };
 var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
   constructor(app, plugin) {
@@ -1088,6 +1089,13 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.display();
       })
     );
+    new import_obsidian5.Setting(containerEl).setName("\u2702\uFE0F \u526A\u5207\u677F\u6587\u672C\u683C\u5F0F\u5316").setDesc("\u5220\u9664\u6362\u884C\uFF0C\u7A7A\u683C\u548C\u5176\u4ED6\u7A7A\u767D\u5B57\u7B26\u3002\u82F1\u6587\u5355\u8BCD\u4E4B\u95F4\uFF0C\u82F1\u6587\u548C\u4E2D\u6587\u4E4B\u95F4\u4FDD\u7559\u4E00\u4E2A\u7A7A\u683C").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async (value) => {
+        this.plugin.settings.cleanClipboardContent = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
   }
 };
 
@@ -1273,23 +1281,33 @@ var Toolbox = class extends import_obsidian9.Plugin {
       })
     );
     this.addCommand({
+      id: "\u526A\u5207\u677F\u6587\u672C\u683C\u5F0F\u5316",
+      name: "\u526A\u5207\u677F\u6587\u672C\u683C\u5F0F\u5316",
+      icon: "clipboard-check",
+      editorCallback: (editor, view) => this.cleanClipboardContent(editor)
+    });
+    this.addCommand({
       id: "\u52A0\u5BC6\u7B14\u8BB0",
       name: "\u52A0\u5BC6\u7B14\u8BB0",
+      icon: "lock",
       editorCallback: (editor, view) => this.encryptPopUp(view.file)
     });
     this.addCommand({
       id: "\u89E3\u5BC6\u7B14\u8BB0",
       name: "\u89E3\u5BC6\u7B14\u8BB0",
+      icon: "lock-open",
       editorCallback: (editor, view) => this.decryptPopUp(view.file)
     });
     this.settings.passwordCreator && this.addCommand({
       id: "\u5BC6\u7801\u521B\u5EFA\u5668",
       name: "\u5BC6\u7801\u521B\u5EFA\u5668",
+      icon: "key-round",
       callback: () => this.passwordCreator()
     });
     this.settings.footnoteRenumbering && this.addCommand({
       id: "\u811A\u6CE8\u91CD\u7F16\u53F7",
       name: "\u811A\u6CE8\u91CD\u7F16\u53F7",
+      icon: "footprints",
       editorCallback: (editor, view) => this.footnoteRenumbering(view.file)
     });
     this.settings.blockReference && this.addCommand({
@@ -1300,8 +1318,8 @@ var Toolbox = class extends import_obsidian9.Plugin {
     });
     this.settings.searchForWords && this.addCommand({
       id: "\u67E5\u8BCD",
-      icon: "search",
       name: "\u67E5\u8BCD",
+      icon: "search",
       editorCallback: (editor) => this.searchForWords(editor)
     });
     this.settings.searchForPlants && this.addCommand({
@@ -1328,6 +1346,11 @@ var Toolbox = class extends import_obsidian9.Plugin {
       icon: "activity",
       callback: () => this.app.vault.getMarkdownFiles().filter((file) => this.hasReadingPage(file)).forEach((file) => this.syncNote(file))
     });
+  }
+  async cleanClipboardContent(editor) {
+    const text = await navigator.clipboard.readText();
+    const cleaned = text.replace(/\s+/g, " ").replace(/(\w)\s+(\w)/g, "$1 $2").replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, "$1$2").replace(/([\u4e00-\u9fa5])(\w)/g, "$1 $2").replace(/(\w)([\u4e00-\u9fa5])/g, "$1 $2").trim();
+    editor.replaceRange(cleaned, editor.getCursor());
   }
   gallery() {
     if (!this.settings.gallery)
