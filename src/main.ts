@@ -53,37 +53,10 @@ export default class Toolbox extends Plugin {
         this.polysemy(file); // 多义笔记转跳
         this.adjustPageStyle(sourceView, file); // 阅读页面
         this.mask(sourceView, file); // 点击遮罩层翻页
-
         // 打开加密笔记时，弹出解密笔记输入框
         this.autoEncryptPopUp(file);
         // 加密笔记后隐藏其内容，防止意外改动
         this.toggleEncrypt(file);
-        // // 加密笔记的快捷模式
-        // if (this.settings.encryptionQuick) {
-        //   // 自动解密当前打开的加密笔记
-        //   const encryptionData = (await this.readPluginData()).encryption;
-        //   const { encrypted, id } = encryptionData[file.path] || {};
-        //   const { pass } = this.encryptionPassCache[id] || {};
-        //   if (encrypted && pass) {
-        //     await this.dec(file, pass);
-        //   }
-
-        //   // 加密笔记自动弹出输入解密密码的窗口
-        //   if (id && encrypted && !pass) {
-        //     this.decryptPopUp(file);
-        //   }
-
-        //   // 上一个打开的解密笔记自动加密
-        //   if (this.previousFile) {
-        //     const { encrypted, id } = encryptionData[this.previousFile.path] || {};
-        //     const { pass } = this.encryptionPassCache[id] || {};
-        //     if (!encrypted && pass) {
-        //       await this.enc(this.previousFile, pass);
-        //     }
-        //   }
-        // }
-
-        // this.previousFile = file;
       })
     );
 
@@ -210,22 +183,6 @@ export default class Toolbox extends Plugin {
     });
   }
 
-  async enc(file: TFile, pass: string, convert = true) {
-    if (!this.settings.encryption || !pass) return;
-    const content = await this.app.vault.read(file);
-    if (!content) return;
-    const links = await this.imageToBase64(file, pass, convert);
-    const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
-    decryptContent && (await this.app.vault.modify(file, decryptContent));
-    this.settings.plugins.encryption[file.path] = {
-      id: md5(pass),
-      encrypted: !!decryptContent,
-      links
-    };
-    this.toggleEncrypt(file);
-    await this.saveSettings();
-  }
-
   async toggleEncrypt(file: TFile) {
     const content = await this.app.vault.read(file);
     const editorViewLine = $('.markdown-source-view .cm-content');
@@ -265,6 +222,22 @@ export default class Toolbox extends Plugin {
     new PanelHighlight(this.app, '解密笔记', '请输入密码。', '确定', async pass => {
       this.enc(file, pass, false);
     }).open();
+  }
+
+  async enc(file: TFile, pass: string, convert = true) {
+    if (!this.settings.encryption || !pass) return;
+    const content = await this.app.vault.read(file);
+    if (!content) return;
+    const links = await this.imageToBase64(file, pass, convert);
+    const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
+    decryptContent && (await this.app.vault.modify(file, decryptContent));
+    this.settings.plugins.encryption[file.path] = {
+      id: md5(pass),
+      encrypted: !!decryptContent,
+      links
+    };
+    this.toggleEncrypt(file);
+    await this.saveSettings();
   }
 
   async imageToBase64(file: TFile, pass: string, convert = true) {
@@ -396,6 +369,7 @@ export default class Toolbox extends Plugin {
           }
           this.settings.fullScreenMode = !this.settings.fullScreenMode;
           this.saveSettings();
+          mask.show();
         }, 2500);
         xStart = e.touches[0].pageX;
       };
@@ -716,17 +690,4 @@ export default class Toolbox extends Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
   }
-
-  // async savePluginData(data: any) {
-  //   await this.app.vault.adapter.write('.obsidian/plugins/toolbox/plugin-data.json', JSON.stringify(data));
-  // }
-
-  // async readPluginData() {
-  //   let d;
-  //   try {
-  //     d = await this.app.vault.adapter.read('.obsidian/plugins/toolbox/plugin-data.json');
-  //   } catch (e) {}
-
-  //   return d && JSON.parse(d);
-  // }
 }

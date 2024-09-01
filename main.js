@@ -1365,23 +1365,6 @@ var Toolbox = class extends import_obsidian9.Plugin {
       }
     });
   }
-  async enc(file, pass, convert = true) {
-    if (!this.settings.encryption || !pass)
-      return;
-    const content = await this.app.vault.read(file);
-    if (!content)
-      return;
-    const links = await this.imageToBase64(file, pass, convert);
-    const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
-    decryptContent && await this.app.vault.modify(file, decryptContent);
-    this.settings.plugins.encryption[file.path] = {
-      id: (0, import_js_md52.md5)(pass),
-      encrypted: !!decryptContent,
-      links
-    };
-    this.toggleEncrypt(file);
-    await this.saveSettings();
-  }
   async toggleEncrypt(file) {
     const content = await this.app.vault.read(file);
     const editorViewLine = $(".markdown-source-view .cm-content");
@@ -1421,6 +1404,23 @@ var Toolbox = class extends import_obsidian9.Plugin {
     new PanelHighlight(this.app, "\u89E3\u5BC6\u7B14\u8BB0", "\u8BF7\u8F93\u5165\u5BC6\u7801\u3002", "\u786E\u5B9A", async (pass) => {
       this.enc(file, pass, false);
     }).open();
+  }
+  async enc(file, pass, convert = true) {
+    if (!this.settings.encryption || !pass)
+      return;
+    const content = await this.app.vault.read(file);
+    if (!content)
+      return;
+    const links = await this.imageToBase64(file, pass, convert);
+    const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
+    decryptContent && await this.app.vault.modify(file, decryptContent);
+    this.settings.plugins.encryption[file.path] = {
+      id: (0, import_js_md52.md5)(pass),
+      encrypted: !!decryptContent,
+      links
+    };
+    this.toggleEncrypt(file);
+    await this.saveSettings();
   }
   async imageToBase64(file, pass, convert = true) {
     var _a;
@@ -1547,6 +1547,7 @@ ${lifestyleForm}`;
           }
           this.settings.fullScreenMode = !this.settings.fullScreenMode;
           this.saveSettings();
+          mask.show();
         }, 2500);
         xStart = e.touches[0].pageX;
       };
@@ -1840,16 +1841,6 @@ ${lifestyleForm}`;
   async saveSettings() {
     await this.saveData(this.settings);
   }
-  // async savePluginData(data: any) {
-  //   await this.app.vault.adapter.write('.obsidian/plugins/toolbox/plugin-data.json', JSON.stringify(data));
-  // }
-  // async readPluginData() {
-  //   let d;
-  //   try {
-  //     d = await this.app.vault.adapter.read('.obsidian/plugins/toolbox/plugin-data.json');
-  //   } catch (e) {}
-  //   return d && JSON.parse(d);
-  // }
 };
 /*! Bundled license information:
 
