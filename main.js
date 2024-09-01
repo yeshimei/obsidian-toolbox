@@ -585,6 +585,12 @@ var import_obsidian2 = require("obsidian");
 
 // src/helpers.ts
 var import_obsidian = require("obsidian");
+function isEncrypt(str) {
+  return /^[a-z0-9:%]+$/.test(str);
+}
+function isImageUrl(url) {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
+}
 function codeBlockParamParse(source, separator = "=") {
   return source.split("\n").filter((row) => row.length > 0).map((row) => row.split(separator)).reduce((res, ret) => {
     res[ret[0]] = ret[1];
@@ -687,9 +693,6 @@ function msTo(t) {
   let minutes = duration.minutes();
   let seconds = duration.seconds();
   return `${hours ? hours + "h" : ""}${minutes ? minutes + "m" : ""}${seconds ? seconds + "s" : ""}`;
-}
-function unique(arr) {
-  return [...new Set(arr)];
 }
 function uniqueBy(arr, key) {
   const seen = /* @__PURE__ */ new Set();
@@ -798,18 +801,19 @@ var Confirm = class extends import_obsidian3.Modal {
   }
 };
 
-// src/PanelHighlight.ts
+// src/InputBox.ts
 var import_obsidian4 = require("obsidian");
 var PanelHighlight = class extends import_obsidian4.Modal {
-  constructor(app, text, buttonText, onSubmit) {
+  constructor(app, title, text, buttonText, onSubmit) {
     super(app);
     this.onSubmit = onSubmit;
+    this.title = title;
     this.text = text;
     this.buttonText = buttonText;
   }
   onOpen() {
     const { contentEl, titleEl } = this;
-    titleEl.setText("\u5212\u7EBF");
+    titleEl.setText(this.title);
     contentEl.setText(this.text);
     new import_obsidian4.Setting(contentEl).addText(
       (text) => text.onChange((value) => {
@@ -836,6 +840,9 @@ var import_obsidian9 = require("obsidian");
 // src/settings.ts
 var import_obsidian5 = require("obsidian");
 var DEFAULT_SETTINGS = {
+  plugins: {
+    encryption: {}
+  },
   passwordCreator: true,
   passwordCreatorMixedContent: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@$%^&*()_+",
   passwordCreatorLength: 16,
@@ -862,6 +869,7 @@ var DEFAULT_SETTINGS = {
   searchForPlants: true,
   searchForPlantsFolder: "\u5361\u7247\u76D2/\u5F52\u6863",
   encryption: true,
+  encryptionQuick: false,
   gallery: true
 };
 var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
@@ -1057,6 +1065,15 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.display();
       })
     );
+    if (this.plugin.settings.encryption) {
+      new import_obsidian5.Setting(containerEl).setName("\u5FEB\u6377\u6A21\u5F0F").setDesc("\u5728\u6BCF\u6B21\u52A0\u5BC6\u7B14\u8BB0\u65F6\u540C\u6B65\u6587\u6863\u5C5E\u6027 encryptionId \u751F\u6210\u6807\u8BB0\u3002\u5F00\u542F\u6B64\u9009\u9879\u540E\uFF0C\u6BCF\u6B21\u542F\u52A8 obsidian\uFF0C\u9996\u6B21\u89E3\u5BC6\u7B14\u8BB0\u7684\u5BC6\u7801\u5C06\u6682\u65F6\u8BB0\u5F55\u5728\u5185\u5B58\u4E2D\uFF0C\u4E4B\u540E\u6BCF\u6B21\u6253\u5F00\u5177\u6709\u76F8\u540C\u6807\u8BB0\u7684\u52A0\u5BC6\u7B14\u8BB0\u90FD\u5C06\u81EA\u52A8\u89E3\u5BC6\uFF0C\u5173\u95ED\u5177\u6709\u76F8\u540C\u6807\u8BB0\u7684\u89E3\u5BC6\u7B14\u8BB0\u65F6\u81EA\u52A8\u52A0\u5BC6").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.encryptionQuick).onChange(async (value) => {
+          this.plugin.settings.encryptionQuick = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+    }
     new import_obsidian5.Setting(containerEl).setName("\u{1F4F8} \u753B\u5ECA").addToggle(
       (cd) => cd.setValue(this.plugin.settings.gallery).onChange(async (value) => {
         this.plugin.settings.gallery = value;
@@ -1068,7 +1085,7 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
 };
 
 // src/main.ts
-var import_js_md5 = __toESM(require_md5());
+var import_js_md52 = __toESM(require_md5());
 
 // src/PanelExhibition.ts
 var import_obsidian6 = require("obsidian");
@@ -1127,12 +1144,18 @@ var PanelSearchForPlants = class extends import_obsidian7.Modal {
 
 // src/Aes.ts
 var import_obsidian8 = require("obsidian");
-async function encrypt(text, password) {
-  if (!text || !password)
+var import_js_md5 = __toESM(require_md5());
+async function encrypt(text, pass) {
+  const args = text.split("%");
+  if (args.length === 2) {
+    new import_obsidian8.Notice("\u5F53\u524D\u7B14\u8BB0\u5DF2\u52A0\u5BC6");
+    return;
+  }
+  if (!text || !pass)
     return;
   const encoder = new TextEncoder();
   const data = encoder.encode(text);
-  const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
+  const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(pass), "PBKDF2", false, ["deriveKey"]);
   const key = await crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
@@ -1150,68 +1173,42 @@ async function encrypt(text, password) {
   const buffer = new Uint8Array(encrypted);
   const ivHex = Array.from(iv).map((b) => b.toString(16).padStart(2, "0")).join("");
   const encryptedHex = Array.from(buffer).map((b) => b.toString(16).padStart(2, "0")).join("");
-  return ivHex + ":" + encryptedHex;
+  return (0, import_js_md5.md5)(pass) + "%" + ivHex + ":" + encryptedHex;
 }
-async function decrypt(encryptedText, password) {
-  if (!encryptedText || !password)
-    return;
-  try {
-    const [ivHex, encryptedHex] = encryptedText.split(":");
-    const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
-    const encrypted = new Uint8Array(encryptedHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
-    const encoder = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
-    const key = await crypto.subtle.deriveKey(
-      {
-        name: "PBKDF2",
-        salt: encoder.encode("salt"),
-        iterations: 1e5,
-        hash: "SHA-256"
-      },
-      keyMaterial,
-      { name: "AES-GCM", length: 256 },
-      true,
-      ["encrypt", "decrypt"]
-    );
-    const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
-    const decoder = new TextDecoder();
-    return decoder.decode(decrypted);
-  } catch (e) {
-    new import_obsidian8.Notice("\u89E3\u5BC6\u5931\u8D25\uFF0C\u53EF\u80FD\u5BC6\u7801\u6709\u8BEF\u6216\u52A0\u5BC6\u6570\u636E\u88AB\u7BE1\u6539\u3002");
-  }
-}
-async function imageToBase64(app, file, action, pass) {
-  const content = await app.vault.read(file);
-  if (!content)
-    return;
-  const imageRegex = /\[\[(.*?\.(png|jpg|jpeg|gif|bmp|svg))\]\]/g;
-  let links = content.match(imageRegex);
-  if (links) {
-    links = unique(links).map((text) => text.slice(2, -2));
-    for (let link of links) {
-      const file2 = app.metadataCache.getFirstLinkpathDest(link, "");
-      if (action === "convert") {
-        const arrayBuffer = await app.vault.adapter.readBinary(file2.path);
-        const base64 = arrayBufferToBase64(arrayBuffer);
-        app.vault.modify(file2, await encrypt(base64, pass));
-      } else if (action === "restore") {
-        const base64 = await app.vault.read(file2);
-        if (base64) {
-          const bytes = convertBase64ToImage(await decrypt(base64, pass));
-          await app.vault.adapter.writeBinary(file2.path, bytes);
-        }
-      }
+async function decrypt(encryptedText, pass) {
+  const args = encryptedText.split("%");
+  if (args[0] === (0, import_js_md5.md5)(pass)) {
+    encryptedText = args[1];
+  } else {
+    if (args.length === 2) {
+      new import_obsidian8.Notice("\u89E3\u5BC6\u5931\u8D25\uFF0C\u53EF\u80FD\u5BC6\u7801\u6709\u8BEF\u6216\u52A0\u5BC6\u6570\u636E\u88AB\u7BE1\u6539\u3002");
+    } else {
+      new import_obsidian8.Notice("\u5F53\u524D\u7B14\u8BB0\u5DF2\u89E3\u5BC6");
     }
+    return;
   }
-}
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return window.btoa(binary);
+  if (!encryptedText || !pass)
+    return;
+  const [ivHex, encryptedHex] = encryptedText.split(":");
+  const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  const encrypted = new Uint8Array(encryptedHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(pass), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: encoder.encode("salt"),
+      iterations: 1e5,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
+  const decoder = new TextDecoder();
+  return decoder.decode(decrypted);
 }
 function convertBase64ToImage(base64) {
   const binaryString = window.atob(base64);
@@ -1232,6 +1229,7 @@ var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var Toolbox = class extends import_obsidian9.Plugin {
   async onload() {
+    this.encryptionPassCache = [];
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
     if (!import_obsidian9.Platform.isMobile) {
@@ -1247,7 +1245,7 @@ var Toolbox = class extends import_obsidian9.Plugin {
     }
     this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.registerEvent(
-      this.app.workspace.on("file-open", (file) => {
+      this.app.workspace.on("file-open", async (file) => {
         this.startTime = Date.now();
         const sourceView = $(SOURCE_VIEW_CLASS);
         this.polysemy(file);
@@ -1268,12 +1266,12 @@ var Toolbox = class extends import_obsidian9.Plugin {
     this.addCommand({
       id: "\u52A0\u5BC6\u7B14\u8BB0",
       name: "\u52A0\u5BC6\u7B14\u8BB0",
-      editorCallback: (editor, view) => this.encrypt(view.file)
+      editorCallback: (editor, view) => this.encryptPopUp(view.file)
     });
     this.addCommand({
       id: "\u89E3\u5BC6\u7B14\u8BB0",
       name: "\u89E3\u5BC6\u7B14\u8BB0",
-      editorCallback: (editor, view) => this.decrypt(view.file)
+      editorCallback: (editor, view) => this.decryptPopUp(view.file)
     });
     this.settings.passwordCreator && this.addCommand({
       id: "\u5BC6\u7801\u521B\u5EFA\u5668",
@@ -1358,35 +1356,73 @@ var Toolbox = class extends import_obsidian9.Plugin {
       }
     });
   }
-  async encrypt(file) {
+  async enc(file, pass, convert = true) {
     if (!this.settings.encryption)
       return;
-    new PanelHighlight(this.app, "\u8BF7\u8F93\u5165\u52A0\u5BC6\u5BC6\u7801\u3002\uFF08\u2757\uFE0F\u2757\uFE0F\u2757\uFE0F\u8BF7\u6CE8\u610F\uFF0C\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002\u5373\u5C06\u52A0\u5BC6\u7B14\u8BB0\u4E2D\u6240\u6709\uFF08wiki \u94FE\u63A5\u5F62\u5F0F\uFF09\u7684\u56FE\u7247\u5E76\u8986\u76D6\u539F\u56FE\uFF08\u8BF7\u505A\u597D\u5907\u4EFD\uFF09\u4EE5\u53CA\u6240\u6709\u6587\u5B57\u2757\uFE0F\u2757\uFE0F\u2757\uFE0F\uFF09", "\u52A0\u5BC6", async (pass) => {
-      const content = await this.app.vault.read(file);
-      if (!pass || !content)
-        return;
+    const content = await this.app.vault.read(file);
+    if (!pass || !content)
+      return;
+    const id = (0, import_js_md52.md5)(pass);
+    const links = await this.imageToBase64(file, pass, convert);
+    const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
+    await this.app.vault.modify(file, decryptContent || content);
+    this.settings.plugins.encryption[file.path] = {
+      id,
+      encrypted: !!decryptContent,
+      links
+    };
+    await this.saveSettings();
+  }
+  async encryptPopUp(file) {
+    if (!this.settings.encryption)
+      return;
+    new PanelHighlight(this.app, "\u52A0\u5BC6\u7B14\u8BB0", "\u8BF7\u8F93\u5165\u52A0\u5BC6\u5BC6\u7801\u3002\uFF08\u2757\uFE0F\u2757\uFE0F\u2757\uFE0F\u8BF7\u6CE8\u610F\uFF0C\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002\u5373\u5C06\u52A0\u5BC6\u7B14\u8BB0\u4E2D\u6240\u6709\uFF08wiki \u94FE\u63A5\u5F62\u5F0F\uFF09\u7684\u56FE\u7247\u5E76\u8986\u76D6\u539F\u56FE\uFF08\u8BF7\u505A\u597D\u5907\u4EFD\uFF09\u4EE5\u53CA\u6240\u6709\u6587\u5B57\u2757\uFE0F\u2757\uFE0F\u2757\uFE0F\uFF09", "\u786E\u5B9A", async (pass) => {
       new Confirm(this.app, `\u8BF7\u786E\u8BA4\uFF0C\u52A0\u5BC6\u5BC6\u7801\u4E3A ${pass} `, async (res) => {
         if (!res)
           return;
         new Confirm(this.app, `\u8BF7\u6700\u540E\u4E00\u6B21\u786E\u8BA4\uFF0C\u52A0\u5BC6\u5BC6\u7801\u4E3A ${pass} `, async (res2) => {
-          if (!res)
+          if (!res2)
             return;
-          await imageToBase64(this.app, file, "convert", pass);
-          this.app.vault.modify(file, "%%" + await encrypt(content, pass) + "%%");
+          this.enc(file, pass);
         }).open();
       }).open();
     }).open();
   }
-  async decrypt(file) {
+  async decryptPopUp(file) {
     if (!this.settings.encryption)
       return;
-    new PanelHighlight(this.app, "\u8BF7\u8F93\u5165\u89E3\u5BC6\u5BC6\u7801\u3002", "\u89E3\u5BC6", async (pass) => {
-      const content = await this.app.vault.read(file);
-      if (!pass || !content)
-        return;
-      this.app.vault.modify(file, await decrypt(content.slice(2, -2), pass));
-      await imageToBase64(this.app, file, "restore", pass);
-    }).open();
+    new PanelHighlight(this.app, "\u89E3\u5BC6\u7B14\u8BB0", "\u8BF7\u8F93\u5165\u89E3\u5BC6\u5BC6\u7801\u3002", "\u786E\u5B9A", async (pass) => this.enc(file, pass, false)).open();
+  }
+  async imageToBase64(file, pass, convert = true) {
+    var _a;
+    const args = (await this.app.vault.read(file)).split("%");
+    let links = (args.length === 1 ? Object.keys(this.app.metadataCache.resolvedLinks[file.path]).filter(isImageUrl) : (_a = this.settings.plugins.encryption[file.path]) == null ? void 0 : _a.links) || [];
+    try {
+      for (let link of links) {
+        const file2 = this.app.metadataCache.getFirstLinkpathDest(link, "");
+        if (convert) {
+          const arrayBuffer = await this.app.vault.adapter.readBinary(file2.path);
+          const content = await this.app.vault.read(file2);
+          let base64 = (0, import_obsidian9.arrayBufferToBase64)(arrayBuffer);
+          if (isEncrypt(content)) {
+            args.length === 1 && new import_obsidian9.Notice(`${link} \u5DF2\u52A0\u5BC6`);
+          } else {
+            this.app.vault.modify(file2, await encrypt(base64, pass));
+          }
+        } else {
+          const base64 = await this.app.vault.read(file2);
+          if (isEncrypt(base64)) {
+            const bytes = convertBase64ToImage(await decrypt(base64, pass));
+            await this.app.vault.adapter.writeBinary(file2.path, bytes);
+          } else {
+            new import_obsidian9.Notice(`${link} \u672A\u52A0\u5BC6`);
+          }
+        }
+      }
+    } catch (e) {
+      new import_obsidian9.Notice(e);
+    }
+    return links;
   }
   async searchForPlants() {
     if (!this.settings.searchForPlants)
@@ -1550,7 +1586,7 @@ ${lifestyleForm}`;
 
 # \u4E66\u8BC4 
 
- > [!tip] ${bookReview}${this.settings.blockId ? " ^" + (0, import_js_md5.md5)(bookReview) : ""}`);
+ > [!tip] ${bookReview}${this.settings.blockId ? " ^" + (0, import_js_md52.md5)(bookReview) : ""}`);
     const t = (markdown.match(/<span class="__comment.+?<\/span>|#{1,6} .+/gm) || []).map((b) => {
       const isTitle = b[0] === "#";
       let res = { isTitle };
@@ -1560,7 +1596,7 @@ ${lifestyleForm}`;
         const el = div.firstChild;
         const { comment, id } = el.dataset;
         const text = el.textContent;
-        res.text = `> [!quote] [${text}](${file.path}#^${id}) ${comment ? "\n\u{1F4AC} " + comment : ""}${this.settings.blockId ? " ^" + (0, import_js_md5.md5)(text) : ""}`;
+        res.text = `> [!quote] [${text}](${file.path}#^${id}) ${comment ? "\n\u{1F4AC} " + comment : ""}${this.settings.blockId ? " ^" + (0, import_js_md52.md5)(text) : ""}`;
         highlights++;
         if (comment)
           thinks++;
@@ -1598,7 +1634,7 @@ ${lifestyleForm}`;
     if (!this.settings.highlight)
       return;
     let text = editor.getSelection();
-    new PanelHighlight(this.app, text, "\u5199\u60F3\u6CD5", async (res) => {
+    new PanelHighlight(this.app, text, "\u5212\u7EBF", "\u5199\u60F3\u6CD5", async (res) => {
       let blockId = getBlock(this.app, editor, file);
       res = `<span class="__comment cm-highlight" data-comment="${res || ""}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
@@ -1747,7 +1783,7 @@ ${lifestyleForm}`;
   }
   getMetadata(file, key) {
     var _a, _b;
-    return (_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b[key];
+    return file && ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b[key]);
   }
   hasReadingPage(file) {
     return file && file.extension === "md" && this.hasTag(file, "book") && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && this.getView().getMode() === "source";
@@ -1768,6 +1804,16 @@ ${lifestyleForm}`;
   async saveSettings() {
     await this.saveData(this.settings);
   }
+  // async savePluginData(data: any) {
+  //   await this.app.vault.adapter.write('.obsidian/plugins/toolbox/plugin-data.json', JSON.stringify(data));
+  // }
+  // async readPluginData() {
+  //   let d;
+  //   try {
+  //     d = await this.app.vault.adapter.read('.obsidian/plugins/toolbox/plugin-data.json');
+  //   } catch (e) {}
+  //   return d && JSON.parse(d);
+  // }
 };
 /*! Bundled license information:
 

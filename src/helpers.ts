@@ -1,5 +1,13 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
+export function isEncrypt(str: string) {
+  return /^[a-z0-9:%]+$/.test(str);
+}
+
+export function isImageUrl(url: string) {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
+}
+
 export function codeBlockParamParse(source: string, separator = '=') {
   return source
     .split('\n')

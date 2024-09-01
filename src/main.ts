@@ -1,13 +1,13 @@
 import { PanelSearchForWord } from './PanelSearchForWord';
 import { Confirm } from './Confirm';
-import { PanelHighlight } from './PanelHighlight';
-import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform } from 'obsidian';
+import { PanelHighlight } from './InputBox';
+import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, arrayBufferToBase64 } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImageUrl, isEncrypt } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
-import { decrypt, encrypt, imageToBase64 } from './Aes';
+import { convertBase64ToImage, decrypt, encrypt } from './Aes';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -17,10 +17,14 @@ const COMMENT_CLASS = '.__comment';
 const OUT_LINK_CLASS = '.cm-underline';
 
 export default class Toolbox extends Plugin {
+  previousFile: TFile;
+  encryptionPassCache: any;
+  pluginData: any;
   debounceReadDataTracking: Function;
   settings: ToolboxSettings;
   startTime: number;
   async onload() {
+    this.encryptionPassCache = [];
     // 加载插件设置页面
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
@@ -39,7 +43,7 @@ export default class Toolbox extends Plugin {
 
     this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.registerEvent(
-      this.app.workspace.on('file-open', file => {
+      this.app.workspace.on('file-open', async file => {
         // document.body.onclick = evt => new Notice((evt.target as HTMLLIElement).className);
         this.startTime = Date.now();
         const sourceView = $(SOURCE_VIEW_CLASS);
@@ -48,6 +52,32 @@ export default class Toolbox extends Plugin {
         this.mask(sourceView, file); // 点击遮罩层翻页
         this.gallery(); // 画廊
         this.reviewOfReadingNotes(); // 读书笔记回顾
+        // // 加密笔记的快捷模式
+        // if (this.settings.encryptionQuick) {
+        //   // 自动解密当前打开的加密笔记
+        //   const encryptionData = (await this.readPluginData()).encryption;
+        //   const { encrypted, id } = encryptionData[file.path] || {};
+        //   const { pass } = this.encryptionPassCache[id] || {};
+        //   if (encrypted && pass) {
+        //     await this.dec(file, pass);
+        //   }
+
+        //   // 加密笔记自动弹出输入解密密码的窗口
+        //   if (id && encrypted && !pass) {
+        //     this.decryptPopUp(file);
+        //   }
+
+        //   // 上一个打开的解密笔记自动加密
+        //   if (this.previousFile) {
+        //     const { encrypted, id } = encryptionData[this.previousFile.path] || {};
+        //     const { pass } = this.encryptionPassCache[id] || {};
+        //     if (!encrypted && pass) {
+        //       await this.enc(this.previousFile, pass);
+        //     }
+        //   }
+        // }
+
+        // this.previousFile = file;
       })
     );
 
@@ -64,13 +94,13 @@ export default class Toolbox extends Plugin {
     this.addCommand({
       id: '加密笔记',
       name: '加密笔记',
-      editorCallback: (editor, view) => this.encrypt(view.file)
+      editorCallback: (editor, view) => this.encryptPopUp(view.file)
     });
 
     this.addCommand({
       id: '解密笔记',
       name: '解密笔记',
-      editorCallback: (editor, view) => this.decrypt(view.file)
+      editorCallback: (editor, view) => this.decryptPopUp(view.file)
     });
 
     this.settings.passwordCreator &&
@@ -174,30 +204,73 @@ export default class Toolbox extends Plugin {
     });
   }
 
-  async encrypt(file: TFile) {
+  async enc(file: TFile, pass: string, convert = true) {
     if (!this.settings.encryption) return;
-    new PanelHighlight(this.app, '请输入加密密码。（❗️❗️❗️请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。即将加密笔记中所有（wiki 链接形式）的图片并覆盖原图（请做好备份）以及所有文字❗️❗️❗️）', '加密', async pass => {
-      const content = await this.app.vault.read(file);
-      if (!pass || !content) return;
+    const content = await this.app.vault.read(file);
+    if (!pass || !content) return;
+    const id = md5(pass);
+    const links = await this.imageToBase64(file, pass, convert);
+    const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
+    await this.app.vault.modify(file, decryptContent || content);
+    this.settings.plugins.encryption[file.path] = {
+      id: id,
+      encrypted: !!decryptContent,
+      links
+    };
+    // this.encryptionPassCache[id] = {
+    //   pass
+    // };
+    await this.saveSettings();
+  }
+
+  async encryptPopUp(file: TFile) {
+    if (!this.settings.encryption) return;
+    new PanelHighlight(this.app, '加密笔记', '请输入加密密码。（❗️❗️❗️请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。即将加密笔记中所有（wiki 链接形式）的图片并覆盖原图（请做好备份）以及所有文字❗️❗️❗️）', '确定', async pass => {
       new Confirm(this.app, `请确认，加密密码为 ${pass} `, async res => {
         if (!res) return;
         new Confirm(this.app, `请最后一次确认，加密密码为 ${pass} `, async res2 => {
-          if (!res) return;
-          await imageToBase64(this.app, file, 'convert', pass);
-          this.app.vault.modify(file, '%%' + (await encrypt(content, pass)) + '%%');
+          if (!res2) return;
+          this.enc(file, pass);
         }).open();
       }).open();
     }).open();
   }
 
-  async decrypt(file: TFile) {
+  async decryptPopUp(file: TFile) {
     if (!this.settings.encryption) return;
-    new PanelHighlight(this.app, '请输入解密密码。', '解密', async pass => {
-      const content = await this.app.vault.read(file);
-      if (!pass || !content) return;
-      this.app.vault.modify(file, await decrypt(content.slice(2, -2), pass));
-      await imageToBase64(this.app, file, 'restore', pass);
-    }).open();
+    new PanelHighlight(this.app, '解密笔记', '请输入解密密码。', '确定', async pass => this.enc(file, pass, false)).open();
+  }
+
+  async imageToBase64(file: TFile, pass: string, convert = true) {
+    const args = (await this.app.vault.read(file)).split('%');
+    let links = (args.length === 1 ? Object.keys(this.app.metadataCache.resolvedLinks[file.path]).filter(isImageUrl) : this.settings.plugins.encryption[file.path]?.links) || [];
+    try {
+      for (let link of links) {
+        const file = this.app.metadataCache.getFirstLinkpathDest(link, '');
+        if (convert) {
+          const arrayBuffer = await this.app.vault.adapter.readBinary(file.path);
+          const content = await this.app.vault.read(file);
+          let base64 = arrayBufferToBase64(arrayBuffer);
+          if (isEncrypt(content)) {
+            args.length === 1 && new Notice(`${link} 已加密`);
+          } else {
+            this.app.vault.modify(file, await encrypt(base64, pass));
+          }
+        } else {
+          const base64 = await this.app.vault.read(file);
+          if (isEncrypt(base64)) {
+            const bytes = convertBase64ToImage(await decrypt(base64, pass));
+            await this.app.vault.adapter.writeBinary(file.path, bytes);
+          } else {
+            new Notice(`${link} 未加密`);
+          }
+        }
+      }
+    } catch (e) {
+      new Notice(e);
+    }
+
+    return links;
   }
 
   async searchForPlants() {
@@ -418,7 +491,7 @@ export default class Toolbox extends Plugin {
   highlight(editor: Editor, file: TFile) {
     if (!this.settings.highlight) return;
     let text = editor.getSelection();
-    new PanelHighlight(this.app, text, '写想法', async res => {
+    new PanelHighlight(this.app, text, '划线', '写想法', async res => {
       let blockId = getBlock(this.app, editor, file);
       res = `<span class="__comment cm-highlight" data-comment="${res || ''}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
@@ -582,7 +655,7 @@ export default class Toolbox extends Plugin {
   }
 
   getMetadata(file: TFile, key: string) {
-    return this.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
+    return file && this.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
   }
 
   hasReadingPage(file: TFile) {
@@ -607,4 +680,17 @@ export default class Toolbox extends Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
   }
+
+  // async savePluginData(data: any) {
+  //   await this.app.vault.adapter.write('.obsidian/plugins/toolbox/plugin-data.json', JSON.stringify(data));
+  // }
+
+  // async readPluginData() {
+  //   let d;
+  //   try {
+  //     d = await this.app.vault.adapter.read('.obsidian/plugins/toolbox/plugin-data.json');
+  //   } catch (e) {}
+
+  //   return d && JSON.parse(d);
+  // }
 }

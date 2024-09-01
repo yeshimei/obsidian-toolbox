@@ -2,6 +2,17 @@ import { App, Platform, PluginSettingTab, Setting } from 'obsidian';
 import Toolbox from './main';
 
 export interface ToolboxSettings {
+  // 插件数据
+  plugins: {
+    encryption: {
+      [path: string]: {
+        id: string;
+        encrypted: boolean;
+        links?: string[];
+      };
+    };
+  };
+
   passwordCreator: boolean;
   passwordCreatorMixedContent: string;
   passwordCreatorLength: number;
@@ -41,11 +52,16 @@ export interface ToolboxSettings {
   searchForPlantsFolder: string;
 
   encryption: boolean;
+  encryptionQuick: boolean;
 
   gallery: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
+  plugins: {
+    encryption: {}
+  },
+
   passwordCreator: true,
   passwordCreatorMixedContent: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@$%^&*()_+',
   passwordCreatorLength: 16,
@@ -82,6 +98,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   searchForPlantsFolder: '卡片盒/归档',
 
   encryption: true,
+  encryptionQuick: false,
 
   gallery: true
 };
@@ -338,6 +355,19 @@ export class ToolboxSettingTab extends PluginSettingTab {
           this.display();
         })
       );
+
+    if (this.plugin.settings.encryption) {
+      new Setting(containerEl)
+        .setName('快捷模式')
+        .setDesc('在每次加密笔记时同步文档属性 encryptionId 生成标记。开启此选项后，每次启动 obsidian，首次解密笔记的密码将暂时记录在内存中，之后每次打开具有相同标记的加密笔记都将自动解密，关闭具有相同标记的解密笔记时自动加密')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.encryptionQuick).onChange(async value => {
+            this.plugin.settings.encryptionQuick = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+    }
 
     new Setting(containerEl).setName('📸 画廊').addToggle(cd =>
       cd.setValue(this.plugin.settings.gallery).onChange(async value => {
