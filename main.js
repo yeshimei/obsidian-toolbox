@@ -594,8 +594,11 @@ function isNoteEncrypt(str) {
 function isImageEncrypt(str) {
   return /^[a-z0-9:%]+$/.test(str);
 }
-function isImageUrl(url) {
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
+function isVideoPath(path) {
+  return /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(path);
+}
+function isImagePath(path) {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(path);
 }
 function codeBlockParamParse(source, separator = "=") {
   return source.split("\n").filter((row) => row.length > 0).map((row) => row.split(separator)).reduce((res, ret) => {
@@ -877,6 +880,8 @@ var DEFAULT_SETTINGS = {
   encryption: true,
   encryptionQuick: false,
   encryptionPopUp: true,
+  encryptionImage: true,
+  encryptionVideo: false,
   gallery: true,
   cleanClipboardContent: true
 };
@@ -1074,7 +1079,21 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
       })
     );
     if (this.plugin.settings.encryption) {
-      new import_obsidian5.Setting(containerEl).setName("\u5F39\u7A97").setDesc("\u6253\u5F00\u52A0\u5BC6\u7B14\u8BB0\u65F6\uFF0C\u5F39\u51FA\u89E3\u5BC6\u7B14\u8BB0\u8F93\u5165\u6846").addToggle(
+      new import_obsidian5.Setting(containerEl).setName("\u652F\u6301\u56FE\u7247\u52A0\u5BC6").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.encryptionImage).onChange(async (value) => {
+          this.plugin.settings.encryptionImage = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+      new import_obsidian5.Setting(containerEl).setName("\u652F\u6301\u89C6\u9891\u52A0\u5BC6").setDesc("\u5927\u4F53\u79EF\u89C6\u9891\u4E0D\u63A8\u8350\u5F00\u542F\u6B64\u9009\u9879\uFF0C\u53EF\u80FD\u4F1A\u957F\u65F6\u95F4\u5361\u987F\uFF0C\u751A\u81F3\u5BFC\u81F4\u5D29\u6E83").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.encryptionVideo).onChange(async (value) => {
+          this.plugin.settings.encryptionVideo = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+      new import_obsidian5.Setting(containerEl).setName("\u81EA\u52A8\u5F39\u7A97").setDesc("\u6253\u5F00\u52A0\u5BC6\u7B14\u8BB0\u65F6\uFF0C\u5F39\u51FA\u89E3\u5BC6\u7B14\u8BB0\u8F93\u5165\u6846").addToggle(
         (cd) => cd.setValue(this.plugin.settings.encryptionPopUp).onChange(async (value) => {
           this.plugin.settings.encryptionPopUp = value;
           await this.plugin.saveSettings();
@@ -1089,7 +1108,7 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.display();
       })
     );
-    new import_obsidian5.Setting(containerEl).setName("\u2702\uFE0F \u526A\u5207\u677F\u6587\u672C\u683C\u5F0F\u5316").setDesc("\u5220\u9664\u6362\u884C\uFF0C\u7A7A\u683C\u548C\u5176\u4ED6\u7A7A\u767D\u5B57\u7B26\u3002\u82F1\u6587\u5355\u8BCD\u4E4B\u95F4\uFF0C\u82F1\u6587\u548C\u4E2D\u6587\u4E4B\u95F4\u4FDD\u7559\u4E00\u4E2A\u7A7A\u683C").addToggle(
+    new import_obsidian5.Setting(containerEl).setName("\u2702\uFE0F \u526A\u5207\u677F\u6587\u672C\u683C\u5F0F\u5316").setDesc("\u5220\u9664\u6362\u884C\uFF0C\u7A7A\u683C\u548C\u5176\u4ED6\u7A7A\u767D\u5B57\u7B26\uFF0C\u82F1\u6587\u5355\u8BCD\u4EE5\u53CA\u82F1\u6587\u548C\u4E2D\u6587\u4E4B\u95F4\u4FDD\u7559\u4E00\u4E2A\u7A7A\u683C").addToggle(
       (cd) => cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async (value) => {
         this.plugin.settings.cleanClipboardContent = value;
         await this.plugin.saveSettings();
@@ -1402,14 +1421,14 @@ var Toolbox = class extends import_obsidian9.Plugin {
   }
   async autoEncryptPopUp(file) {
     const content = await this.app.vault.read(file);
-    if (this.settings.encryptionPopUp && isNoteEncrypt(content)) {
+    if (this.settings.encryptionPopUp && isNoteEncrypt(content) && file.extension === "md") {
       await this.decryptPopUp(file);
     }
   }
   async encryptPopUp(file) {
     if (!this.settings.encryption)
       return;
-    new PanelHighlight(this.app, "\u52A0\u5BC6\u7B14\u8BB0", "\u8BF7\u8F93\u5165\u5BC6\u7801\u3002\uFF08\u8BF7\u6CE8\u610F\uFF0C\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002\u5C06\u52A0\u5BC6\u7B14\u8BB0\u4E2D\u7684\u6587\u5B57\u53CA\u56FE\u7247\uFF0C\u52A0\u5BC6\u540E\u7684\u56FE\u7247\u8986\u76D6\u539F\u56FE\uFF0C\u4E5F\u8BF7\u505A\u597D\u5907\u4EFD\uFF09", "\u786E\u5B9A", async (pass) => {
+    new PanelHighlight(this.app, "\u52A0\u5BC6\u7B14\u8BB0", "\u8BF7\u8F93\u5165\u5BC6\u7801\u3002\uFF08\u8BF7\u6CE8\u610F\uFF0C\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002\u5C06\u52A0\u5BC6\u7B14\u8BB0\u4E2D\u7684\u6587\u5B57\uFF0C\u56FE\u7247\u4EE5\u53CA\u89C6\u9891\uFF08\u9ED8\u8BA4\u4E0D\u5F00\u542F\uFF09\uFF0C\u52A0\u5BC6\u540E\u7684\u8D44\u6E90\u6587\u4EF6\u8986\u76D6\u6E90\u6587\u4EF6\uFF0C\u4E5F\u8BF7\u505A\u597D\u5907\u4EFD\uFF09", "\u786E\u5B9A", async (pass) => {
       new Confirm(this.app, `\u8BF7\u786E\u8BA4\uFF0C\u52A0\u5BC6\u5BC6\u7801\u4E3A ${pass} `, async (res) => {
         if (!res)
           return;
@@ -1454,7 +1473,10 @@ var Toolbox = class extends import_obsidian9.Plugin {
       if (rawContent.slice(0, 32) !== (0, import_js_md52.md5)(pass))
         return links;
     } else {
-      links = Object.keys(this.app.metadataCache.resolvedLinks[file.path]).filter(isImageUrl);
+      const f = Object.keys(this.app.metadataCache.resolvedLinks[file.path]);
+      links = f.filter(isImagePath);
+      if (this.settings.encryptionVideo)
+        links = links.concat(f.filter(isVideoPath));
     }
     try {
       for (let link of links) {

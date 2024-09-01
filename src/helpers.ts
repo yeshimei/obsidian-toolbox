@@ -12,8 +12,12 @@ export function isImageEncrypt(str: string) {
   return /^[a-z0-9:%]+$/.test(str);
 }
 
-export function isImageUrl(url: string) {
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(url);
+export function isVideoPath(path: string) {
+  return /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(path);
+}
+
+export function isImagePath(path: string) {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(path);
 }
 
 export function codeBlockParamParse(source: string, separator = '=') {

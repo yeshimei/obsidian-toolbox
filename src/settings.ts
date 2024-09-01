@@ -54,6 +54,8 @@ export interface ToolboxSettings {
   encryption: boolean;
   encryptionQuick: boolean;
   encryptionPopUp: boolean;
+  encryptionImage: boolean;
+  encryptionVideo: boolean;
 
   gallery: boolean;
 
@@ -103,6 +105,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   encryption: true,
   encryptionQuick: false,
   encryptionPopUp: true,
+  encryptionImage: true,
+  encryptionVideo: false,
 
   gallery: true,
 
@@ -374,8 +378,27 @@ export class ToolboxSettingTab extends PluginSettingTab {
       //     })
       //   );
 
+      new Setting(containerEl).setName('支持图片加密').addToggle(cd =>
+        cd.setValue(this.plugin.settings.encryptionImage).onChange(async value => {
+          this.plugin.settings.encryptionImage = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
       new Setting(containerEl)
-        .setName('弹窗')
+        .setName('支持视频加密')
+        .setDesc('大体积视频不推荐开启此选项，可能会长时间卡顿，甚至导致崩溃')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.encryptionVideo).onChange(async value => {
+            this.plugin.settings.encryptionVideo = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+
+      new Setting(containerEl)
+        .setName('自动弹窗')
         .setDesc('打开加密笔记时，弹出解密笔记输入框')
         .addToggle(cd =>
           cd.setValue(this.plugin.settings.encryptionPopUp).onChange(async value => {
@@ -396,7 +419,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('✂️ 剪切板文本格式化')
-      .setDesc('删除换行，空格和其他空白字符。英文单词之间，英文和中文之间保留一个空格')
+      .setDesc('删除换行，空格和其他空白字符，英文单词以及英文和中文之间保留一个空格')
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async value => {
           this.plugin.settings.cleanClipboardContent = value;

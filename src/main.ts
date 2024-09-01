@@ -3,7 +3,7 @@ import { Confirm } from './Confirm';
 import { PanelHighlight } from './InputBox';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, arrayBufferToBase64 } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImageUrl, isImageEncrypt, isNoteEncrypt, getBasename } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
@@ -223,14 +223,14 @@ export default class Toolbox extends Plugin {
 
   async autoEncryptPopUp(file: TFile) {
     const content = await this.app.vault.read(file);
-    if (this.settings.encryptionPopUp && isNoteEncrypt(content)) {
+    if (this.settings.encryptionPopUp && isNoteEncrypt(content) && file.extension === 'md') {
       await this.decryptPopUp(file);
     }
   }
 
   async encryptPopUp(file: TFile) {
     if (!this.settings.encryption) return;
-    new PanelHighlight(this.app, '加密笔记', '请输入密码。（请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。将加密笔记中的文字及图片，加密后的图片覆盖原图，也请做好备份）', '确定', async pass => {
+    new PanelHighlight(this.app, '加密笔记', '请输入密码。（请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。将加密笔记中的文字，图片以及视频（默认不开启），加密后的资源文件覆盖源文件，也请做好备份）', '确定', async pass => {
       new Confirm(this.app, `请确认，加密密码为 ${pass} `, async res => {
         if (!res) return;
         new Confirm(this.app, `请最后一次确认，加密密码为 ${pass} `, async res2 => {
@@ -272,7 +272,10 @@ export default class Toolbox extends Plugin {
       links = this.settings.plugins.encryption[file.path]?.links || [];
       if (rawContent.slice(0, 32) !== md5(pass)) return links;
     } else {
-      links = Object.keys(this.app.metadataCache.resolvedLinks[file.path]).filter(isImageUrl);
+      const f = Object.keys(this.app.metadataCache.resolvedLinks[file.path]);
+      links = f.filter(isImagePath);
+      // 支持视频
+      if (this.settings.encryptionVideo) links = links.concat(f.filter(isVideoPath));
     }
 
     try {
