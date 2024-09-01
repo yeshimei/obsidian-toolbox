@@ -585,6 +585,13 @@ var import_obsidian2 = require("obsidian");
 
 // src/helpers.ts
 var import_obsidian = require("obsidian");
+function mergeArrayBuffers(buffer1, buffer2) {
+  const mergedBuffer = new ArrayBuffer(buffer1.byteLength + buffer2.byteLength);
+  const mergedView = new Uint8Array(mergedBuffer);
+  mergedView.set(new Uint8Array(buffer1), 0);
+  mergedView.set(new Uint8Array(buffer2), buffer1.byteLength);
+  return mergedBuffer;
+}
 function getBasename(path) {
   return path.split("/").pop() || path;
 }
@@ -1243,15 +1250,52 @@ async function decrypt(encryptedText, pass) {
   const decoder = new TextDecoder();
   return decoder.decode(decrypted);
 }
-function convertBase64ToImage(base64) {
-  const binaryString = window.atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
   for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+    binary += String.fromCharCode(bytes[i]);
   }
-  return bytes;
+  return window.btoa(binary);
 }
+
+// src/ProgressBar.ts
+var ProgressBar = class {
+  constructor() {
+    this.progressBarContainer = document.createElement("div");
+    this.progressBarContainer.style.position = "fixed";
+    this.progressBarContainer.style.top = "0";
+    this.progressBarContainer.style.left = "50%";
+    this.progressBarContainer.style.transform = "translateX(-50%)";
+    this.progressBarContainer.style.width = "100%";
+    this.progressBarContainer.style.backgroundColor = "#f3f3f3";
+    this.progressBarContainer.style.zIndex = "1000";
+    this.progressBar = document.createElement("div");
+    this.progressBar.style.width = "0%";
+    this.progressBar.style.height = "3px";
+    this.progressBar.style.backgroundColor = "#4caf50";
+    this.progressBar.style.borderRadius = "5px";
+    this.progressBarContainer.appendChild(this.progressBar);
+    this.text = document.createElement("div");
+    this.text.style.position = "absolute";
+    this.text.style.left = "0";
+    this.text.style.top = "100%";
+    this.text.style.fontSize = "1rem";
+    this.text.style.color = "#fff";
+    this.progressBar.appendChild(this.text);
+  }
+  show() {
+    document.body.appendChild(this.progressBarContainer);
+  }
+  update(progress, text) {
+    this.progressBar.style.width = `${progress}%`;
+    this.text.innerText = text;
+  }
+  hide() {
+    document.body.removeChild(this.progressBarContainer);
+  }
+};
 
 // src/main.ts
 var SOURCE_VIEW_CLASS = ".cm-scroller";
@@ -1467,7 +1511,10 @@ var Toolbox = class extends import_obsidian9.Plugin {
   async imageToBase64(file, pass, convert = true) {
     var _a;
     let links;
+    let index = 0;
     const rawContent = await this.app.vault.read(file);
+    const progressBar = new ProgressBar();
+    progressBar.show();
     if (isNoteEncrypt(rawContent)) {
       links = ((_a = this.settings.plugins.encryption[file.path]) == null ? void 0 : _a.links) || [];
       if (rawContent.slice(0, 32) !== (0, import_js_md52.md5)(pass))
@@ -1480,29 +1527,67 @@ var Toolbox = class extends import_obsidian9.Plugin {
     }
     try {
       for (let link of links) {
-        const file2 = this.app.vault.getAbstractFileByPath(link);
+        const file2 = this.app.vault.getFileByPath(link);
+        const chunkSize = 1024 * 1024;
+        let offset = 0;
+        index++;
+        const tempFilePath = `${file2.path}.tmp`;
+        const content = await this.app.vault.read(file2);
+        let tempFile = this.app.vault.getFileByPath(tempFilePath);
+        if (tempFile)
+          await this.app.vault.delete(tempFile);
+        tempFile = await this.app.vault.create(tempFilePath, "");
         if (convert) {
-          const arrayBuffer = await this.app.vault.adapter.readBinary(file2.path);
-          const content = await this.app.vault.read(file2);
-          let base64 = (0, import_obsidian9.arrayBufferToBase64)(arrayBuffer);
           if (isImageEncrypt(content)) {
-            isNoteEncrypt(rawContent) || new import_obsidian9.Notice(`${getBasename(link)} \u5DF2\u52A0\u5BC6`);
+            if (!isNoteEncrypt(rawContent)) {
+              new import_obsidian9.Notice(`${getBasename(link)} \u5DF2\u52A0\u5BC6`);
+              return links;
+            }
           } else {
-            this.app.vault.modify(file2, await encrypt(base64, pass));
+            const arrayBuffer = await this.app.vault.adapter.readBinary(file2.path);
+            while (offset < file2.stat.size) {
+              const chunk = arrayBuffer.slice(offset, offset + chunkSize);
+              const base64Chunk = arrayBufferToBase64(chunk);
+              const encryptedChunk = await encrypt(base64Chunk, pass);
+              const chunkLength = encryptedChunk.length.toString().padStart(8, "0");
+              await this.app.vault.append(tempFile, chunkLength + encryptedChunk);
+              offset += chunkSize;
+              const progress = Math.min(Math.floor(offset / content.length * 100), 100);
+              progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+            }
           }
         } else {
-          const base64 = await this.app.vault.read(file2);
-          if (isImageEncrypt(base64)) {
-            const bytes = convertBase64ToImage(await decrypt(base64, pass));
-            await this.app.vault.adapter.writeBinary(file2.path, bytes);
+          let data;
+          if (isImageEncrypt(content)) {
+            while (offset < content.length) {
+              const chunkLength = parseInt(content.slice(offset, offset + 8), 10);
+              offset += 8;
+              const encryptedChunk = content.slice(offset, offset + chunkLength);
+              const decryptedChunk = await decrypt(encryptedChunk, pass);
+              const arrayBuffer = (0, import_obsidian9.base64ToArrayBuffer)(decryptedChunk);
+              if (data) {
+                data = mergeArrayBuffers(data, arrayBuffer);
+              } else {
+                data = arrayBuffer;
+              }
+              offset += chunkLength;
+              const progress = Math.min(Math.floor(offset / content.length * 100), 100);
+              progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+            }
+            await this.app.vault.adapter.writeBinary(tempFilePath, data);
           } else {
             new import_obsidian9.Notice(`${getBasename(link)} \u5DF2\u89E3\u5BC6`);
+            return links;
           }
         }
+        await this.app.vault.delete(file2);
+        await this.app.vault.rename(tempFile, file2.path);
       }
     } catch (e) {
-      new import_obsidian9.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u56FE\u50CF\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
+      new import_obsidian9.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u8D44\u6E90\u6587\u4EF6\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
+      return links;
     }
+    progressBar.hide();
     return links;
   }
   async searchForPlants() {

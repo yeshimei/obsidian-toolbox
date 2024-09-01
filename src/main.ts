@@ -1,13 +1,14 @@
 import { PanelSearchForWord } from './PanelSearchForWord';
 import { Confirm } from './Confirm';
 import { PanelHighlight } from './InputBox';
-import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, arrayBufferToBase64 } from 'obsidian';
+import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, base64ToArrayBuffer } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath, mergeArrayBuffers } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
-import { convertBase64ToImage, decrypt, encrypt } from './Aes';
+import { arrayBufferToBase64, convertBase64ToImage, decrypt, encrypt } from './Aes';
+import ProgressBar from './ProgressBar';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -266,7 +267,11 @@ export default class Toolbox extends Plugin {
 
   async imageToBase64(file: TFile, pass: string, convert = true) {
     let links;
+    let index = 0;
     const rawContent = await this.app.vault.read(file);
+    const progressBar = new ProgressBar();
+    progressBar.show();
+
     // 如果笔记已加密，从插件数据获取图像路径，否则获取笔记中的图像路径
     if (isNoteEncrypt(rawContent)) {
       links = this.settings.plugins.encryption[file.path]?.links || [];
@@ -280,32 +285,70 @@ export default class Toolbox extends Plugin {
 
     try {
       for (let link of links) {
-        const file = this.app.vault.getAbstractFileByPath(link) as TFile;
+        const file = this.app.vault.getFileByPath(link);
+        const chunkSize = 1024 * 1024; // 1MB
+        let offset = 0;
+        index++;
+        const tempFilePath = `${file.path}.tmp`;
+        const content = await this.app.vault.read(file);
+        let tempFile = this.app.vault.getFileByPath(tempFilePath);
+        if (tempFile) await this.app.vault.delete(tempFile);
+        tempFile = await this.app.vault.create(tempFilePath, ''); // 创建一个空的临时文件
         if (convert) {
-          const arrayBuffer = await this.app.vault.adapter.readBinary(file.path);
-          const content = await this.app.vault.read(file);
-          let base64 = arrayBufferToBase64(arrayBuffer);
           if (isImageEncrypt(content)) {
             // 只在未加密笔记时，提醒此通知
-            isNoteEncrypt(rawContent) || new Notice(`${getBasename(link)} 已加密`);
+            if (!isNoteEncrypt(rawContent)) {
+              new Notice(`${getBasename(link)} 已加密`);
+              return links;
+            }
           } else {
-            this.app.vault.modify(file, await encrypt(base64, pass));
+            const arrayBuffer = await this.app.vault.adapter.readBinary(file.path);
+            while (offset < file.stat.size) {
+              const chunk = arrayBuffer.slice(offset, offset + chunkSize);
+              const base64Chunk = arrayBufferToBase64(chunk);
+              const encryptedChunk = await encrypt(base64Chunk, pass);
+              const chunkLength = encryptedChunk.length.toString().padStart(8, '0'); // 固定长度的块长度信息
+              await this.app.vault.append(tempFile, chunkLength + encryptedChunk);
+              offset += chunkSize;
+              const progress = Math.min(Math.floor((offset / content.length) * 100), 100);
+              progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+            }
           }
         } else {
-          const base64 = await this.app.vault.read(file);
-          if (isImageEncrypt(base64)) {
-            const bytes = convertBase64ToImage(await decrypt(base64, pass));
-            await this.app.vault.adapter.writeBinary(file.path, bytes);
+          let data: ArrayBuffer;
+          if (isImageEncrypt(content)) {
+            while (offset < content.length) {
+              const chunkLength = parseInt(content.slice(offset, offset + 8), 10); // 读取块长度信息
+              offset += 8;
+              const encryptedChunk = content.slice(offset, offset + chunkLength);
+              const decryptedChunk = await decrypt(encryptedChunk, pass); // 假设 decrypt 是你的解密函数
+              const arrayBuffer = base64ToArrayBuffer(decryptedChunk);
+              if (data) {
+                data = mergeArrayBuffers(data, arrayBuffer);
+              } else {
+                data = arrayBuffer;
+              }
+
+              offset += chunkLength;
+              const progress = Math.min(Math.floor((offset / content.length) * 100), 100);
+              progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+            }
+            await this.app.vault.adapter.writeBinary(tempFilePath, data);
           } else {
             new Notice(`${getBasename(link)} 已解密`);
+            return links;
           }
         }
+
+        await this.app.vault.delete(file);
+        await this.app.vault.rename(tempFile, file.path);
       }
     } catch (e) {
-      // 从插件获取图像路径，有可能被删除，导致解密失败，故捕捉异常
-      new Notice('警告：笔记中可能存在已损坏图像，也有可能被移动或删除，请排查');
+      new Notice('警告：笔记中可能存在已损坏资源文件，也有可能被移动或删除，请排查');
+      return links;
     }
 
+    progressBar.hide();
     return links;
   }
 

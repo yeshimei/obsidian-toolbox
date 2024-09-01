@@ -1,5 +1,15 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
+export function mergeArrayBuffers(buffer1: ArrayBuffer, buffer2: ArrayBuffer): ArrayBuffer {
+  const mergedBuffer = new ArrayBuffer(buffer1.byteLength + buffer2.byteLength);
+  const mergedView = new Uint8Array(mergedBuffer);
+
+  mergedView.set(new Uint8Array(buffer1), 0);
+  mergedView.set(new Uint8Array(buffer2), buffer1.byteLength);
+
+  return mergedBuffer;
+}
+
 export function getBasename(path: string): string {
   return path.split('/').pop() || path;
 }
