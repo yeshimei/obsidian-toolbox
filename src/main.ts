@@ -1,14 +1,15 @@
+import Confirm from './Modals/Confirm';
+import InputBox from './Modals/InputBox';
 import { PanelSearchForWord } from './PanelSearchForWord';
-import { Confirm } from './Confirm';
-import { PanelHighlight } from './InputBox';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, base64ToArrayBuffer, arrayBufferToBase64 } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath, mergeArrayBuffers } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath, mergeArrayBuffers, editorBlur } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
 import { decrypt, encrypt } from './Aes';
 import ProgressBarEncryption from './ProgressBarEncryption';
+import FuzzySuggest from './Modals/FuzzySuggest';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -74,6 +75,13 @@ export default class Toolbox extends Plugin {
         this.toggleEncrypt(file);
       })
     );
+
+    this.addCommand({
+      id: '移动当前笔记中的资源至',
+      name: '移动当前笔记中的资源至',
+      icon: 'clipboard-check',
+      editorCallback: (editor, view) => this.moveResourcesTo(view.file)
+    });
 
     this.addCommand({
       id: '剪切板文本格式化',
@@ -157,6 +165,21 @@ export default class Toolbox extends Plugin {
             .filter(file => this.hasReadingPage(file))
             .forEach(file => this.syncNote(file))
       });
+  }
+
+  moveResourcesTo(file: TFile) {
+    if (!this.settings.moveResourcesTo) return;
+    new FuzzySuggest(
+      this.app,
+      this.app.vault.getAllFolders().map(folder => ({ text: folder.path, value: folder.path })),
+      ({ value }, evt) => {
+        const paths = Object.keys(this.app.metadataCache.resolvedLinks[file.path])
+          .filter(path => path.indexOf(value) === -1)
+          .map(path => this.app.vault.adapter.rename(path, value + '/' + this.app.vault.getFileByPath(path).name));
+
+        new Notice(`已移动 ${paths.length} 至 ${value}`);
+      }
+    ).open();
   }
 
   poster(element: HTMLElement) {
@@ -266,21 +289,33 @@ export default class Toolbox extends Plugin {
 
   async encryptPopUp(file: TFile) {
     if (!this.settings.encryption) return;
-    new PanelHighlight(this.app, '加密笔记', '请输入密码。（请注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。将加密笔记中的文字，图片以及视频（默认不开启），加密后的资源文件覆盖源文件，也请做好备份）', '确定', async pass => {
-      new Confirm(this.app, `请确认，加密密码为 ${pass} `, async res => {
-        if (!res) return;
-        new Confirm(this.app, `请最后一次确认，加密密码为 ${pass} `, async res2 => {
-          if (!res2) return;
-          this.enc(file, pass);
-        }).open();
+
+    const onSubmit = (pass: string) => {
+      new Confirm(this.app, {
+        content: `请确认，加密密码为 ${pass} `,
+        onSubmit: res =>
+          res &&
+          new Confirm(this.app, {
+            content: `请最后一次确认，加密密码为 ${pass} `,
+            onSubmit: res2 => res2 && this.enc(file, pass)
+          }).open()
       }).open();
+    };
+
+    new InputBox(this.app, {
+      title: '加密笔记',
+      name: '密码',
+      description: '注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。将加密笔记中的文字，图片以及视频（默认不开启），加密后的资源文件覆盖源文件，也请做好备份',
+      onSubmit
     }).open();
   }
 
   async decryptPopUp(file: TFile) {
     if (!this.settings.encryption) return;
-    new PanelHighlight(this.app, '解密笔记', '请输入密码。', '确定', async pass => {
-      this.enc(file, pass, false);
+    new InputBox(this.app, {
+      title: '解密笔记',
+      name: '密码',
+      onSubmit: pass => this.enc(file, pass, false)
     }).open();
   }
 
@@ -523,7 +558,7 @@ export default class Toolbox extends Plugin {
       window.onresize = () => {
         if (window.innerHeight === originalHeight) {
           mask.show();
-          blur(this.app);
+          editorBlur(this.app);
         } else {
           mask.hide();
         }
@@ -612,12 +647,19 @@ export default class Toolbox extends Plugin {
   }
 
   highlight(editor: Editor, file: TFile) {
-    if (!this.settings.highlight) return;
-    let text = editor.getSelection();
-    new PanelHighlight(this.app, text, '划线', '写想法', async res => {
+    const onSubmit = (res: string) => {
       let blockId = getBlock(this.app, editor, file);
       res = `<span class="__comment cm-highlight" data-comment="${res || ''}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
+    };
+
+    if (!this.settings.highlight) return;
+    let text = editor.getSelection();
+    new InputBox(this.app, {
+      title: '划线',
+      name: '想法',
+      content: text,
+      onSubmit
     }).open();
   }
 
@@ -637,13 +679,17 @@ export default class Toolbox extends Plugin {
       }
       // 是否未读
       if (!readingDate) {
-        new Confirm(this.app, `《${file.basename}》未过读，是否标记在读？`, res => {
-          res && this.updateFrontmatter(file, 'readingDate', today());
+        new Confirm(this.app, {
+          content: `《${file.basename}》未过读，是否标记在读？`,
+          onSubmit: res => res && this.updateFrontmatter(file, 'readingDate', today())
         }).open();
       }
       // 是否读完
       if (readingProgress >= 100 && !completionDate) {
-        new Confirm(this.app, `《${file.basename}》进度 100%，是否标记读完？`, res => res && this.updateFrontmatter(file, 'completionDate', today())).open();
+        new Confirm(this.app, {
+          content: `《${file.basename}》进度 100%，是否标记读完？`,
+          onSubmit: res => res && this.updateFrontmatter(file, 'completionDate', today())
+        }).open();
       }
     });
   }

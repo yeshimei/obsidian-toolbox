@@ -41,7 +41,7 @@ export function codeBlockParamParse(source: string, separator = '=') {
     }, {});
 }
 
-export function blur(app: App) {
+export function editorBlur(app: App) {
   app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur();
   getSelection().removeAllRanges();
 }

@@ -63,6 +63,8 @@ export interface ToolboxSettings {
   cleanClipboardContent: boolean;
 
   poster: boolean;
+
+  moveResourcesTo: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -116,7 +118,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   cleanClipboardContent: true,
 
-  poster: true
+  poster: true,
+
+  moveResourcesTo: true
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -442,5 +446,13 @@ export class ToolboxSettingTab extends PluginSettingTab {
           })
         );
     }
+
+    new Setting(containerEl).setName('🗂️ 移动当前笔记中的资源至').addToggle(cd =>
+      cd.setValue(this.plugin.settings.moveResourcesTo).onChange(async value => {
+        this.plugin.settings.moveResourcesTo = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
   }
 }
