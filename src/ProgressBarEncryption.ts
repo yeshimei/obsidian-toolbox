@@ -33,6 +33,7 @@ export default class ProgressBarEncryption {
   }
 
   show() {
+    this.update(0, '');
     this.progressBarContainer.show();
   }
 

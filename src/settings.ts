@@ -61,6 +61,8 @@ export interface ToolboxSettings {
   gallery: boolean;
 
   cleanClipboardContent: boolean;
+
+  poster: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -112,7 +114,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   gallery: true,
 
-  cleanClipboardContent: true
+  cleanClipboardContent: true,
+
+  poster: true
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -425,5 +429,18 @@ export class ToolboxSettingTab extends PluginSettingTab {
           this.display();
         })
       );
+
+    if (Platform.isMobile) {
+      new Setting(containerEl)
+        .setName('🏞️ 海报')
+        .setDesc('将视频第一帧作为海报')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.poster).onChange(async value => {
+            this.plugin.settings.poster = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+    }
   }
 }

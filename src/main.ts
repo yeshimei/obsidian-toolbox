@@ -18,21 +18,23 @@ const COMMENT_CLASS = '.__comment';
 const OUT_LINK_CLASS = '.cm-underline';
 
 export default class Toolbox extends Plugin {
-  previousFile: TFile;
-  encryptionPassCache: any;
-  pluginData: any;
+  progressBarEncryption: ProgressBarEncryption;
   debounceReadDataTracking: Function;
   settings: ToolboxSettings;
   startTime: number;
   async onload() {
-    this.encryptionPassCache = [];
     // 加载插件设置页面
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
-    // 注册代码块
-    this.gallery(); // 画廊
-    this.reviewOfReadingNotes(); // 读书笔记回顾
-    // 阅读相关仅允许在移动端使用
+    // 画廊
+    this.gallery();
+    // 读书笔记回顾
+    this.reviewOfReadingNotes();
+    // 将视频第一帧作为海报
+    Platform.isMobile && this.poster(document.body);
+    // 加载笔记加密进度条
+    this.progressBarEncryption = new ProgressBarEncryption();
+    // 阅读功能仅允许在移动端使用
     if (!Platform.isMobile) {
       Object.assign(this.settings, {
         flip: false,
@@ -40,7 +42,8 @@ export default class Toolbox extends Plugin {
         readDataTracking: false,
         highlight: false,
         readingNotes: false,
-        readingPageStyles: false
+        readingPageStyles: false,
+        poster: false
       });
       this.saveSettings();
     }
@@ -156,6 +159,38 @@ export default class Toolbox extends Plugin {
       });
   }
 
+  poster(element: HTMLElement) {
+    if (!this.settings.poster || !Platform.isMobile) return;
+    const processVideos = (element: HTMLElement) => {
+      const videoElements = element.querySelectorAll('video, .internal-embed[src$=".mp4"]');
+      videoElements.forEach(video => {
+        if (video instanceof HTMLVideoElement) {
+          video.addEventListener('loadeddata', () => {
+            video.play();
+            video.pause();
+            video.currentTime = 0;
+          });
+
+          video.load();
+        }
+      });
+    };
+
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(node => {
+            if (node instanceof HTMLElement) {
+              processVideos(node);
+            }
+          });
+        }
+      });
+    });
+
+    processVideos(element);
+    observer.observe(element, { childList: true, subtree: true });
+  }
   async cleanClipboardContent(editor: Editor) {
     const text = await navigator.clipboard.readText();
     const cleaned = text
@@ -253,9 +288,11 @@ export default class Toolbox extends Plugin {
     if (!this.settings.encryption || !pass) return;
     const content = await this.app.vault.read(file);
     if (!content) return;
+    this.progressBarEncryption.show();
     const links = await this.imageToBase64(file, pass, convert);
     const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
     decryptContent && (await this.app.vault.modify(file, decryptContent));
+    this.progressBarEncryption.hide();
     this.settings.plugins.encryption[file.path] = {
       id: md5(pass),
       encrypted: !!decryptContent,
@@ -269,9 +306,6 @@ export default class Toolbox extends Plugin {
     let links;
     let index = 0;
     const rawContent = await this.app.vault.read(file);
-    const progressBar = new ProgressBarEncryption();
-    progressBar.show();
-
     // 如果笔记已加密，从插件数据获取图像路径，否则获取笔记中的图像路径
     if (isNoteEncrypt(rawContent)) {
       links = this.settings.plugins.encryption[file.path]?.links || [];
@@ -319,9 +353,9 @@ export default class Toolbox extends Plugin {
               }
               offset += chunkSize;
               const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
-              progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
-            progressBar.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
+            this.progressBarEncryption.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
           }
         } else {
@@ -340,9 +374,9 @@ export default class Toolbox extends Plugin {
 
               offset += chunkLength;
               const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
-              progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
-            progressBar.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
+            this.progressBarEncryption.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
           } else {
             new Notice(`${getBasename(link)} 已解密`);
@@ -355,11 +389,9 @@ export default class Toolbox extends Plugin {
       }
     } catch (e) {
       new Notice('警告：笔记中可能存在已损坏资源文件，也有可能被移动或删除，请排查');
-      progressBar.hide();
       return links;
     }
 
-    progressBar.hide();
     return links;
   }
 

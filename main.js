@@ -891,7 +891,8 @@ var DEFAULT_SETTINGS = {
   encryptionVideo: false,
   encryptionChunkSize: 1024 * 1024,
   gallery: true,
-  cleanClipboardContent: true
+  cleanClipboardContent: true,
+  poster: true
 };
 var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
   constructor(app, plugin) {
@@ -1129,6 +1130,15 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.display();
       })
     );
+    if (import_obsidian5.Platform.isMobile) {
+      new import_obsidian5.Setting(containerEl).setName("\u{1F3DE}\uFE0F \u6D77\u62A5").setDesc("\u5C06\u89C6\u9891\u7B2C\u4E00\u5E27\u4F5C\u4E3A\u6D77\u62A5").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.poster).onChange(async (value) => {
+          this.plugin.settings.poster = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+    }
   }
 };
 
@@ -1286,6 +1296,7 @@ var ProgressBarEncryption = class {
     document.body.appendChild(this.progressBarContainer);
   }
   show() {
+    this.update(0, "");
     this.progressBarContainer.show();
   }
   update(progress, text) {
@@ -1306,11 +1317,12 @@ var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var Toolbox = class extends import_obsidian9.Plugin {
   async onload() {
-    this.encryptionPassCache = [];
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
     this.gallery();
     this.reviewOfReadingNotes();
+    import_obsidian9.Platform.isMobile && this.poster(document.body);
+    this.progressBarEncryption = new ProgressBarEncryption();
     if (!import_obsidian9.Platform.isMobile) {
       Object.assign(this.settings, {
         flip: false,
@@ -1318,7 +1330,8 @@ var Toolbox = class extends import_obsidian9.Plugin {
         readDataTracking: false,
         highlight: false,
         readingNotes: false,
-        readingPageStyles: false
+        readingPageStyles: false,
+        poster: false
       });
       this.saveSettings();
     }
@@ -1410,6 +1423,36 @@ var Toolbox = class extends import_obsidian9.Plugin {
       callback: () => this.app.vault.getMarkdownFiles().filter((file) => this.hasReadingPage(file)).forEach((file) => this.syncNote(file))
     });
   }
+  poster(element) {
+    if (!this.settings.poster || !import_obsidian9.Platform.isMobile)
+      return;
+    const processVideos = (element2) => {
+      const videoElements = element2.querySelectorAll('video, .internal-embed[src$=".mp4"]');
+      videoElements.forEach((video) => {
+        if (video instanceof HTMLVideoElement) {
+          video.addEventListener("loadeddata", () => {
+            video.play();
+            video.pause();
+            video.currentTime = 0;
+          });
+          video.load();
+        }
+      });
+    };
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === "childList") {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof HTMLElement) {
+              processVideos(node);
+            }
+          });
+        }
+      });
+    });
+    processVideos(element);
+    observer.observe(element, { childList: true, subtree: true });
+  }
   async cleanClipboardContent(editor) {
     const text = await navigator.clipboard.readText();
     const cleaned = text.replace(/\s+/g, " ").replace(/(\w)\s+(\w)/g, "$1 $2").replace(/([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])/g, "$1$2").replace(/([\u4e00-\u9fa5])(\w)/g, "$1 $2").replace(/(\w)([\u4e00-\u9fa5])/g, "$1 $2").trim();
@@ -1497,9 +1540,11 @@ var Toolbox = class extends import_obsidian9.Plugin {
     const content = await this.app.vault.read(file);
     if (!content)
       return;
+    this.progressBarEncryption.show();
     const links = await this.imageToBase64(file, pass, convert);
     const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
     decryptContent && await this.app.vault.modify(file, decryptContent);
+    this.progressBarEncryption.hide();
     this.settings.plugins.encryption[file.path] = {
       id: (0, import_js_md52.md5)(pass),
       encrypted: !!decryptContent,
@@ -1513,8 +1558,6 @@ var Toolbox = class extends import_obsidian9.Plugin {
     let links;
     let index = 0;
     const rawContent = await this.app.vault.read(file);
-    const progressBar = new ProgressBarEncryption();
-    progressBar.show();
     if (isNoteEncrypt(rawContent)) {
       links = ((_a = this.settings.plugins.encryption[file.path]) == null ? void 0 : _a.links) || [];
       if (rawContent.slice(0, 32) !== (0, import_js_md52.md5)(pass))
@@ -1559,9 +1602,9 @@ var Toolbox = class extends import_obsidian9.Plugin {
               }
               offset += chunkSize;
               const progress = Math.min(Math.floor(offset / arrayBuffer.byteLength * 100), 100);
-              progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
-            progressBar.update(100, `[${index}/${links.length}] ${getBasename(link)} - \u6B63\u5728\u5199\u5165`);
+            this.progressBarEncryption.update(100, `[${index}/${links.length}] ${getBasename(link)} - \u6B63\u5728\u5199\u5165`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
           }
         } else {
@@ -1579,9 +1622,9 @@ var Toolbox = class extends import_obsidian9.Plugin {
               }
               offset += chunkLength;
               const progress = Math.min(Math.floor(offset / arrayBuffer.byteLength * 100), 100);
-              progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
-            progressBar.update(100, `[${index}/${links.length}] ${getBasename(link)} - \u6B63\u5728\u5199\u5165`);
+            this.progressBarEncryption.update(100, `[${index}/${links.length}] ${getBasename(link)} - \u6B63\u5728\u5199\u5165`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
           } else {
             new import_obsidian9.Notice(`${getBasename(link)} \u5DF2\u89E3\u5BC6`);
@@ -1593,10 +1636,8 @@ var Toolbox = class extends import_obsidian9.Plugin {
       }
     } catch (e) {
       new import_obsidian9.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u8D44\u6E90\u6587\u4EF6\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
-      progressBar.hide();
       return links;
     }
-    progressBar.hide();
     return links;
   }
   async searchForPlants() {
