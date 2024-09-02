@@ -6,8 +6,8 @@ export interface ToolboxSettings {
   plugins: {
     encryption: {
       [path: string]: {
-        id: string;
         encrypted: boolean;
+        pass?: string;
         links?: string[];
       };
     };
@@ -52,11 +52,10 @@ export interface ToolboxSettings {
   searchForPlantsFolder: string;
 
   encryption: boolean;
-  encryptionQuick: boolean;
-  encryptionPopUp: boolean;
   encryptionImage: boolean;
   encryptionVideo: boolean;
   encryptionChunkSize: number;
+  encryptionPass: 'always' | 'disposable' | 'notSave';
 
   gallery: boolean;
 
@@ -108,11 +107,10 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   searchForPlantsFolder: '卡片盒/归档',
 
   encryption: true,
-  encryptionQuick: false,
-  encryptionPopUp: true,
   encryptionImage: true,
   encryptionVideo: false,
   encryptionChunkSize: 1024 * 1024,
+  encryptionPass: 'notSave',
 
   gallery: true,
 
@@ -135,49 +133,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
     let { containerEl } = this;
     containerEl.empty();
     containerEl.createEl('h1', { text: this.plugin.manifest.name });
-
-    new Setting(containerEl).setName('🔑 密码创建器').addToggle(cd =>
-      cd.setValue(this.plugin.settings.passwordCreator).onChange(async value => {
-        this.plugin.settings.passwordCreator = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-
-    if (this.plugin.settings.passwordCreator) {
-      new Setting(containerEl).setName('从指定字符集中随机生成密码').addText(cd =>
-        cd.setValue('' + this.plugin.settings.passwordCreatorMixedContent).onChange(async value => {
-          this.plugin.settings.passwordCreatorMixedContent = value;
-          await this.plugin.saveSettings();
-        })
-      );
-
-      new Setting(containerEl).setName('生成密码的长度').addText(cd =>
-        cd.setValue('' + this.plugin.settings.passwordCreatorLength).onChange(async value => {
-          this.plugin.settings.passwordCreatorLength = Number(value);
-          await this.plugin.saveSettings();
-        })
-      );
-    }
-
-    new Setting(containerEl)
-      .setName('🔗 多义笔记转跳')
-      .setDesc('to: "[[filename or path]]"')
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.polysemy).onChange(async value => {
-          this.plugin.settings.polysemy = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    new Setting(containerEl).setName('🏷️ 脚注重编号').addToggle(cd =>
-      cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async value => {
-        this.plugin.settings.footnoteRenumbering = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
 
     if (Platform.isMobile) {
       new Setting(containerEl)
@@ -334,6 +289,49 @@ export class ToolboxSettingTab extends PluginSettingTab {
       })
     );
 
+    new Setting(containerEl).setName('🔑 密码创建器').addToggle(cd =>
+      cd.setValue(this.plugin.settings.passwordCreator).onChange(async value => {
+        this.plugin.settings.passwordCreator = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    if (this.plugin.settings.passwordCreator) {
+      new Setting(containerEl).setName('从指定字符集中随机生成密码').addText(cd =>
+        cd.setValue('' + this.plugin.settings.passwordCreatorMixedContent).onChange(async value => {
+          this.plugin.settings.passwordCreatorMixedContent = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl).setName('生成密码的长度').addText(cd =>
+        cd.setValue('' + this.plugin.settings.passwordCreatorLength).onChange(async value => {
+          this.plugin.settings.passwordCreatorLength = Number(value);
+          await this.plugin.saveSettings();
+        })
+      );
+    }
+
+    new Setting(containerEl)
+      .setName('🔗 多义笔记转跳')
+      .setDesc('to: "[[filename or path]]"')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.polysemy).onChange(async value => {
+          this.plugin.settings.polysemy = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+    new Setting(containerEl).setName('🏷️ 脚注重编号').addToggle(cd =>
+      cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async value => {
+        this.plugin.settings.footnoteRenumbering = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
     new Setting(containerEl)
       .setName('📌 块引用')
       .setDesc('获取光标所在行（块）的双链，方便复制到地方使用')
@@ -377,7 +375,20 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.encryption) {
-      new Setting(containerEl).setName('支持图片加密').addToggle(cd =>
+      new Setting(containerEl).setName('记住密码').addDropdown(cd =>
+        cd
+          .addOption('notSave', '不保存')
+          .addOption('disposable', '软件运行时')
+          .addOption('always', '永久')
+          .setValue(this.plugin.settings.encryptionPass)
+          .onChange(async value => {
+            this.plugin.settings.encryptionPass = value as 'always' | 'disposable' | 'notSave';
+            await this.plugin.saveSettings();
+            this.display();
+          })
+      );
+
+      new Setting(containerEl).setName('支持图片').addToggle(cd =>
         cd.setValue(this.plugin.settings.encryptionImage).onChange(async value => {
           this.plugin.settings.encryptionImage = value;
           await this.plugin.saveSettings();
@@ -385,7 +396,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
-      new Setting(containerEl).setName('支持视频加密').addToggle(cd =>
+      new Setting(containerEl).setName('支持视频').addToggle(cd =>
         cd.setValue(this.plugin.settings.encryptionVideo).onChange(async value => {
           this.plugin.settings.encryptionVideo = value;
           await this.plugin.saveSettings();
@@ -394,19 +405,8 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       new Setting(containerEl)
-        .setName('自动弹窗')
-        .setDesc('打开加密笔记时，弹出解密笔记输入框')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.encryptionPopUp).onChange(async value => {
-            this.plugin.settings.encryptionPopUp = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-
-      new Setting(containerEl)
-        .setName('分块大小')
-        .setDesc('kb')
+        .setName('分块量')
+        .setDesc('单位 kb')
         .addText(cd =>
           cd.setValue('' + this.plugin.settings.encryptionChunkSize / 1024).onChange(async value => {
             this.plugin.settings.encryptionChunkSize = Number(value) * 1024;

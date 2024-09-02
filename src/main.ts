@@ -7,7 +7,7 @@ import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, remov
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
-import { decrypt, encrypt } from './Aes';
+import { decrypt, encrypt } from './Encryption';
 import ProgressBarEncryption from './ProgressBarEncryption';
 import FuzzySuggest from './Modals/FuzzySuggest';
 
@@ -20,10 +20,12 @@ const OUT_LINK_CLASS = '.cm-underline';
 
 export default class Toolbox extends Plugin {
   progressBarEncryption: ProgressBarEncryption;
+  encryptionTempData: any;
   debounceReadDataTracking: Function;
   settings: ToolboxSettings;
   startTime: number;
   async onload() {
+    this.encryptionTempData = {};
     // 加载插件设置页面
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
@@ -62,6 +64,8 @@ export default class Toolbox extends Plugin {
         this.autoEncryptPopUp(file);
         // 加密笔记后隐藏其内容，防止意外改动
         this.toggleEncrypt(file);
+        // 根据记住密码的行为判断是否清空本地存储的笔记密码
+        this.ClearLocalNotePass();
       })
     );
 
@@ -165,6 +169,17 @@ export default class Toolbox extends Plugin {
             .filter(file => this.hasReadingPage(file))
             .forEach(file => this.syncNote(file))
       });
+  }
+
+  ClearLocalNotePass() {
+    if (this.settings.encryptionPass !== 'always') {
+      for (let key in this.settings.plugins.encryption) {
+        const data = this.settings.plugins.encryption[key];
+        if (data) data.pass = '';
+      }
+
+      this.saveSettings();
+    }
   }
 
   moveResourcesTo(file: TFile) {
@@ -281,9 +296,18 @@ export default class Toolbox extends Plugin {
   }
 
   async autoEncryptPopUp(file: TFile) {
-    const content = await this.app.vault.read(file);
-    if (this.settings.encryptionPopUp && isNoteEncrypt(content) && file.extension === 'md') {
+    const type = this.settings.encryptionPass;
+    let { pass, encrypted } = this.settings.plugins.encryption[file.path] || {};
+    const tempPass = this.encryptionTempData[file.path];
+    if (file.extension === 'md' && encrypted && (type === 'notSave' || (type === 'always' && !pass) || (type === 'disposable' && !tempPass))) {
       await this.decryptPopUp(file);
+    }
+
+    if ((type === 'always' && pass) || (type === 'disposable' && (pass = tempPass))) {
+      new Confirm(this.app, {
+        title: encrypted ? '解密这篇笔记？' : '加密这篇笔记？',
+        onSubmit: res => res && this.enc(file, pass, !encrypted)
+      }).open();
     }
   }
 
@@ -297,7 +321,7 @@ export default class Toolbox extends Plugin {
           res &&
           new Confirm(this.app, {
             content: `请最后一次确认，加密密码为 ${pass} `,
-            onSubmit: res2 => res2 && this.enc(file, pass)
+            onSubmit: res2 => res2 && this.enc(file, md5(pass))
           }).open()
       }).open();
     };
@@ -315,7 +339,7 @@ export default class Toolbox extends Plugin {
     new InputBox(this.app, {
       title: '解密笔记',
       name: '密码',
-      onSubmit: pass => this.enc(file, pass, false)
+      onSubmit: pass => this.enc(file, md5(pass), false)
     }).open();
   }
 
@@ -326,15 +350,21 @@ export default class Toolbox extends Plugin {
     this.progressBarEncryption.show();
     const links = await this.imageToBase64(file, pass, convert);
     const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
-    decryptContent && (await this.app.vault.modify(file, decryptContent));
     this.progressBarEncryption.hide();
-    this.settings.plugins.encryption[file.path] = {
-      id: md5(pass),
-      encrypted: !!decryptContent,
-      links
-    };
-    this.toggleEncrypt(file);
-    await this.saveSettings();
+    if (decryptContent) {
+      await this.app.vault.modify(file, decryptContent);
+      const data = this.settings.plugins.encryption[file.path] || ({} as any);
+      this.settings.plugins.encryption[file.path] = {
+        pass: this.settings.encryptionPass === 'always' ? pass : '',
+        encrypted: convert,
+        links
+      };
+      if (this.settings.encryptionPass === 'disposable') {
+        this.encryptionTempData[file.path] = pass;
+      }
+      this.toggleEncrypt(file);
+      await this.saveSettings();
+    }
   }
 
   async imageToBase64(file: TFile, pass: string, convert = true) {

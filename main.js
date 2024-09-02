@@ -794,7 +794,7 @@ var InputBox = class extends import_obsidian3.Modal {
   onOpen() {
     let res;
     const { contentEl } = this;
-    const { title, name, description, content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
+    const { title, name, description = "", content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
     this.setTitle(title);
     content && this.setContent(content);
     new import_obsidian3.Setting(contentEl).setDesc(description).setName(name).addText(
@@ -885,11 +885,10 @@ var DEFAULT_SETTINGS = {
   searchForPlants: true,
   searchForPlantsFolder: "\u5361\u7247\u76D2/\u5F52\u6863",
   encryption: true,
-  encryptionQuick: false,
-  encryptionPopUp: true,
   encryptionImage: true,
   encryptionVideo: false,
   encryptionChunkSize: 1024 * 1024,
+  encryptionPass: "notSave",
   gallery: true,
   cleanClipboardContent: true,
   poster: true,
@@ -904,41 +903,6 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
     let { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h1", { text: this.plugin.manifest.name });
-    new import_obsidian5.Setting(containerEl).setName("\u{1F511} \u5BC6\u7801\u521B\u5EFA\u5668").addToggle(
-      (cd) => cd.setValue(this.plugin.settings.passwordCreator).onChange(async (value) => {
-        this.plugin.settings.passwordCreator = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-    if (this.plugin.settings.passwordCreator) {
-      new import_obsidian5.Setting(containerEl).setName("\u4ECE\u6307\u5B9A\u5B57\u7B26\u96C6\u4E2D\u968F\u673A\u751F\u6210\u5BC6\u7801").addText(
-        (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorMixedContent).onChange(async (value) => {
-          this.plugin.settings.passwordCreatorMixedContent = value;
-          await this.plugin.saveSettings();
-        })
-      );
-      new import_obsidian5.Setting(containerEl).setName("\u751F\u6210\u5BC6\u7801\u7684\u957F\u5EA6").addText(
-        (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorLength).onChange(async (value) => {
-          this.plugin.settings.passwordCreatorLength = Number(value);
-          await this.plugin.saveSettings();
-        })
-      );
-    }
-    new import_obsidian5.Setting(containerEl).setName("\u{1F517} \u591A\u4E49\u7B14\u8BB0\u8F6C\u8DF3").setDesc('to: "[[filename or path]]"').addToggle(
-      (cd) => cd.setValue(this.plugin.settings.polysemy).onChange(async (value) => {
-        this.plugin.settings.polysemy = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-    new import_obsidian5.Setting(containerEl).setName("\u{1F3F7}\uFE0F \u811A\u6CE8\u91CD\u7F16\u53F7").addToggle(
-      (cd) => cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async (value) => {
-        this.plugin.settings.footnoteRenumbering = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
     if (import_obsidian5.Platform.isMobile) {
       new import_obsidian5.Setting(containerEl).setName("\u{1F550} \u9605\u8BFB\u6570\u636E\u8DDF\u8E2A").setDesc("\u9605\u8BFB\u8FDB\u5EA6\u3001\u65F6\u957F\uFF0C\u672A\u8BFB\u4EE5\u53CA\u8BFB\u5B8C").addToggle(
         (cd) => cd.setValue(this.plugin.settings.readDataTracking).onChange(async (value) => {
@@ -1059,6 +1023,41 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         this.display();
       })
     );
+    new import_obsidian5.Setting(containerEl).setName("\u{1F511} \u5BC6\u7801\u521B\u5EFA\u5668").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.passwordCreator).onChange(async (value) => {
+        this.plugin.settings.passwordCreator = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+    if (this.plugin.settings.passwordCreator) {
+      new import_obsidian5.Setting(containerEl).setName("\u4ECE\u6307\u5B9A\u5B57\u7B26\u96C6\u4E2D\u968F\u673A\u751F\u6210\u5BC6\u7801").addText(
+        (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorMixedContent).onChange(async (value) => {
+          this.plugin.settings.passwordCreatorMixedContent = value;
+          await this.plugin.saveSettings();
+        })
+      );
+      new import_obsidian5.Setting(containerEl).setName("\u751F\u6210\u5BC6\u7801\u7684\u957F\u5EA6").addText(
+        (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorLength).onChange(async (value) => {
+          this.plugin.settings.passwordCreatorLength = Number(value);
+          await this.plugin.saveSettings();
+        })
+      );
+    }
+    new import_obsidian5.Setting(containerEl).setName("\u{1F517} \u591A\u4E49\u7B14\u8BB0\u8F6C\u8DF3").setDesc('to: "[[filename or path]]"').addToggle(
+      (cd) => cd.setValue(this.plugin.settings.polysemy).onChange(async (value) => {
+        this.plugin.settings.polysemy = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+    new import_obsidian5.Setting(containerEl).setName("\u{1F3F7}\uFE0F \u811A\u6CE8\u91CD\u7F16\u53F7").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async (value) => {
+        this.plugin.settings.footnoteRenumbering = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
     new import_obsidian5.Setting(containerEl).setName("\u{1F4CC} \u5757\u5F15\u7528").setDesc("\u83B7\u53D6\u5149\u6807\u6240\u5728\u884C\uFF08\u5757\uFF09\u7684\u53CC\u94FE\uFF0C\u65B9\u4FBF\u590D\u5236\u5230\u5730\u65B9\u4F7F\u7528").addToggle(
       (cd) => cd.setValue(this.plugin.settings.blockReference).onChange(async (value) => {
         this.plugin.settings.blockReference = value;
@@ -1089,28 +1088,28 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
       })
     );
     if (this.plugin.settings.encryption) {
-      new import_obsidian5.Setting(containerEl).setName("\u652F\u6301\u56FE\u7247\u52A0\u5BC6").addToggle(
+      new import_obsidian5.Setting(containerEl).setName("\u8BB0\u4F4F\u5BC6\u7801").addDropdown(
+        (cd) => cd.addOption("notSave", "\u4E0D\u4FDD\u5B58").addOption("disposable", "\u8F6F\u4EF6\u8FD0\u884C\u65F6").addOption("always", "\u6C38\u4E45").setValue(this.plugin.settings.encryptionPass).onChange(async (value) => {
+          this.plugin.settings.encryptionPass = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+      new import_obsidian5.Setting(containerEl).setName("\u652F\u6301\u56FE\u7247").addToggle(
         (cd) => cd.setValue(this.plugin.settings.encryptionImage).onChange(async (value) => {
           this.plugin.settings.encryptionImage = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian5.Setting(containerEl).setName("\u652F\u6301\u89C6\u9891\u52A0\u5BC6").addToggle(
+      new import_obsidian5.Setting(containerEl).setName("\u652F\u6301\u89C6\u9891").addToggle(
         (cd) => cd.setValue(this.plugin.settings.encryptionVideo).onChange(async (value) => {
           this.plugin.settings.encryptionVideo = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian5.Setting(containerEl).setName("\u81EA\u52A8\u5F39\u7A97").setDesc("\u6253\u5F00\u52A0\u5BC6\u7B14\u8BB0\u65F6\uFF0C\u5F39\u51FA\u89E3\u5BC6\u7B14\u8BB0\u8F93\u5165\u6846").addToggle(
-        (cd) => cd.setValue(this.plugin.settings.encryptionPopUp).onChange(async (value) => {
-          this.plugin.settings.encryptionPopUp = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-      new import_obsidian5.Setting(containerEl).setName("\u5206\u5757\u5927\u5C0F").setDesc("kb").addText(
+      new import_obsidian5.Setting(containerEl).setName("\u5206\u5757\u91CF").setDesc("\u5355\u4F4D kb").addText(
         (cd) => cd.setValue("" + this.plugin.settings.encryptionChunkSize / 1024).onChange(async (value) => {
           this.plugin.settings.encryptionChunkSize = Number(value) * 1024;
           await this.plugin.saveSettings();
@@ -1208,7 +1207,7 @@ var PanelSearchForPlants = class extends import_obsidian7.Modal {
   }
 };
 
-// src/Aes.ts
+// src/Encryption.ts
 var import_obsidian8 = require("obsidian");
 var import_js_md5 = __toESM(require_md5());
 async function encrypt(text, pass) {
@@ -1344,6 +1343,7 @@ var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var Toolbox = class extends import_obsidian10.Plugin {
   async onload() {
+    this.encryptionTempData = {};
     await this.loadSettings();
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
     this.gallery();
@@ -1372,6 +1372,7 @@ var Toolbox = class extends import_obsidian10.Plugin {
         this.mask(sourceView, file);
         this.autoEncryptPopUp(file);
         this.toggleEncrypt(file);
+        this.ClearLocalNotePass();
       })
     );
     this.registerEvent(
@@ -1455,6 +1456,16 @@ var Toolbox = class extends import_obsidian10.Plugin {
       icon: "activity",
       callback: () => this.app.vault.getMarkdownFiles().filter((file) => this.hasReadingPage(file)).forEach((file) => this.syncNote(file))
     });
+  }
+  ClearLocalNotePass() {
+    if (this.settings.encryptionPass !== "always") {
+      for (let key in this.settings.plugins.encryption) {
+        const data = this.settings.plugins.encryption[key];
+        if (data)
+          data.pass = "";
+      }
+      this.saveSettings();
+    }
   }
   moveResourcesTo(file) {
     if (!this.settings.moveResourcesTo)
@@ -1552,9 +1563,17 @@ var Toolbox = class extends import_obsidian10.Plugin {
     }
   }
   async autoEncryptPopUp(file) {
-    const content = await this.app.vault.read(file);
-    if (this.settings.encryptionPopUp && isNoteEncrypt(content) && file.extension === "md") {
+    const type = this.settings.encryptionPass;
+    let { pass, encrypted } = this.settings.plugins.encryption[file.path] || {};
+    const tempPass = this.encryptionTempData[file.path];
+    if (file.extension === "md" && encrypted && (type === "notSave" || type === "always" && !pass || type === "disposable" && !tempPass)) {
       await this.decryptPopUp(file);
+    }
+    if (type === "always" && pass || type === "disposable" && (pass = tempPass)) {
+      new Confirm(this.app, {
+        title: encrypted ? "\u89E3\u5BC6\u8FD9\u7BC7\u7B14\u8BB0\uFF1F" : "\u52A0\u5BC6\u8FD9\u7BC7\u7B14\u8BB0\uFF1F",
+        onSubmit: (res) => res && this.enc(file, pass, !encrypted)
+      }).open();
     }
   }
   async encryptPopUp(file) {
@@ -1565,7 +1584,7 @@ var Toolbox = class extends import_obsidian10.Plugin {
         content: `\u8BF7\u786E\u8BA4\uFF0C\u52A0\u5BC6\u5BC6\u7801\u4E3A ${pass} `,
         onSubmit: (res) => res && new Confirm(this.app, {
           content: `\u8BF7\u6700\u540E\u4E00\u6B21\u786E\u8BA4\uFF0C\u52A0\u5BC6\u5BC6\u7801\u4E3A ${pass} `,
-          onSubmit: (res2) => res2 && this.enc(file, pass)
+          onSubmit: (res2) => res2 && this.enc(file, (0, import_js_md52.md5)(pass))
         }).open()
       }).open();
     };
@@ -1582,7 +1601,7 @@ var Toolbox = class extends import_obsidian10.Plugin {
     new InputBox(this.app, {
       title: "\u89E3\u5BC6\u7B14\u8BB0",
       name: "\u5BC6\u7801",
-      onSubmit: (pass) => this.enc(file, pass, false)
+      onSubmit: (pass) => this.enc(file, (0, import_js_md52.md5)(pass), false)
     }).open();
   }
   async enc(file, pass, convert = true) {
@@ -1594,15 +1613,21 @@ var Toolbox = class extends import_obsidian10.Plugin {
     this.progressBarEncryption.show();
     const links = await this.imageToBase64(file, pass, convert);
     const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
-    decryptContent && await this.app.vault.modify(file, decryptContent);
     this.progressBarEncryption.hide();
-    this.settings.plugins.encryption[file.path] = {
-      id: (0, import_js_md52.md5)(pass),
-      encrypted: !!decryptContent,
-      links
-    };
-    this.toggleEncrypt(file);
-    await this.saveSettings();
+    if (decryptContent) {
+      await this.app.vault.modify(file, decryptContent);
+      const data = this.settings.plugins.encryption[file.path] || {};
+      this.settings.plugins.encryption[file.path] = {
+        pass: this.settings.encryptionPass === "always" ? pass : "",
+        encrypted: convert,
+        links
+      };
+      if (this.settings.encryptionPass === "disposable") {
+        this.encryptionTempData[file.path] = pass;
+      }
+      this.toggleEncrypt(file);
+      await this.saveSettings();
+    }
   }
   async imageToBase64(file, pass, convert = true) {
     var _a;

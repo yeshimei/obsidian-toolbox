@@ -20,7 +20,7 @@ export default class InputBox extends Modal {
   onOpen() {
     let res: string;
     const { contentEl } = this;
-    const { title, name, description, content, submitText = '确定', onSubmit } = this.data;
+    const { title, name, description = '', content, submitText = '确定', onSubmit } = this.data;
     this.setTitle(title);
     content && this.setContent(content);
     new Setting(contentEl)
