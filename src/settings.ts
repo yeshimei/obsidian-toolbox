@@ -56,6 +56,7 @@ export interface ToolboxSettings {
   encryptionPopUp: boolean;
   encryptionImage: boolean;
   encryptionVideo: boolean;
+  encryptionChunkSize: number;
 
   gallery: boolean;
 
@@ -107,6 +108,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   encryptionPopUp: true,
   encryptionImage: true,
   encryptionVideo: false,
+  encryptionChunkSize: 1024 * 1024,
 
   gallery: true,
 
@@ -405,6 +407,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
             this.plugin.settings.encryptionPopUp = value;
             await this.plugin.saveSettings();
             this.display();
+          })
+        );
+
+      new Setting(containerEl)
+        .setName('分块大小')
+        .setDesc('kb')
+        .addText(cd =>
+          cd.setValue('' + this.plugin.settings.encryptionChunkSize / 1024).onChange(async value => {
+            this.plugin.settings.encryptionChunkSize = Number(value) * 1024;
+            await this.plugin.saveSettings();
           })
         );
     }

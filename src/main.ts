@@ -286,14 +286,18 @@ export default class Toolbox extends Plugin {
     try {
       for (let link of links) {
         const file = this.app.vault.getFileByPath(link);
-        const chunkSize = 1024 * 1024; // 1MB
+        const chunkSize = this.settings.encryptionChunkSize;
         let offset = 0;
+        let data: ArrayBuffer;
         index++;
+        // 创建一个空的临时文件
         const tempFilePath = `${file.path}.tmp`;
-        const content = await this.app.vault.read(file);
         let tempFile = this.app.vault.getFileByPath(tempFilePath);
         if (tempFile) await this.app.vault.delete(tempFile);
-        tempFile = await this.app.vault.create(tempFilePath, ''); // 创建一个空的临时文件
+        tempFile = await this.app.vault.create(tempFilePath, '');
+        const arrayBuffer = await this.app.vault.adapter.readBinary(file.path);
+        const content = new TextDecoder().decode(arrayBuffer.slice(0, chunkSize));
+
         if (convert) {
           if (isImageEncrypt(content)) {
             // 只在未加密笔记时，提醒此通知
@@ -302,35 +306,39 @@ export default class Toolbox extends Plugin {
               return links;
             }
           } else {
-            const arrayBuffer = await this.app.vault.adapter.readBinary(file.path);
             while (offset < file.stat.size) {
               const chunk = arrayBuffer.slice(offset, offset + chunkSize);
               const base64Chunk = arrayBufferToBase64(chunk);
               const encryptedChunk = await encrypt(base64Chunk, pass);
               const chunkLength = encryptedChunk.length.toString().padStart(8, '0'); // 固定长度的块长度信息
-              await this.app.vault.append(tempFile, chunkLength + encryptedChunk);
+              const encryptedArrayBuffer = new TextEncoder().encode(chunkLength + encryptedChunk);
+              if (data) {
+                data = mergeArrayBuffers(data, encryptedArrayBuffer);
+              } else {
+                data = encryptedArrayBuffer;
+              }
               offset += chunkSize;
-              const progress = Math.min(Math.floor((offset / content.length) * 100), 100);
+              const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
               progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
+            await this.app.vault.adapter.writeBinary(tempFilePath, data);
           }
         } else {
-          let data: ArrayBuffer;
           if (isImageEncrypt(content)) {
-            while (offset < content.length) {
-              const chunkLength = parseInt(content.slice(offset, offset + 8), 10); // 读取块长度信息
+            while (offset < arrayBuffer.byteLength) {
+              const chunkLength = parseInt(new TextDecoder().decode(arrayBuffer.slice(offset, offset + 8)), 10);
               offset += 8;
-              const encryptedChunk = content.slice(offset, offset + chunkLength);
-              const decryptedChunk = await decrypt(encryptedChunk, pass); // 假设 decrypt 是你的解密函数
-              const arrayBuffer = base64ToArrayBuffer(decryptedChunk);
+              const encryptedChunk = arrayBuffer.slice(offset, offset + chunkLength);
+              const decryptedChunk = await decrypt(new TextDecoder().decode(encryptedChunk), pass);
+              const decryptedArrayBuffer = base64ToArrayBuffer(decryptedChunk);
               if (data) {
-                data = mergeArrayBuffers(data, arrayBuffer);
+                data = mergeArrayBuffers(data, decryptedArrayBuffer);
               } else {
-                data = arrayBuffer;
+                data = decryptedArrayBuffer;
               }
 
               offset += chunkLength;
-              const progress = Math.min(Math.floor((offset / content.length) * 100), 100);
+              const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
               progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
             await this.app.vault.adapter.writeBinary(tempFilePath, data);

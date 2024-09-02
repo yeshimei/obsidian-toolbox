@@ -889,6 +889,7 @@ var DEFAULT_SETTINGS = {
   encryptionPopUp: true,
   encryptionImage: true,
   encryptionVideo: false,
+  encryptionChunkSize: 1024 * 1024,
   gallery: true,
   cleanClipboardContent: true
 };
@@ -1105,6 +1106,12 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
           this.plugin.settings.encryptionPopUp = value;
           await this.plugin.saveSettings();
           this.display();
+        })
+      );
+      new import_obsidian5.Setting(containerEl).setName("\u5206\u5757\u5927\u5C0F").setDesc("kb").addText(
+        (cd) => cd.setValue("" + this.plugin.settings.encryptionChunkSize / 1024).onChange(async (value) => {
+          this.plugin.settings.encryptionChunkSize = Number(value) * 1024;
+          await this.plugin.saveSettings();
         })
       );
     }
@@ -1528,15 +1535,17 @@ var Toolbox = class extends import_obsidian9.Plugin {
     try {
       for (let link of links) {
         const file2 = this.app.vault.getFileByPath(link);
-        const chunkSize = 1024 * 1024;
+        const chunkSize = this.settings.encryptionChunkSize;
         let offset = 0;
+        let data;
         index++;
         const tempFilePath = `${file2.path}.tmp`;
-        const content = await this.app.vault.read(file2);
         let tempFile = this.app.vault.getFileByPath(tempFilePath);
         if (tempFile)
           await this.app.vault.delete(tempFile);
         tempFile = await this.app.vault.create(tempFilePath, "");
+        const arrayBuffer = await this.app.vault.adapter.readBinary(file2.path);
+        const content = new TextDecoder().decode(arrayBuffer.slice(0, chunkSize));
         if (convert) {
           if (isImageEncrypt(content)) {
             if (!isNoteEncrypt(rawContent)) {
@@ -1544,34 +1553,38 @@ var Toolbox = class extends import_obsidian9.Plugin {
               return links;
             }
           } else {
-            const arrayBuffer = await this.app.vault.adapter.readBinary(file2.path);
             while (offset < file2.stat.size) {
               const chunk = arrayBuffer.slice(offset, offset + chunkSize);
               const base64Chunk = arrayBufferToBase64(chunk);
               const encryptedChunk = await encrypt(base64Chunk, pass);
               const chunkLength = encryptedChunk.length.toString().padStart(8, "0");
-              await this.app.vault.append(tempFile, chunkLength + encryptedChunk);
+              const encryptedArrayBuffer = new TextEncoder().encode(chunkLength + encryptedChunk);
+              if (data) {
+                data = mergeArrayBuffers(data, encryptedArrayBuffer);
+              } else {
+                data = encryptedArrayBuffer;
+              }
               offset += chunkSize;
-              const progress = Math.min(Math.floor(offset / content.length * 100), 100);
+              const progress = Math.min(Math.floor(offset / arrayBuffer.byteLength * 100), 100);
               progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
+            await this.app.vault.adapter.writeBinary(tempFilePath, data);
           }
         } else {
-          let data;
           if (isImageEncrypt(content)) {
-            while (offset < content.length) {
-              const chunkLength = parseInt(content.slice(offset, offset + 8), 10);
+            while (offset < arrayBuffer.byteLength) {
+              const chunkLength = parseInt(new TextDecoder().decode(arrayBuffer.slice(offset, offset + 8)), 10);
               offset += 8;
-              const encryptedChunk = content.slice(offset, offset + chunkLength);
-              const decryptedChunk = await decrypt(encryptedChunk, pass);
-              const arrayBuffer = (0, import_obsidian9.base64ToArrayBuffer)(decryptedChunk);
+              const encryptedChunk = arrayBuffer.slice(offset, offset + chunkLength);
+              const decryptedChunk = await decrypt(new TextDecoder().decode(encryptedChunk), pass);
+              const decryptedArrayBuffer = (0, import_obsidian9.base64ToArrayBuffer)(decryptedChunk);
               if (data) {
-                data = mergeArrayBuffers(data, arrayBuffer);
+                data = mergeArrayBuffers(data, decryptedArrayBuffer);
               } else {
-                data = arrayBuffer;
+                data = decryptedArrayBuffer;
               }
               offset += chunkLength;
-              const progress = Math.min(Math.floor(offset / content.length * 100), 100);
+              const progress = Math.min(Math.floor(offset / arrayBuffer.byteLength * 100), 100);
               progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
