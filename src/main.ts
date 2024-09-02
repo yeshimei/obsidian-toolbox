@@ -1,14 +1,14 @@
 import { PanelSearchForWord } from './PanelSearchForWord';
 import { Confirm } from './Confirm';
 import { PanelHighlight } from './InputBox';
-import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, base64ToArrayBuffer } from 'obsidian';
+import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, base64ToArrayBuffer, arrayBufferToBase64 } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
 import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, blur, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath, mergeArrayBuffers } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
-import { arrayBufferToBase64, convertBase64ToImage, decrypt, encrypt } from './Aes';
-import ProgressBar from './ProgressBar';
+import { decrypt, encrypt } from './Aes';
+import ProgressBarEncryption from './ProgressBarEncryption';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -269,7 +269,7 @@ export default class Toolbox extends Plugin {
     let links;
     let index = 0;
     const rawContent = await this.app.vault.read(file);
-    const progressBar = new ProgressBar();
+    const progressBar = new ProgressBarEncryption();
     progressBar.show();
 
     // 如果笔记已加密，从插件数据获取图像路径，否则获取笔记中的图像路径
@@ -321,6 +321,7 @@ export default class Toolbox extends Plugin {
               const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
               progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
+            progressBar.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
           }
         } else {
@@ -341,6 +342,7 @@ export default class Toolbox extends Plugin {
               const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
               progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
+            progressBar.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
           } else {
             new Notice(`${getBasename(link)} 已解密`);
@@ -353,6 +355,7 @@ export default class Toolbox extends Plugin {
       }
     } catch (e) {
       new Notice('警告：笔记中可能存在已损坏资源文件，也有可能被移动或删除，请排查');
+      progressBar.hide();
       return links;
     }
 

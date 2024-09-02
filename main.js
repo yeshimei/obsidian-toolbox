@@ -1094,7 +1094,7 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
           this.display();
         })
       );
-      new import_obsidian5.Setting(containerEl).setName("\u652F\u6301\u89C6\u9891\u52A0\u5BC6").setDesc("\u5927\u4F53\u79EF\u89C6\u9891\u4E0D\u63A8\u8350\u5F00\u542F\u6B64\u9009\u9879\uFF0C\u53EF\u80FD\u4F1A\u957F\u65F6\u95F4\u5361\u987F\uFF0C\u751A\u81F3\u5BFC\u81F4\u5D29\u6E83").addToggle(
+      new import_obsidian5.Setting(containerEl).setName("\u652F\u6301\u89C6\u9891\u52A0\u5BC6").addToggle(
         (cd) => cd.setValue(this.plugin.settings.encryptionVideo).onChange(async (value) => {
           this.plugin.settings.encryptionVideo = value;
           await this.plugin.saveSettings();
@@ -1257,18 +1257,9 @@ async function decrypt(encryptedText, pass) {
   const decoder = new TextDecoder();
   return decoder.decode(decrypted);
 }
-function arrayBufferToBase64(buffer) {
-  let binary = "";
-  const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return window.btoa(binary);
-}
 
-// src/ProgressBar.ts
-var ProgressBar = class {
+// src/ProgressBarEncryption.ts
+var ProgressBarEncryption = class {
   constructor() {
     this.progressBarContainer = document.createElement("div");
     this.progressBarContainer.style.position = "fixed";
@@ -1278,6 +1269,7 @@ var ProgressBar = class {
     this.progressBarContainer.style.width = "100%";
     this.progressBarContainer.style.backgroundColor = "#f3f3f3";
     this.progressBarContainer.style.zIndex = "1000";
+    this.progressBarContainer.hide();
     this.progressBar = document.createElement("div");
     this.progressBar.style.width = "0%";
     this.progressBar.style.height = "3px";
@@ -1291,16 +1283,17 @@ var ProgressBar = class {
     this.text.style.fontSize = "1rem";
     this.text.style.color = "#fff";
     this.progressBar.appendChild(this.text);
+    document.body.appendChild(this.progressBarContainer);
   }
   show() {
-    document.body.appendChild(this.progressBarContainer);
+    this.progressBarContainer.show();
   }
   update(progress, text) {
     this.progressBar.style.width = `${progress}%`;
     this.text.innerText = text;
   }
   hide() {
-    document.body.removeChild(this.progressBarContainer);
+    this.progressBarContainer.hide();
   }
 };
 
@@ -1520,7 +1513,7 @@ var Toolbox = class extends import_obsidian9.Plugin {
     let links;
     let index = 0;
     const rawContent = await this.app.vault.read(file);
-    const progressBar = new ProgressBar();
+    const progressBar = new ProgressBarEncryption();
     progressBar.show();
     if (isNoteEncrypt(rawContent)) {
       links = ((_a = this.settings.plugins.encryption[file.path]) == null ? void 0 : _a.links) || [];
@@ -1555,7 +1548,7 @@ var Toolbox = class extends import_obsidian9.Plugin {
           } else {
             while (offset < file2.stat.size) {
               const chunk = arrayBuffer.slice(offset, offset + chunkSize);
-              const base64Chunk = arrayBufferToBase64(chunk);
+              const base64Chunk = (0, import_obsidian9.arrayBufferToBase64)(chunk);
               const encryptedChunk = await encrypt(base64Chunk, pass);
               const chunkLength = encryptedChunk.length.toString().padStart(8, "0");
               const encryptedArrayBuffer = new TextEncoder().encode(chunkLength + encryptedChunk);
@@ -1568,6 +1561,7 @@ var Toolbox = class extends import_obsidian9.Plugin {
               const progress = Math.min(Math.floor(offset / arrayBuffer.byteLength * 100), 100);
               progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
+            progressBar.update(100, `[${index}/${links.length}] ${getBasename(link)} - \u6B63\u5728\u5199\u5165`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
           }
         } else {
@@ -1587,6 +1581,7 @@ var Toolbox = class extends import_obsidian9.Plugin {
               const progress = Math.min(Math.floor(offset / arrayBuffer.byteLength * 100), 100);
               progressBar.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
+            progressBar.update(100, `[${index}/${links.length}] ${getBasename(link)} - \u6B63\u5728\u5199\u5165`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
           } else {
             new import_obsidian9.Notice(`${getBasename(link)} \u5DF2\u89E3\u5BC6`);
@@ -1598,6 +1593,7 @@ var Toolbox = class extends import_obsidian9.Plugin {
       }
     } catch (e) {
       new import_obsidian9.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u8D44\u6E90\u6587\u4EF6\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
+      progressBar.hide();
       return links;
     }
     progressBar.hide();

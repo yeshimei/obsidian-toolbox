@@ -369,17 +369,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.encryption) {
-      // new Setting(containerEl)
-      //   .setName('快捷模式')
-      //   .setDesc('在每次加密笔记时同步文档属性 encryptionId 生成标记。开启此选项后，每次启动 obsidian，首次解密笔记的密码将暂时记录在内存中，之后每次打开具有相同标记的加密笔记都将自动解密，关闭具有相同标记的解密笔记时自动加密')
-      //   .addToggle(cd =>
-      //     cd.setValue(this.plugin.settings.encryptionQuick).onChange(async value => {
-      //       this.plugin.settings.encryptionQuick = value;
-      //       await this.plugin.saveSettings();
-      //       this.display();
-      //     })
-      //   );
-
       new Setting(containerEl).setName('支持图片加密').addToggle(cd =>
         cd.setValue(this.plugin.settings.encryptionImage).onChange(async value => {
           this.plugin.settings.encryptionImage = value;
@@ -388,16 +377,13 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
-      new Setting(containerEl)
-        .setName('支持视频加密')
-        .setDesc('大体积视频不推荐开启此选项，可能会长时间卡顿，甚至导致崩溃')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.encryptionVideo).onChange(async value => {
-            this.plugin.settings.encryptionVideo = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
+      new Setting(containerEl).setName('支持视频加密').addToggle(cd =>
+        cd.setValue(this.plugin.settings.encryptionVideo).onChange(async value => {
+          this.plugin.settings.encryptionVideo = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
 
       new Setting(containerEl)
         .setName('自动弹窗')

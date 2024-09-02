@@ -1,8 +1,7 @@
-export default class ProgressBar {
+export default class ProgressBarEncryption {
   private progressBarContainer: HTMLDivElement;
   private progressBar: HTMLDivElement;
   private text: HTMLDivElement;
-  private belowText: HTMLDivElement;
 
   constructor() {
     this.progressBarContainer = document.createElement('div');
@@ -13,6 +12,7 @@ export default class ProgressBar {
     this.progressBarContainer.style.width = '100%';
     this.progressBarContainer.style.backgroundColor = '#f3f3f3';
     this.progressBarContainer.style.zIndex = '1000';
+    this.progressBarContainer.hide();
 
     this.progressBar = document.createElement('div');
     this.progressBar.style.width = '0%';
@@ -28,10 +28,12 @@ export default class ProgressBar {
     this.text.style.fontSize = '1rem';
     this.text.style.color = '#fff';
     this.progressBar.appendChild(this.text);
+
+    document.body.appendChild(this.progressBarContainer);
   }
 
   show() {
-    document.body.appendChild(this.progressBarContainer);
+    this.progressBarContainer.show();
   }
 
   update(progress: number, text: string) {
@@ -40,6 +42,6 @@ export default class ProgressBar {
   }
 
   hide() {
-    document.body.removeChild(this.progressBarContainer);
+    this.progressBarContainer.hide();
   }
 }
