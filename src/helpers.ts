@@ -1,5 +1,17 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
+export function insertString(original: string, index: number, insert: string) {
+  if (index < 0) {
+    index = original.length + index;
+  }
+  return original.substring(0, index) + insert + original.substring(index);
+}
+export async function createFile(app: App, path: string, cover = false) {
+  let file = app.vault.getFileByPath(path);
+  file ? cover && (await app.vault.modify(file, '')) : (file = await app.vault.create(path, ''));
+  return file;
+}
+
 export function mergeArrayBuffers(buffer1: ArrayBuffer, buffer2: ArrayBuffer): ArrayBuffer {
   const mergedBuffer = new ArrayBuffer(buffer1.byteLength + buffer2.byteLength);
   const mergedView = new Uint8Array(mergedBuffer);
@@ -12,6 +24,15 @@ export function mergeArrayBuffers(buffer1: ArrayBuffer, buffer2: ArrayBuffer): A
 
 export function getBasename(path: string): string {
   return path.split('/').pop() || path;
+}
+
+export function isBase64(str: string): boolean {
+  if (str === '' || str.trim() === '') {
+    return false;
+  }
+
+  const base64Pattern = /^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/;
+  return base64Pattern.test(str);
 }
 
 export function isNoteEncrypt(str: string) {

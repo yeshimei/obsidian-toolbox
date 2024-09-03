@@ -7,9 +7,10 @@ import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, remov
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
-import { AES256Helper, decrypt, encrypt } from './Encryption';
-import ProgressBarEncryption from './ProgressBarEncryption';
+import { AES256Helper, decrypt, encrypt, imageToBase64 } from './Encryption';
 import FuzzySuggest from './Modals/FuzzySuggest';
+// import test from 'test/Test';
+// import 'test';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -19,7 +20,6 @@ const COMMENT_CLASS = '.__comment';
 const OUT_LINK_CLASS = '.cm-underline';
 
 export default class Toolbox extends Plugin {
-  progressBarEncryption: ProgressBarEncryption;
   encryptionTempData: any;
   debounceReadDataTracking: Function;
   settings: ToolboxSettings;
@@ -35,8 +35,6 @@ export default class Toolbox extends Plugin {
     this.reviewOfReadingNotes();
     // 将视频第一帧作为海报
     Platform.isMobile && this.poster(document.body);
-    // 加载笔记加密进度条
-    this.progressBarEncryption = new ProgressBarEncryption();
     // 阅读功能仅允许在移动端使用
     if (!Platform.isMobile) {
       Object.assign(this.settings, {
@@ -81,6 +79,13 @@ export default class Toolbox extends Plugin {
       })
     );
 
+    // this.addCommand({
+    //   id: '测试',
+    //   name: '测试',
+    //   icon: 'clipboard-check',
+    //   callback: () => this.test()
+    // });
+
     this.addCommand({
       id: '移动当前笔记中的资源至',
       name: '移动当前笔记中的资源至',
@@ -111,7 +116,7 @@ export default class Toolbox extends Plugin {
 
     this.settings.passwordCreator &&
       this.addCommand({
-        id: '密码创建器',
+        id: '测试',
         name: '密码创建器',
         icon: 'key-round',
         callback: () => this.passwordCreator()
@@ -173,7 +178,13 @@ export default class Toolbox extends Plugin {
   }
 
   ClearLocalNotePass() {
-    if (this.settings.encryptionPass !== 'always') {
+    // 清空已经删除笔记的本地记录
+    for (let key in this.settings.plugins.encryption) {
+      if (!this.app.vault.getFileByPath(key)) delete this.settings.plugins.encryption[key];
+      this.saveSettings();
+    }
+    // 非永久记住密码，都清空本地密码
+    if (this.settings.encryptionRememberPassMode !== 'always') {
       for (let key in this.settings.plugins.encryption) {
         const data = this.settings.plugins.encryption[key];
         if (data) data.pass = '';
@@ -297,7 +308,7 @@ export default class Toolbox extends Plugin {
   }
 
   async autoEncryptPopUp(file: TFile) {
-    const type = this.settings.encryptionPass;
+    const type = this.settings.encryptionRememberPassMode;
     const tempPass = this.encryptionTempData[file.path];
     const encrypted = isNoteEncrypt(await this.app.vault.cachedRead(file));
     let { pass } = this.settings.plugins.encryption[file.path] || {};
@@ -308,14 +319,13 @@ export default class Toolbox extends Plugin {
     if ((type === 'always' && pass) || (type === 'disposable' && (pass = tempPass))) {
       new Confirm(this.app, {
         title: encrypted ? '解密这篇笔记？' : '加密这篇笔记？',
-        onSubmit: res => res && this.enc(file, pass, !encrypted)
+        onSubmit: res => res && this.encryptionNote(file, pass, !encrypted)
       }).open();
     }
   }
 
   async encryptPopUp(file: TFile) {
     if (!this.settings.encryption) return;
-
     const onSubmit = (pass: string) => {
       new Confirm(this.app, {
         content: `请确认，加密密码为 ${pass} `,
@@ -323,7 +333,7 @@ export default class Toolbox extends Plugin {
           res &&
           new Confirm(this.app, {
             content: `请最后一次确认，加密密码为 ${pass} `,
-            onSubmit: async res2 => res2 && this.enc(file, await AES256Helper.encrypt(md5(pass), pass))
+            onSubmit: async res2 => res2 && this.encryptionNote(file, await AES256Helper.encrypt(md5(pass), pass))
           }).open()
       }).open();
     };
@@ -341,135 +351,46 @@ export default class Toolbox extends Plugin {
     new InputBox(this.app, {
       title: '解密笔记',
       name: '密码',
-      onSubmit: async pass => this.enc(file, await AES256Helper.encrypt(md5(pass), pass), false)
+      onSubmit: async pass => this.encryptionNote(file, await AES256Helper.encrypt(md5(pass), pass), false)
     }).open();
   }
 
-  async enc(file: TFile, pass: string, convert = true) {
+  async encryptionNote(file: TFile, pass: string, convert = true) {
     if (!this.settings.encryption || !pass) return;
     let content = await this.app.vault.read(file);
     if (!content) return;
-    this.progressBarEncryption.show();
-    let links, decryptContent;
+    let decryptContent;
     // 如果笔记已加密，从插件数据获取图像路径，否则获取笔记中的图像路径
     const isN = isNoteEncrypt(content);
-    if (isN) {
-      links = this.settings.plugins.encryption[file.path]?.links || [];
-    } else {
-      const f = Object.keys(this.app.metadataCache.resolvedLinks[file.path]);
-      links = f.filter(isImagePath);
-      // 视频
-      if (this.settings.encryptionVideo) links = links.concat(f.filter(isVideoPath));
-    }
-
     if (convert) {
-      if (isN) return new Notice('笔记已加密');
-      decryptContent = await encrypt(content, pass);
+      const localP = this.settings.plugins.encryption[file.path]?.pass;
+      const tP = this.encryptionTempData[file.path];
+      if (this.settings.encryptionImageCompress && (localP || tP) && pass !== (localP || tP)) {
+        return new Notice('请先关闭图片压缩，使用旧密码恢复原图，再修改新密码');
+      }
+      isN ? new Notice('笔记已加密') : (decryptContent = await encrypt(content, pass));
     } else {
-      if (!isN) return new Notice('笔记已解密');
       try {
-        decryptContent = await decrypt(content.slice(32 + 1), pass);
+        isN ? (decryptContent = await decrypt(content.slice(32 + 1), pass)) : new Notice('笔记已解密');
       } catch (e) {
         new Notice('密码可能有误');
       }
     }
 
+    let links = isN ? this.settings.plugins.encryption[file.path]?.links || [] : Object.keys(this.app.metadataCache.resolvedLinks[file.path]);
     if (decryptContent) {
+      const localLinks = await imageToBase64(this, links, pass, convert);
       await this.app.vault.modify(file, (convert ? md5(file.path) + '%' : '') + decryptContent);
       this.toggleEncrypt(file);
-      const localLinks = await this.imageToBase64(isN, links, pass, convert);
       this.settings.plugins.encryption[file.path] = {
-        pass: this.settings.encryptionPass === 'always' ? pass : '',
+        pass: this.settings.encryptionRememberPassMode === 'always' ? pass : '',
         links: localLinks
       };
-      if (this.settings.encryptionPass === 'disposable') {
+      if (this.settings.encryptionRememberPassMode !== 'always') {
         this.encryptionTempData[file.path] = pass;
       }
       await this.saveSettings();
     }
-
-    this.progressBarEncryption.hide();
-  }
-
-  async imageToBase64(isN: boolean, links: string[], pass: string, convert = true) {
-    let index = 0;
-    try {
-      for (let link of links) {
-        const file = this.app.vault.getFileByPath(link);
-        const chunkSize = Math.max(this.settings.encryptionChunkSize, 1024);
-        let offset = 0;
-        let data: ArrayBuffer;
-        index++;
-        // 创建一个空的临时文件
-        const tempFilePath = `${file.path}.tmp`;
-        let tempFile = this.app.vault.getFileByPath(tempFilePath);
-        if (tempFile) await this.app.vault.delete(tempFile);
-        tempFile = await this.app.vault.create(tempFilePath, '');
-        const arrayBuffer = await this.app.vault.adapter.readBinary(file.path);
-        const content = new TextDecoder().decode(arrayBuffer.slice(0, chunkSize));
-
-        if (convert) {
-          if (isImageEncrypt(content)) {
-            // 只在未加密笔记时，提醒此通知
-            if (!isN) {
-              new Notice(`${getBasename(link)} 已加密`);
-              return links;
-            }
-          } else {
-            while (offset < file.stat.size) {
-              const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
-              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
-
-              const chunk = arrayBuffer.slice(offset, offset + chunkSize);
-              const base64Chunk = arrayBufferToBase64(chunk);
-              const encryptedChunk = await encrypt(base64Chunk, pass);
-              const chunkLength = encryptedChunk.length.toString().padStart(8, '0'); // 固定长度的块长度信息
-              const encryptedArrayBuffer = new TextEncoder().encode(chunkLength + encryptedChunk);
-              if (data) {
-                data = mergeArrayBuffers(data, encryptedArrayBuffer);
-              } else {
-                data = encryptedArrayBuffer;
-              }
-              offset += chunkSize;
-            }
-            this.progressBarEncryption.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
-            await this.app.vault.adapter.writeBinary(tempFilePath, data);
-          }
-        } else {
-          if (isImageEncrypt(content)) {
-            while (offset < arrayBuffer.byteLength) {
-              const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
-              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
-
-              const chunkLength = parseInt(new TextDecoder().decode(arrayBuffer.slice(offset, offset + 8)), 10);
-              offset += 8;
-              const encryptedChunk = arrayBuffer.slice(offset, offset + chunkLength);
-              const decryptedChunk = await decrypt(new TextDecoder().decode(encryptedChunk), pass);
-              const decryptedArrayBuffer = base64ToArrayBuffer(decryptedChunk);
-              if (data) {
-                data = mergeArrayBuffers(data, decryptedArrayBuffer);
-              } else {
-                data = decryptedArrayBuffer;
-              }
-
-              offset += chunkLength;
-            }
-            this.progressBarEncryption.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
-            await this.app.vault.adapter.writeBinary(tempFilePath, data);
-          } else {
-            new Notice(`${getBasename(link)} 已解密`);
-            return links;
-          }
-        }
-
-        await this.app.vault.delete(file);
-        await this.app.vault.rename(tempFile, file.path);
-      }
-    } catch (e) {
-      new Notice('警告：笔记中可能存在已损坏资源文件，也有可能被移动或删除，请排查');
-    }
-
-    return links;
   }
 
   async searchForPlants() {
@@ -891,4 +812,8 @@ export default class Toolbox extends Plugin {
   async saveSettings() {
     await this.saveData(this.settings);
   }
+
+  // async test() {
+  //   await test.run(this);
+  // }
 }
