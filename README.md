@@ -49,8 +49,10 @@
 
 支持桌面端和移动端。
 
-# 画廊
+![](./resource/enry.gif)
 
+# 画廊
+1
 ```bash
 # ```t-gallery
 # path=CONFIG/GALLERY/影集/LIVE

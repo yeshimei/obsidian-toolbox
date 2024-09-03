@@ -6,7 +6,6 @@ export interface ToolboxSettings {
   plugins: {
     encryption: {
       [path: string]: {
-        encrypted: boolean;
         pass?: string;
         links?: string[];
       };
@@ -109,7 +108,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   encryption: true,
   encryptionImage: true,
   encryptionVideo: false,
-  encryptionChunkSize: 1024 * 1024,
+  encryptionChunkSize: 1024 * 1024 * 1024,
   encryptionPass: 'notSave',
 
   gallery: true,
@@ -405,11 +404,11 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       new Setting(containerEl)
-        .setName('分块量')
-        .setDesc('单位 kb')
+        .setName('分块量（单位 mb）')
+        .setDesc('桌面端（100-300），移动端（1-5），如果处理器性能优越，值可以更大，用时更短')
         .addText(cd =>
-          cd.setValue('' + this.plugin.settings.encryptionChunkSize / 1024).onChange(async value => {
-            this.plugin.settings.encryptionChunkSize = Number(value) * 1024;
+          cd.setValue('' + this.plugin.settings.encryptionChunkSize / 1024 / 1024).onChange(async value => {
+            this.plugin.settings.encryptionChunkSize = Number(value) * 1024 * 1024;
             await this.plugin.saveSettings();
           })
         );
@@ -424,7 +423,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
     );
 
     new Setting(containerEl)
-      .setName('✂️ 剪切板文本格式化')
+      .setName('📀 剪切板文本格式化')
       .setDesc('删除换行，空格和其他空白字符，英文单词以及英文和中文之间保留一个空格')
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async value => {
@@ -447,7 +446,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
     }
 
-    new Setting(containerEl).setName('🗂️ 移动当前笔记中的资源至').addToggle(cd =>
+    new Setting(containerEl).setName('🗂️ 移动笔记中的资源至指定文件夹').addToggle(cd =>
       cd.setValue(this.plugin.settings.moveResourcesTo).onChange(async value => {
         this.plugin.settings.moveResourcesTo = value;
         await this.plugin.saveSettings();

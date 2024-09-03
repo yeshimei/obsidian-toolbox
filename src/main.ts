@@ -7,7 +7,7 @@ import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, remov
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
-import { decrypt, encrypt } from './Encryption';
+import { AES256Helper, decrypt, encrypt } from './Encryption';
 import ProgressBarEncryption from './ProgressBarEncryption';
 import FuzzySuggest from './Modals/FuzzySuggest';
 
@@ -73,7 +73,8 @@ export default class Toolbox extends Plugin {
     this.registerEvent(
       this.app.workspace.on('layout-change', () => {
         const sourceView = $(SOURCE_VIEW_CLASS);
-        const file = this.getView().file;
+        const file = this.getView()?.file;
+        if (!file) return;
         this.adjustPageStyle(sourceView, file);
         this.mask(sourceView, file);
         this.toggleEncrypt(file);
@@ -297,8 +298,9 @@ export default class Toolbox extends Plugin {
 
   async autoEncryptPopUp(file: TFile) {
     const type = this.settings.encryptionPass;
-    let { pass, encrypted } = this.settings.plugins.encryption[file.path] || {};
     const tempPass = this.encryptionTempData[file.path];
+    const encrypted = isNoteEncrypt(await this.app.vault.cachedRead(file));
+    let { pass } = this.settings.plugins.encryption[file.path] || {};
     if (file.extension === 'md' && encrypted && (type === 'notSave' || (type === 'always' && !pass) || (type === 'disposable' && !tempPass))) {
       await this.decryptPopUp(file);
     }
@@ -321,7 +323,7 @@ export default class Toolbox extends Plugin {
           res &&
           new Confirm(this.app, {
             content: `请最后一次确认，加密密码为 ${pass} `,
-            onSubmit: res2 => res2 && this.enc(file, md5(pass))
+            onSubmit: async res2 => res2 && this.enc(file, await AES256Helper.encrypt(md5(pass), pass))
           }).open()
       }).open();
     };
@@ -339,53 +341,62 @@ export default class Toolbox extends Plugin {
     new InputBox(this.app, {
       title: '解密笔记',
       name: '密码',
-      onSubmit: pass => this.enc(file, md5(pass), false)
+      onSubmit: async pass => this.enc(file, await AES256Helper.encrypt(md5(pass), pass), false)
     }).open();
   }
 
   async enc(file: TFile, pass: string, convert = true) {
     if (!this.settings.encryption || !pass) return;
-    const content = await this.app.vault.read(file);
+    let content = await this.app.vault.read(file);
     if (!content) return;
     this.progressBarEncryption.show();
-    const links = await this.imageToBase64(file, pass, convert);
-    const decryptContent = convert ? await encrypt(content, pass) : await decrypt(content, pass);
-    this.progressBarEncryption.hide();
+    let links, decryptContent;
+    // 如果笔记已加密，从插件数据获取图像路径，否则获取笔记中的图像路径
+    const isN = isNoteEncrypt(content);
+    if (isN) {
+      links = this.settings.plugins.encryption[file.path]?.links || [];
+    } else {
+      const f = Object.keys(this.app.metadataCache.resolvedLinks[file.path]);
+      links = f.filter(isImagePath);
+      // 视频
+      if (this.settings.encryptionVideo) links = links.concat(f.filter(isVideoPath));
+    }
+
+    if (convert) {
+      if (isN) return new Notice('笔记已加密');
+      decryptContent = await encrypt(content, pass);
+    } else {
+      if (!isN) return new Notice('笔记已解密');
+      try {
+        decryptContent = await decrypt(content.slice(32 + 1), pass);
+      } catch (e) {
+        new Notice('密码可能有误');
+      }
+    }
+
     if (decryptContent) {
-      await this.app.vault.modify(file, decryptContent);
-      const data = this.settings.plugins.encryption[file.path] || ({} as any);
+      await this.app.vault.modify(file, (convert ? md5(file.path) + '%' : '') + decryptContent);
+      this.toggleEncrypt(file);
+      const localLinks = await this.imageToBase64(isN, links, pass, convert);
       this.settings.plugins.encryption[file.path] = {
         pass: this.settings.encryptionPass === 'always' ? pass : '',
-        encrypted: convert,
-        links
+        links: localLinks
       };
       if (this.settings.encryptionPass === 'disposable') {
         this.encryptionTempData[file.path] = pass;
       }
-      this.toggleEncrypt(file);
       await this.saveSettings();
     }
+
+    this.progressBarEncryption.hide();
   }
 
-  async imageToBase64(file: TFile, pass: string, convert = true) {
-    let links;
+  async imageToBase64(isN: boolean, links: string[], pass: string, convert = true) {
     let index = 0;
-    const rawContent = await this.app.vault.read(file);
-    // 如果笔记已加密，从插件数据获取图像路径，否则获取笔记中的图像路径
-    if (isNoteEncrypt(rawContent)) {
-      links = this.settings.plugins.encryption[file.path]?.links || [];
-      if (rawContent.slice(0, 32) !== md5(pass)) return links;
-    } else {
-      const f = Object.keys(this.app.metadataCache.resolvedLinks[file.path]);
-      links = f.filter(isImagePath);
-      // 支持视频
-      if (this.settings.encryptionVideo) links = links.concat(f.filter(isVideoPath));
-    }
-
     try {
       for (let link of links) {
         const file = this.app.vault.getFileByPath(link);
-        const chunkSize = this.settings.encryptionChunkSize;
+        const chunkSize = Math.max(this.settings.encryptionChunkSize, 1024);
         let offset = 0;
         let data: ArrayBuffer;
         index++;
@@ -400,12 +411,15 @@ export default class Toolbox extends Plugin {
         if (convert) {
           if (isImageEncrypt(content)) {
             // 只在未加密笔记时，提醒此通知
-            if (!isNoteEncrypt(rawContent)) {
+            if (!isN) {
               new Notice(`${getBasename(link)} 已加密`);
               return links;
             }
           } else {
             while (offset < file.stat.size) {
+              const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
+              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+
               const chunk = arrayBuffer.slice(offset, offset + chunkSize);
               const base64Chunk = arrayBufferToBase64(chunk);
               const encryptedChunk = await encrypt(base64Chunk, pass);
@@ -417,8 +431,6 @@ export default class Toolbox extends Plugin {
                 data = encryptedArrayBuffer;
               }
               offset += chunkSize;
-              const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
-              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
             this.progressBarEncryption.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
@@ -426,6 +438,9 @@ export default class Toolbox extends Plugin {
         } else {
           if (isImageEncrypt(content)) {
             while (offset < arrayBuffer.byteLength) {
+              const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
+              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
+
               const chunkLength = parseInt(new TextDecoder().decode(arrayBuffer.slice(offset, offset + 8)), 10);
               offset += 8;
               const encryptedChunk = arrayBuffer.slice(offset, offset + chunkLength);
@@ -438,8 +453,6 @@ export default class Toolbox extends Plugin {
               }
 
               offset += chunkLength;
-              const progress = Math.min(Math.floor((offset / arrayBuffer.byteLength) * 100), 100);
-              this.progressBarEncryption.update(progress, `[${index}/${links.length}] ${getBasename(link)} - ${progress}%`);
             }
             this.progressBarEncryption.update(100, `[${index}/${links.length}] ${getBasename(link)} - 正在写入`);
             await this.app.vault.adapter.writeBinary(tempFilePath, data);
@@ -454,7 +467,6 @@ export default class Toolbox extends Plugin {
       }
     } catch (e) {
       new Notice('警告：笔记中可能存在已损坏资源文件，也有可能被移动或删除，请排查');
-      return links;
     }
 
     return links;
