@@ -9,8 +9,8 @@ import { PanelExhibition } from './PanelExhibition';
 import { PanelSearchForPlants } from './PanelSearchForPlants';
 import { AES256Helper, decrypt, encrypt, imageToBase64 } from './Encryption';
 import FuzzySuggest from './Modals/FuzzySuggest';
-// import test from 'test/Test';
-// import 'test';
+import test from 'test/Test';
+import 'test';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -79,12 +79,12 @@ export default class Toolbox extends Plugin {
       })
     );
 
-    // this.addCommand({
-    //   id: '测试',
-    //   name: '测试',
-    //   icon: 'clipboard-check',
-    //   callback: () => this.test()
-    // });
+    this.addCommand({
+      id: '单元测试',
+      name: '单元测试',
+      icon: 'clipboard-check',
+      callback: () => this.test()
+    });
 
     this.addCommand({
       id: '移动当前笔记中的资源至',
@@ -813,7 +813,7 @@ export default class Toolbox extends Plugin {
     await this.saveData(this.settings);
   }
 
-  // async test() {
-  //   await test.run(this);
-  // }
+  async test() {
+    await test.run(this);
+  }
 }

@@ -50,6 +50,10 @@ export function isBase64(str: string): boolean {
   return base64Pattern.test(str);
 }
 
+export function isResourceEncrypt(str: string) {
+  return /^[a-z0-9]{24,32}:[a-z0-9]+$/.test(str); /* 分块，记录了 8 位的长度信息 */
+}
+
 export function isNoteEncrypt(str: string) {
   return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str);
 }

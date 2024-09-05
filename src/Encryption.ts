@@ -1,6 +1,6 @@
 import imageCompression from 'browser-image-compression';
 import { arrayBufferToBase64, base64ToArrayBuffer, Notice } from 'obsidian';
-import { createFile, getBasename, insertString, isImagePath, isLongScreenshot, isVideoPath, mergeArrayBuffers } from './helpers';
+import { createFile, getBasename, insertString, isImagePath, isLongScreenshot, isResourceEncrypt, isVideoPath, mergeArrayBuffers } from './helpers';
 import ProgressBarEncryption from './ProgressBarEncryption';
 import Toolbox from './main';
 const progress = new ProgressBarEncryption();
@@ -28,6 +28,7 @@ export async function imageToBase64(self: Toolbox, links: string[], pass: string
   const chunkSize = Math.max(self.settings.encryptionChunkSize, 1024 * 1024);
   links = links.filter(isImagePath).concat(links.filter(isVideoPath));
   progress.show();
+  let isN = true;
   try {
     for (let link of links) {
       let file = self.app.vault.getFileByPath(link);
@@ -47,7 +48,6 @@ export async function imageToBase64(self: Toolbox, links: string[], pass: string
       progressUpdate(0, index, links.length, link, '正在读取');
       let arrayBuffer = await self.app.vault.adapter.readBinary(file.path);
       if (convert) {
-        // 解密后才可以压缩图片
         if (self.settings.encryptionImageCompress && isImagePath(link) && !suffixFile) {
           const compressArrayBuffer = await fileToArrayBuffer(
             await imageCompression(arrayBufferToFile(arrayBuffer, link, `image/${file.extension}`), {
@@ -76,6 +76,12 @@ export async function imageToBase64(self: Toolbox, links: string[], pass: string
         while (offset < fileSize) {
           progressUpdate(computedProgress(offset, fileSize), index, links.length, link, `正在加密 / ${computedProgress(offset, fileSize)}%`);
           const chunk = arrayBuffer.slice(offset, offset + chunkSize);
+          const chunkString = new TextDecoder().decode(chunk);
+          if (isResourceEncrypt(chunkString)) {
+            isN = false;
+            new Notice(`${file.basename} 已加密`);
+            break;
+          }
           const base64Chunk = arrayBufferToBase64(chunk);
           const encryptedChunk = await encrypt(base64Chunk, pass);
           const chunkLength = encryptedChunk.length.toString().padStart(8, '0');
@@ -88,20 +94,27 @@ export async function imageToBase64(self: Toolbox, links: string[], pass: string
           progressUpdate(computedProgress(offset, fileSize), index, links.length, link, `正在解密 / ${computedProgress(offset, fileSize)}%`);
           const chunkLength = parseInt(new TextDecoder().decode(arrayBuffer.slice(offset, offset + 8)), 10);
           offset += 8;
-          const encryptedChunk = arrayBuffer.slice(offset, offset + chunkLength);
-          const decryptedChunk = await decrypt(new TextDecoder().decode(encryptedChunk), pass);
+          const encryptedChunk = new TextDecoder().decode(arrayBuffer.slice(offset, offset + chunkLength));
+          if (!isResourceEncrypt(encryptedChunk)) {
+            isN = false;
+            new Notice(`${file.basename} 已解密`);
+            break;
+          }
+          const decryptedChunk = await decrypt(encryptedChunk, pass);
           const decryptedArrayBuffer = base64ToArrayBuffer(decryptedChunk);
           data = data ? mergeArrayBuffers(data, decryptedArrayBuffer) : decryptedArrayBuffer;
           offset += chunkLength;
         }
       }
-      progressUpdate(0, index, links.length, link, '正在写入');
-      const tempFilePath = `${file.path}.tmp`;
-      const tempFile = await createFile(self.app, tempFilePath, true);
-      await self.app.vault.adapter.writeBinary(tempFilePath, data);
-      if (tempFile) {
-        await self.app.vault.delete(file);
-        await self.app.vault.rename(tempFile, file.path);
+      if (isN) {
+        progressUpdate(100, index, links.length, link, '正在写入');
+        const tempFilePath = `${file.path}.tmp`;
+        const tempFile = await createFile(self.app, tempFilePath, true);
+        await self.app.vault.adapter.writeBinary(tempFilePath, data);
+        if (tempFile) {
+          await self.app.vault.delete(file);
+          await self.app.vault.rename(tempFile, file.path);
+        }
       }
     }
   } catch (e) {

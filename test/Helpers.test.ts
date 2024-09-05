@@ -1,7 +1,8 @@
 import { AES256Helper, encrypt, decrypt } from 'src/Encryption';
 import Toolbox from 'src/main';
-import { clearRootFFolder, create, remove } from 'test';
+import { clearRootFFolder, create } from 'test';
 import test from './Test';
+import { isResourceEncrypt } from 'src/helpers';
 
 const base64Image = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/6Gf8AAAAABJRU5ErkJggg==';
 
@@ -29,4 +30,9 @@ test.add('encrypt,decrypt', '加密和解密后的base64相同', async () => {
   const p1 = await encrypt(base64Image, pass);
   const p2 = await decrypt(p1, pass);
   test.assertEqual(p2, base64Image);
+});
+
+test.add('isResourceEncrypt ', '判断图片是否加密', async () => {
+  const text = await encrypt(base64Image, '123');
+  test.assertTrue(isResourceEncrypt(text));
 });
