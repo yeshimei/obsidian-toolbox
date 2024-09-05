@@ -1,5 +1,20 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
+export async function isLongScreenshot(arrayBuffer: ArrayBuffer, proportion = 2): Promise<boolean> {
+  const blob = new Blob([arrayBuffer]);
+  const url = URL.createObjectURL(blob);
+
+  return new Promise(resolve => {
+    const img = new Image();
+    img.src = url;
+    img.onload = () => {
+      const aspectRatio = img.height / img.width;
+      resolve(aspectRatio > proportion);
+      URL.revokeObjectURL(url);
+    };
+  });
+}
+
 export function insertString(original: string, index: number, insert: string) {
   if (index < 0) {
     index = original.length + index;

@@ -54,6 +54,7 @@ export interface ToolboxSettings {
   encryptionSupportImage: boolean;
   encryptionImageCompress: boolean;
   encryptionImageCompressMaxSize: number;
+  encryptionImageCompressLongScreenshotRatio: number;
   encryptionImageCompressPreserveExif: boolean;
 
   encryptionSupportVideo: boolean;
@@ -113,6 +114,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   encryptionSupportImage: true,
   encryptionImageCompress: false,
   encryptionImageCompressMaxSize: 2,
+  encryptionImageCompressLongScreenshotRatio: 3,
   encryptionImageCompressPreserveExif: true,
   encryptionSupportVideo: false,
   encryptionChunkSize: 1024 * 1024 * 1024,
@@ -153,7 +155,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
 
       if (this.plugin.settings.readDataTracking) {
-        new Setting(containerEl).setName('— 跟踪哪个文件夹').addText(cd =>
+        new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
           cd.setValue('' + this.plugin.settings.readDataTrackingFolder).onChange(async value => {
             this.plugin.settings.readDataTrackingFolder = value;
             await this.plugin.saveSettings();
@@ -161,7 +163,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
 
         new Setting(containerEl)
-          .setName('— 超时')
+          .setName('超时')
           .setDesc(`超过一段时间未翻页将暂停跟踪阅读时长，以获得更准确的数据。`)
           .addText(cd =>
             cd.setValue('' + this.plugin.settings.readDataTrackingTimeout).onChange(async value => {
@@ -171,7 +173,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
           );
 
         new Setting(containerEl)
-          .setName('— 跟踪数据延迟更新')
+          .setName('跟踪数据延迟更新')
           .setDesc('在某些老旧水墨屏设备或者单文件体积过大，每次更新跟踪数据都会导致翻页明显滞后，设置延迟以大幅提升翻页流畅性')
           .addText(text =>
             text.setValue('' + this.plugin.settings.readDataTrackingDelayTime).onChange(async value => {
@@ -193,7 +195,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
 
       if (this.plugin.settings.flip) {
-        new Setting(containerEl).setName('— 修正值').addText(cd =>
+        new Setting(containerEl).setName('修正值').addText(cd =>
           cd.setValue('' + this.plugin.settings.fileCorrect).onChange(async value => {
             this.plugin.settings.fileCorrect = Number(value);
             await this.plugin.saveSettings();
@@ -237,14 +239,14 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       if (this.plugin.settings.readingNotes) {
-        new Setting(containerEl).setName('— 同步至哪个文件夹').addText(cd =>
+        new Setting(containerEl).setName('同步至哪个文件夹').addText(cd =>
           cd.setValue('' + this.plugin.settings.readingNotesToFolder).onChange(async value => {
             this.plugin.settings.readingNotesToFolder = value;
             await this.plugin.saveSettings();
           })
         );
 
-        new Setting(containerEl).setName('— 同步出链').addToggle(cd =>
+        new Setting(containerEl).setName('同步出链').addToggle(cd =>
           cd.setValue(this.plugin.settings.outLink).onChange(async value => {
             this.plugin.settings.outLink = value;
             await this.plugin.saveSettings();
@@ -252,7 +254,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
 
         new Setting(containerEl)
-          .setName('— 同步元字段')
+          .setName('同步元字段')
           .setDesc('添加划线，想法和出链数量元字段')
           .addToggle(cd =>
             cd.setValue(this.plugin.settings.frontmatter).onChange(async value => {
@@ -261,7 +263,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
             })
           );
 
-        new Setting(containerEl).setName('— 添加块id').addToggle(cd =>
+        new Setting(containerEl).setName('添加块id').addToggle(cd =>
           cd.setValue(this.plugin.settings.blockId).onChange(async value => {
             this.plugin.settings.blockId = value;
             await this.plugin.saveSettings();
@@ -278,7 +280,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       if (this.plugin.settings.readingPageStyles) {
-        new Setting(containerEl).setName('— 字体大小').addText(cd =>
+        new Setting(containerEl).setName('字体大小').addText(cd =>
           cd.setValue('' + this.plugin.settings.fontSize).onChange(async value => {
             this.plugin.settings.fontSize = Number(value);
             await this.plugin.saveSettings();
@@ -304,14 +306,14 @@ export class ToolboxSettingTab extends PluginSettingTab {
     );
 
     if (this.plugin.settings.passwordCreator) {
-      new Setting(containerEl).setName('— 从指定字符集中随机生成密码').addText(cd =>
+      new Setting(containerEl).setName('从指定字符集中随机生成密码').addText(cd =>
         cd.setValue('' + this.plugin.settings.passwordCreatorMixedContent).onChange(async value => {
           this.plugin.settings.passwordCreatorMixedContent = value;
           await this.plugin.saveSettings();
         })
       );
 
-      new Setting(containerEl).setName('— 生成密码的长度').addText(cd =>
+      new Setting(containerEl).setName('生成密码的长度').addText(cd =>
         cd.setValue('' + this.plugin.settings.passwordCreatorLength).onChange(async value => {
           this.plugin.settings.passwordCreatorLength = Number(value);
           await this.plugin.saveSettings();
@@ -361,7 +363,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.readDataTracking) {
-      new Setting(containerEl).setName('— 放至哪个文件夹').addText(cd =>
+      new Setting(containerEl).setName('放至哪个文件夹').addText(cd =>
         cd.setValue('' + this.plugin.settings.searchForPlantsFolder).onChange(async value => {
           this.plugin.settings.searchForPlantsFolder = value;
           await this.plugin.saveSettings();
@@ -381,7 +383,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.encryption) {
-      new Setting(containerEl).setName('-- 记住密码').addDropdown(cd =>
+      new Setting(containerEl).setName('记住密码').addDropdown(cd =>
         cd
           .addOption('notSave', '不保存')
           .addOption('disposable', '软件运行时')
@@ -394,7 +396,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
           })
       );
 
-      new Setting(containerEl).setName('— 支持图片').addToggle(cd =>
+      new Setting(containerEl).setName('支持图片').addToggle(cd =>
         cd.setValue(this.plugin.settings.encryptionSupportImage).onChange(async value => {
           this.plugin.settings.encryptionSupportImage = value;
           await this.plugin.saveSettings();
@@ -403,16 +405,19 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       if (this.plugin.settings.encryptionSupportImage) {
-        new Setting(containerEl).setName('—— 压缩图片').addToggle(cd =>
-          cd.setValue(this.plugin.settings.encryptionImageCompress).onChange(async value => {
-            this.plugin.settings.encryptionImageCompress = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
+        new Setting(containerEl)
+          .setName('压缩图片')
+          .setDesc('有损压缩，大幅提升加解密速度。开启此选项，原图将备份，笔记内的图片换为压缩图，首次加密会耗时更长。关闭此选项，再进行一次加密或解密后还原原图。')
+          .addToggle(cd =>
+            cd.setValue(this.plugin.settings.encryptionImageCompress).onChange(async value => {
+              this.plugin.settings.encryptionImageCompress = value;
+              await this.plugin.saveSettings();
+              this.display();
+            })
+          );
 
         if (this.plugin.settings.encryptionImageCompress) {
-          new Setting(containerEl).setName('——— 体积不超过多大（mb）').addText(cd =>
+          new Setting(containerEl).setName('压缩后的图片大小尽量不超过（mb）').addText(cd =>
             cd.setValue('' + this.plugin.settings.encryptionImageCompressMaxSize).onChange(async value => {
               this.plugin.settings.encryptionImageCompressMaxSize = Number(value);
               await this.plugin.saveSettings();
@@ -420,7 +425,17 @@ export class ToolboxSettingTab extends PluginSettingTab {
           );
 
           new Setting(containerEl)
-            .setName('——— 保留exif')
+            .setName('长图比率')
+            .setDesc('对长图进行浅压缩，以避免过于模糊')
+            .addText(cd =>
+              cd.setValue('' + this.plugin.settings.encryptionImageCompressLongScreenshotRatio).onChange(async value => {
+                this.plugin.settings.encryptionImageCompressLongScreenshotRatio = Number(value);
+                await this.plugin.saveSettings();
+              })
+            );
+
+          new Setting(containerEl)
+            .setName('保留exif')
             .setDesc('图像的元数据。如焦距，地理位置信息等')
             .addToggle(cd =>
               cd.setValue(this.plugin.settings.encryptionImageCompressPreserveExif).onChange(async value => {
@@ -432,7 +447,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         }
       }
 
-      new Setting(containerEl).setName('— 支持视频').addToggle(cd =>
+      new Setting(containerEl).setName('支持视频').addToggle(cd =>
         cd.setValue(this.plugin.settings.encryptionSupportVideo).onChange(async value => {
           this.plugin.settings.encryptionSupportVideo = value;
           await this.plugin.saveSettings();
@@ -441,7 +456,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       new Setting(containerEl)
-        .setName('— 分块量（mb）')
+        .setName('分块量（mb）')
         .setDesc('桌面端（100-300），移动端（1-5），如果处理器性能优越，值可以更大，用时更短')
         .addText(cd =>
           cd.setValue('' + this.plugin.settings.encryptionChunkSize / 1024 / 1024).onChange(async value => {

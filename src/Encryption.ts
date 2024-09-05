@@ -1,6 +1,6 @@
 import imageCompression from 'browser-image-compression';
 import { arrayBufferToBase64, base64ToArrayBuffer, Notice } from 'obsidian';
-import { createFile, getBasename, insertString, isImagePath, mergeArrayBuffers } from './helpers';
+import { createFile, getBasename, insertString, isImagePath, isLongScreenshot, isVideoPath, mergeArrayBuffers } from './helpers';
 import ProgressBarEncryption from './ProgressBarEncryption';
 import Toolbox from './main';
 const progress = new ProgressBarEncryption();
@@ -26,6 +26,7 @@ function fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
 export async function imageToBase64(self: Toolbox, links: string[], pass: string, convert = true) {
   let index = 0;
   const chunkSize = Math.max(self.settings.encryptionChunkSize, 1024 * 1024);
+  links = links.filter(isImagePath).concat(links.filter(isVideoPath));
   progress.show();
   try {
     for (let link of links) {
@@ -51,9 +52,9 @@ export async function imageToBase64(self: Toolbox, links: string[], pass: string
           const compressArrayBuffer = await fileToArrayBuffer(
             await imageCompression(arrayBufferToFile(arrayBuffer, link, `image/${file.extension}`), {
               maxSizeMB: self.settings.encryptionImageCompressMaxSize,
-              maxWidthOrHeight: 1920,
+              maxWidthOrHeight: (await isLongScreenshot(arrayBuffer, self.settings.encryptionImageCompressLongScreenshotRatio)) ? undefined : 720,
               preserveExif: self.settings.encryptionImageCompressPreserveExif,
-              initialQuality: 100,
+              initialQuality: 0.4,
               useWebWorker: true,
               maxIteration: 10,
               onProgress: n => progressUpdate(n, index, links.length, link, `正在压缩 / ${n}%`)
@@ -63,7 +64,9 @@ export async function imageToBase64(self: Toolbox, links: string[], pass: string
           const backupPath = insertString(file.path, -file.extension.length - 1, '__backup__');
           await self.app.vault.rename(file, backupPath);
           self.settings.encryptionImageCompress = false; //fix 循环生成 backup 图片
+          progress.hide();
           await imageToBase64(self, [backupPath], pass, convert);
+          progress.show();
           self.settings.encryptionImageCompress = true;
           await self.app.vault.adapter.writeBinary(link, compressArrayBuffer);
           arrayBuffer = compressArrayBuffer;
