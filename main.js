@@ -3952,7 +3952,7 @@ var Toolbox = class extends import_obsidian12.Plugin {
       editorCallback: (editor, view) => this.decryptPopUp(view.file)
     });
     this.settings.passwordCreator && this.addCommand({
-      id: "\u6D4B\u8BD5",
+      id: "\u5BC6\u7801\u521B\u5EFA\u5668",
       name: "\u5BC6\u7801\u521B\u5EFA\u5668",
       icon: "key-round",
       callback: () => this.passwordCreator()
@@ -4447,6 +4447,7 @@ ${lifestyleForm}`;
     if (!this.settings.searchForWords)
       return;
     let word = editor.getSelection();
+    const notice = new import_obsidian12.Notice("\u6B63\u5728\u67E5\u8BE2\u6C49\u5178\u548C\u767E\u5EA6\u767E\u79D1\uFF0C\u8BF7\u7A0D\u7B49");
     const html = await requestUrlToHTML("https://www.zdic.net/hans/" + word);
     const jnr = html.querySelector(".jnr");
     const pinyin = ((_a = html.querySelector(".ciif .dicpy")) == null ? void 0 : _a.textContent) || Array.from(html.querySelectorAll(".z_py .z_d.song")).map((el) => el.textContent).join("|") || "";
@@ -4457,6 +4458,7 @@ ${lifestyleForm}`;
     div.appendChild(jnr || createElement("p", "\u7A7A\u7A7A\u5982\u4E5F"));
     div.appendChild(createElement("h1", "\u767E\u5EA6\u767E\u79D1"));
     div.appendChild(JSummary || createElement("p", "\u7A7A\u7A7A\u5982\u4E5F"));
+    notice.hide();
     new PanelSearchForWord(
       this.app,
       `${word} ${pinyin}`,

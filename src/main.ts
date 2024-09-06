@@ -116,7 +116,7 @@ export default class Toolbox extends Plugin {
 
     this.settings.passwordCreator &&
       this.addCommand({
-        id: '测试',
+        id: '密码创建器',
         name: '密码创建器',
         icon: 'key-round',
         callback: () => this.passwordCreator()
@@ -660,6 +660,7 @@ export default class Toolbox extends Plugin {
   async searchForWords(editor: Editor) {
     if (!this.settings.searchForWords) return;
     let word = editor.getSelection();
+    const notice = new Notice('正在查询汉典和百度百科，请稍等');
     const html = await requestUrlToHTML('https://www.zdic.net/hans/' + word);
     const jnr = html.querySelector('.jnr');
     const pinyin =
@@ -675,6 +676,7 @@ export default class Toolbox extends Plugin {
     div.appendChild(jnr || createElement('p', '空空如也'));
     div.appendChild(createElement('h1', '百度百科'));
     div.appendChild(JSummary || createElement('p', '空空如也'));
+    notice.hide();
     new PanelSearchForWord(
       this.app,
       `${word} ${pinyin}`,
