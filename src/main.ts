@@ -443,19 +443,20 @@ export default class Toolbox extends Plugin {
     new Notice('块引用已复制至剪切板！');
   }
 
+  h(mask: HTMLElement) {}
   mask(el: HTMLElement, file: TFile) {
     if (!this.settings.flip) return;
     let timer: number, timer2: number, xStart: number, xEnd: number;
     const t = $(MOBILE_HEADER_CLASS);
     const b = $(MOBILE_NAVBAR_CLASS);
+    let th: number, bh: number;
     let mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
     if (this.hasReadingPage(file)) {
       if (this.settings.fullScreenMode) {
-        t.hide();
-        b.hide();
+        h();
       }
-      const th = t.offsetHeight || 0;
-      const bh = b.offsetHeight || 0;
+      th = t.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
       mask.style.position = 'fixed';
       mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
       mask.style.left = '0';
@@ -470,12 +471,10 @@ export default class Toolbox extends Plugin {
         timer = window.setTimeout(() => mask.hide(), 500);
         timer2 = window.setTimeout(() => {
           if (this.settings.fullScreenMode) {
-            t.show();
-            b.show();
+            s();
             new Notice('已关闭全屏模式');
           } else {
-            t.hide();
-            b.hide();
+            h();
             new Notice('已开启全屏模式');
           }
           this.settings.fullScreenMode = !this.settings.fullScreenMode;
@@ -529,8 +528,25 @@ export default class Toolbox extends Plugin {
     } else {
       mask.hide();
       mask.onclick = mask.ontouchstart = mask.ontouchend = window.onresize = null;
+      s();
+    }
+
+    function h() {
+      t.hide();
+      b.hide();
+      th = t.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
+      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
+      mask.style.height = el.clientHeight - th - bh + 'px';
+    }
+
+    function s() {
       t.show();
       b.show();
+      th = t.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
+      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
+      mask.style.height = el.clientHeight - th - bh + 'px';
     }
   }
 

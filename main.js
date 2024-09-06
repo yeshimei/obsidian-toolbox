@@ -4242,20 +4242,22 @@ ${lifestyleForm}`;
     window.navigator.clipboard.writeText(`[[${file.path.replace("." + file.extension, "")}#^${blockId}|${file.basename}]]`);
     new import_obsidian12.Notice("\u5757\u5F15\u7528\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
   }
+  h(mask) {
+  }
   mask(el, file) {
     if (!this.settings.flip)
       return;
     let timer, timer2, xStart, xEnd;
     const t2 = $(MOBILE_HEADER_CLASS);
     const b = $(MOBILE_NAVBAR_CLASS);
+    let th, bh;
     let mask = $(MASK_CLASS) || document.body.appendChild(createElement("div", "", MASK_CLASS.slice(1)));
     if (this.hasReadingPage(file)) {
       if (this.settings.fullScreenMode) {
-        t2.hide();
-        b.hide();
+        h();
       }
-      const th = t2.offsetHeight || 0;
-      const bh = b.offsetHeight || 0;
+      th = t2.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
       mask.style.position = "fixed";
       mask.style.bottom = bh + 10 + "px";
       mask.style.left = "0";
@@ -4268,12 +4270,10 @@ ${lifestyleForm}`;
         timer = window.setTimeout(() => mask.hide(), 500);
         timer2 = window.setTimeout(() => {
           if (this.settings.fullScreenMode) {
-            t2.show();
-            b.show();
+            s2();
             new import_obsidian12.Notice("\u5DF2\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F");
           } else {
-            t2.hide();
-            b.hide();
+            h();
             new import_obsidian12.Notice("\u5DF2\u5F00\u542F\u5168\u5C4F\u6A21\u5F0F");
           }
           this.settings.fullScreenMode = !this.settings.fullScreenMode;
@@ -4323,8 +4323,23 @@ ${lifestyleForm}`;
     } else {
       mask.hide();
       mask.onclick = mask.ontouchstart = mask.ontouchend = window.onresize = null;
+      s2();
+    }
+    function h() {
+      t2.hide();
+      b.hide();
+      th = t2.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
+      mask.style.bottom = bh + 10 + "px";
+      mask.style.height = el.clientHeight - th - bh + "px";
+    }
+    function s2() {
       t2.show();
       b.show();
+      th = t2.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
+      mask.style.bottom = bh + 10 + "px";
+      mask.style.height = el.clientHeight - th - bh + "px";
     }
   }
   adjustPageStyle(el, file) {
