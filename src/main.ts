@@ -580,7 +580,8 @@ export default class Toolbox extends Plugin {
     bookReview && (content += `\n\n# 书评 \n\n > [!tip] ${bookReview}${this.settings.blockId ? ' ^' + md5(bookReview) : ''}`);
 
     // 划线
-    const t = (markdown.match(/<span class="__comment.+?<\/span>|#{1,6} .+/gm) || [])
+    const t = (markdown.match(/<span class="__comment[\S\s]+?<\/span>|#{1,6} .+/gm) || [])
+      .map(b => b.replace(/\r?\n|\r/g, ''))
       .map(b => {
         const isTitle = b[0] === '#';
         let res: any = { isTitle };
@@ -628,7 +629,7 @@ export default class Toolbox extends Plugin {
   highlight(editor: Editor, file: TFile) {
     const onSubmit = (res: string) => {
       let blockId = getBlock(this.app, editor, file);
-      res = `<span class="__comment cm-highlight" data-comment="${res || ''}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
+      res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ''}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
     };
 

@@ -4370,7 +4370,7 @@ ${lifestyleForm}`;
 # \u4E66\u8BC4 
 
  > [!tip] ${bookReview}${this.settings.blockId ? " ^" + (0, import_js_md5.md5)(bookReview) : ""}`);
-    const t2 = (markdown.match(/<span class="__comment.+?<\/span>|#{1,6} .+/gm) || []).map((b) => {
+    const t2 = (markdown.match(/<span class="__comment[\S\s]+?<\/span>|#{1,6} .+/gm) || []).map((b) => b.replace(/\r?\n|\r/g, "")).map((b) => {
       const isTitle = b[0] === "#";
       let res = { isTitle };
       if (!isTitle) {
@@ -4416,7 +4416,7 @@ ${lifestyleForm}`;
   highlight(editor, file) {
     const onSubmit = (res) => {
       let blockId = getBlock(this.app, editor, file);
-      res = `<span class="__comment cm-highlight" data-comment="${res || ""}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
+      res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ""}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
     };
     if (!this.settings.highlight)
