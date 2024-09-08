@@ -18,7 +18,6 @@ const MOBILE_HEADER_CLASS = '.view-header';
 const MOBILE_NAVBAR_CLASS = '.mobile-navbar-actions';
 const COMMENT_CLASS = '.__comment';
 const OUT_LINK_CLASS = '.cm-underline';
-
 export default class Toolbox extends Plugin {
   encryptionTempData: any;
   debounceReadDataTracking: Function;
@@ -511,6 +510,12 @@ export default class Toolbox extends Plugin {
           const text = target.textContent.split('|').shift();
           const file = this.getFileByShort(text);
           new PanelExhibition(this.app, text, file ? createElement('p', await this.app.vault.read(file)) : '空空如也', file && (() => this.app.workspace.getLeaf(false).openFile(file))).open();
+          // 点击脚注，显示其内容
+        } else if (target.className === 'cm-footref cm-hmd-barelink') {
+          const footnote = target.textContent;
+          const context = await this.app.vault.cachedRead(file);
+          const text = new RegExp(`\\[\\^${footnote}\\]: (.*)`).exec(context);
+          new PanelExhibition(this.app, '脚注', createElement('p', text ? text[1] : '空空如也')).open();
         } else {
           this.flip(file);
         }

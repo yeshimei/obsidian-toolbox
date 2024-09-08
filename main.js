@@ -4307,6 +4307,11 @@ ${lifestyleForm}`;
           const text = target.textContent.split("|").shift();
           const file2 = this.getFileByShort(text);
           new PanelExhibition(this.app, text, file2 ? createElement("p", await this.app.vault.read(file2)) : "\u7A7A\u7A7A\u5982\u4E5F", file2 && (() => this.app.workspace.getLeaf(false).openFile(file2))).open();
+        } else if (target.className === "cm-footref cm-hmd-barelink") {
+          const footnote = target.textContent;
+          const context = await this.app.vault.cachedRead(file);
+          const text = new RegExp(`\\[\\^${footnote}\\]: (.*)`).exec(context);
+          new PanelExhibition(this.app, "\u811A\u6CE8", createElement("p", text ? text[1] : "\u7A7A\u7A7A\u5982\u4E5F")).open();
         } else {
           this.flip(file);
         }
