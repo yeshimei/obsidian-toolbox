@@ -4365,7 +4365,7 @@ ${lifestyleForm}`;
     let content = "---\ntags: \u8BFB\u4E66\u7B14\u8BB0\n---";
     if (this.settings.outLink && links) {
       content += "\n\n# \u51FA\u94FE\n\n";
-      uniqueBy(links, (link) => link.link).forEach(({ link }) => content += `[[${link}|${link.split("/").pop()}]] / `);
+      uniqueBy(links, (link) => link.link).filter((link) => /^([^.\s]+|.*\.md)$/i.test(link.link)).forEach(({ link }) => content += `[[${link}|${link.split("/").pop()}]] / `);
       content = content.slice(0, -3);
       outlinks = links.length;
     }

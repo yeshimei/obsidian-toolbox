@@ -575,7 +575,9 @@ export default class Toolbox extends Plugin {
     // 出链
     if (this.settings.outLink && links) {
       content += '\n\n# 出链\n\n';
-      uniqueBy(links, (link: any) => link.link).forEach(({ link }) => (content += `[[${link}|${link.split('/').pop()}]] / `));
+      uniqueBy(links, (link: any) => link.link)
+        .filter(link => /^([^.\s]+|.*\.md)$/i.test(link.link))
+        .forEach(({ link }) => (content += `[[${link}|${link.split('/').pop()}]] / `));
       content = content.slice(0, -3);
       outlinks = links.length;
     }
