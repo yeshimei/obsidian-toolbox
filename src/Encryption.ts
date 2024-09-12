@@ -1,7 +1,7 @@
 import imageCompression from 'browser-image-compression';
 import { arrayBufferToBase64, base64ToArrayBuffer, Notice } from 'obsidian';
 import { createFile, getBasename, insertString, isImagePath, isLongScreenshot, isResourceEncrypt, isVideoPath, mergeArrayBuffers } from './helpers';
-import ProgressBarEncryption from './ProgressBarEncryption';
+import ProgressBarEncryption from './Modals/ProgressBarEncryption';
 import Toolbox from './main';
 const progress = new ProgressBarEncryption();
 

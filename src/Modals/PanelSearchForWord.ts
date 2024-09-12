@@ -1,5 +1,5 @@
 import { App, MarkdownView, Modal, Setting } from 'obsidian';
-import { editorBlur } from './helpers';
+import { editorBlur } from '../helpers';
 
 export class PanelSearchForWord extends Modal {
   title: string;

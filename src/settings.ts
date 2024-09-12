@@ -34,6 +34,8 @@ export interface ToolboxSettings {
 
   highlight: boolean;
 
+  dialogue: boolean;
+
   readingNotes: boolean;
   readingNotesToFolder: string;
   outLink: boolean;
@@ -93,6 +95,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   readDataTrackingDelayTime: 3 * 1000,
 
   highlight: true,
+
+  dialogue: true,
 
   readingNotes: true,
   readingNotesToFolder: '书库/读书笔记',
@@ -229,6 +233,17 @@ export class ToolboxSettingTab extends PluginSettingTab {
           this.display();
         })
       );
+
+      new Setting(containerEl)
+        .setName('🔔 讨论')
+        .setDesc('在当前行下方添加对本章节或本书的见解')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.dialogue).onChange(async value => {
+            this.plugin.settings.dialogue = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
 
       new Setting(containerEl).setName('📙 同步读书笔记').addToggle(cd =>
         cd.setValue(this.plugin.settings.readingNotes).onChange(async value => {

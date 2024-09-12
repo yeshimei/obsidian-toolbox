@@ -237,7 +237,7 @@ export function getBlock(app: App, editor: Editor, file: TFile) {
   return blockId;
 }
 
-function generateId() {
+export function generateId() {
   return Math.random().toString(36).substr(2, 6);
 }
 

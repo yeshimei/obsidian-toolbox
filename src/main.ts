@@ -1,16 +1,17 @@
 import Confirm from './Modals/Confirm';
 import InputBox from './Modals/InputBox';
-import { PanelSearchForWord } from './PanelSearchForWord';
+import { PanelSearchForWord } from './Modals/PanelSearchForWord';
 import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, base64ToArrayBuffer, arrayBufferToBase64 } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath, mergeArrayBuffers, editorBlur } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath, mergeArrayBuffers, editorBlur, generateId } from './helpers';
 import { md5 } from 'js-md5';
-import { PanelExhibition } from './PanelExhibition';
-import { PanelSearchForPlants } from './PanelSearchForPlants';
+import { PanelExhibition } from './Modals/PanelExhibition';
+import { PanelSearchForPlants } from './Modals/PanelSearchForPlants';
 import { AES256Helper, decrypt, encrypt, imageToBase64 } from './Encryption';
 import FuzzySuggest from './Modals/FuzzySuggest';
 import test from 'test/Test';
 import 'test';
+import PanelQA from './Modals/DoubleInputBox';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -43,7 +44,8 @@ export default class Toolbox extends Plugin {
         highlight: false,
         readingNotes: false,
         readingPageStyles: false,
-        poster: false
+        poster: false,
+        dialogue: false
       });
       this.saveSettings();
     }
@@ -161,6 +163,14 @@ export default class Toolbox extends Plugin {
         name: '划线',
         icon: 'brush',
         editorCallback: (editor, view) => this.highlight(editor, view.file)
+      });
+
+    this.settings.dialogue &&
+      this.addCommand({
+        id: '讨论',
+        name: '讨论',
+        icon: 'bell-ring',
+        editorCallback: editor => this.dialogue(editor)
       });
 
     this.settings.readingNotes &&
@@ -569,6 +579,7 @@ export default class Toolbox extends Plugin {
     let highlights = 0;
     let thinks = 0;
     let outlinks = 0;
+    let dialogue = 0;
 
     const { links, frontmatter } = this.app.metadataCache.getFileCache(file);
     let content = '---\ntags: 读书笔记\n---';
@@ -585,6 +596,27 @@ export default class Toolbox extends Plugin {
     // 书评
     let { bookReview } = frontmatter;
     bookReview && (content += `\n\n# 书评 \n\n > [!tip] ${bookReview}${this.settings.blockId ? ' ^' + md5(bookReview) : ''}`);
+
+    // 讨论
+    const d = (markdown.match(/==dialogue==[\s\S]*?==dialogue==/g) || [])
+      .reverse()
+      .map(t => t.replace(/==dialogue==/g, ''))
+      .map(t => {
+        const c = t.split('\n');
+        const [title, id] = c[2].split('^');
+        c[2] = `## [${title}](${file.path}#^${id})`;
+        return c.slice(0, -2).join('\n');
+      });
+
+    if (d.length) {
+      dialogue = d.length;
+      content +=
+        '\n\n# 讨论' +
+        d.reduce((res, ret) => {
+          ret += res;
+          return ret;
+        }, '');
+    }
 
     // 划线
     const t = (markdown.match(/<span class="__comment[\S\s]+?<\/span>|#{1,6} .+/gm) || [])
@@ -623,12 +655,12 @@ export default class Toolbox extends Plugin {
       const sourceContent = await this.app.vault.read(readingNoteFile as TFile);
       if (sourceContent !== content) {
         this.app.vault.modify(readingNoteFile as TFile, content);
-        this.updateMetadata(file, outlinks, highlights, thinks);
+        this.updateMetadata(file, outlinks, highlights, thinks, dialogue);
         new Notice(file.name + ' - 已同步');
       }
     } else {
       this.app.vault.create(readingNotePath, content);
-      this.updateMetadata(file, outlinks, highlights, thinks);
+      this.updateMetadata(file, outlinks, highlights, thinks, dialogue);
       new Notice(file.name + ' - 已同步');
     }
   }
@@ -646,6 +678,26 @@ export default class Toolbox extends Plugin {
       title: '划线',
       name: '想法',
       content: text,
+      onSubmit
+    }).open();
+  }
+
+  dialogue(editor: Editor) {
+    const onSubmit = (title: string, text: string) => {
+      let blockId = generateId();
+      const cursor = editor.getCursor();
+      const line = editor.getLine(cursor.line);
+      const newText = `\n\n==dialogue==\n\n${title || '---'} ^${blockId}\n\n${text}\n\n==dialogue==`;
+
+      editor.replaceRange(newText, { line: cursor.line, ch: line.length });
+    };
+
+    if (!this.settings.dialogue) return;
+    let text = editor.getSelection();
+    new PanelQA(this.app, {
+      title: '讨论',
+      titleName: '标题（可选）',
+      textName: '内容',
       onSubmit
     }).open();
   }
@@ -794,10 +846,11 @@ export default class Toolbox extends Plugin {
     });
   }
 
-  updateMetadata(file: TFile, outlinks: number, highlights: number, thinks: number) {
+  updateMetadata(file: TFile, outlinks: number, highlights: number, thinks: number, dialogue: number) {
     this.updateFrontmatter(file, 'outlinks', outlinks);
     this.updateFrontmatter(file, 'highlights', highlights);
     this.updateFrontmatter(file, 'thinks', thinks);
+    this.updateFrontmatter(file, 'dialogue', dialogue);
   }
 
   getView() {
