@@ -65,6 +65,8 @@ export default class Toolbox extends Plugin {
         this.toggleEncrypt(file);
         // 根据记住密码的行为判断是否清空本地存储的笔记密码
         this.ClearLocalNotePass();
+        // 当前笔记资源移动到对应文件夹内
+        this.moveResourcesTo(file, null);
       })
     );
 
@@ -91,7 +93,7 @@ export default class Toolbox extends Plugin {
       id: '移动当前笔记中的资源至',
       name: '移动当前笔记中的资源至',
       icon: 'clipboard-check',
-      editorCallback: (editor, view) => this.moveResourcesTo(view.file)
+      editorCallback: (editor, view) => this.moveResourcesToPopup(view.file)
     });
 
     this.addCommand({
@@ -203,19 +205,29 @@ export default class Toolbox extends Plugin {
     }
   }
 
-  moveResourcesTo(file: TFile) {
+  moveResourcesToPopup(file: TFile) {
     if (!this.settings.moveResourcesTo) return;
     new FuzzySuggest(
       this.app,
       this.app.vault.getAllFolders().map(folder => ({ text: folder.path, value: folder.path })),
-      ({ value }, evt) => {
-        const paths = Object.keys(this.app.metadataCache.resolvedLinks[file.path])
-          .filter(path => path.indexOf(value) === -1)
-          .map(path => this.app.vault.adapter.rename(path, value + '/' + this.app.vault.getFileByPath(path).name));
-
-        new Notice(`已移动 ${paths.length} 至 ${value}`);
-      }
+      ({ value }, evt) => this.moveResourcesTo(file, value)
     ).open();
+  }
+
+  async moveResourcesTo(file: TFile, targetFolder: string) {
+    targetFolder = targetFolder || this.getMetadata(file, 'moveResourcesTo');
+    if (!this.settings.moveResourcesTo || !targetFolder) return;
+    let content = await this.app.vault.cachedRead(file);
+    const paths = Object.keys(this.app.metadataCache.resolvedLinks[file.path])
+      .filter(path => path.indexOf(targetFolder) === -1)
+      .map(path => {
+        const targetPath = targetFolder + '/' + this.app.vault.getFileByPath(path).name;
+        content = content.replace(path, targetPath);
+        this.app.vault.adapter.rename(path, targetPath);
+      });
+
+    this.app.vault.modify(file, content);
+    paths.length && new Notice(`已移动 ${paths.length} 至 ${targetFolder}`);
   }
 
   poster(element: HTMLElement) {

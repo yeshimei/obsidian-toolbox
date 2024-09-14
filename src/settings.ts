@@ -513,12 +513,15 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
     }
 
-    new Setting(containerEl).setName('🗂️ 移动笔记中的资源至指定文件夹').addToggle(cd =>
-      cd.setValue(this.plugin.settings.moveResourcesTo).onChange(async value => {
-        this.plugin.settings.moveResourcesTo = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
+    new Setting(containerEl)
+      .setName('🗂️ 移动笔记中的资源至指定文件夹')
+      .setDesc('moveResourcesTo: "[[folder]]"')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.moveResourcesTo).onChange(async value => {
+          this.plugin.settings.moveResourcesTo = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
   }
 }

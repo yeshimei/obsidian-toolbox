@@ -1205,7 +1205,7 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
         })
       );
     }
-    new import_obsidian5.Setting(containerEl).setName("\u{1F5C2}\uFE0F \u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").addToggle(
+    new import_obsidian5.Setting(containerEl).setName("\u{1F5C2}\uFE0F \u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").setDesc('moveResourcesTo: "[[folder]]"').addToggle(
       (cd) => cd.setValue(this.plugin.settings.moveResourcesTo).onChange(async (value) => {
         this.plugin.settings.moveResourcesTo = value;
         await this.plugin.saveSettings();
@@ -3954,6 +3954,7 @@ var Toolbox = class extends import_obsidian13.Plugin {
         this.autoEncryptPopUp(file);
         this.toggleEncrypt(file);
         this.ClearLocalNotePass();
+        this.moveResourcesTo(file, null);
       })
     );
     this.registerEvent(
@@ -3978,7 +3979,7 @@ var Toolbox = class extends import_obsidian13.Plugin {
       id: "\u79FB\u52A8\u5F53\u524D\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3",
       name: "\u79FB\u52A8\u5F53\u524D\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3",
       icon: "clipboard-check",
-      editorCallback: (editor, view) => this.moveResourcesTo(view.file)
+      editorCallback: (editor, view) => this.moveResourcesToPopup(view.file)
     });
     this.addCommand({
       id: "\u526A\u5207\u677F\u6587\u672C\u683C\u5F0F\u5316",
@@ -4068,17 +4069,27 @@ var Toolbox = class extends import_obsidian13.Plugin {
       this.saveSettings();
     }
   }
-  moveResourcesTo(file) {
+  moveResourcesToPopup(file) {
     if (!this.settings.moveResourcesTo)
       return;
     new FuzzySuggest(
       this.app,
       this.app.vault.getAllFolders().map((folder) => ({ text: folder.path, value: folder.path })),
-      ({ value }, evt) => {
-        const paths = Object.keys(this.app.metadataCache.resolvedLinks[file.path]).filter((path) => path.indexOf(value) === -1).map((path) => this.app.vault.adapter.rename(path, value + "/" + this.app.vault.getFileByPath(path).name));
-        new import_obsidian13.Notice(`\u5DF2\u79FB\u52A8 ${paths.length} \u81F3 ${value}`);
-      }
+      ({ value }, evt) => this.moveResourcesTo(file, value)
     ).open();
+  }
+  async moveResourcesTo(file, targetFolder) {
+    targetFolder = targetFolder || this.getMetadata(file, "moveResourcesTo");
+    if (!this.settings.moveResourcesTo || !targetFolder)
+      return;
+    let content = await this.app.vault.cachedRead(file);
+    const paths = Object.keys(this.app.metadataCache.resolvedLinks[file.path]).filter((path) => path.indexOf(targetFolder) === -1).map((path) => {
+      const targetPath = targetFolder + "/" + this.app.vault.getFileByPath(path).name;
+      content = content.replace(path, targetPath);
+      this.app.vault.adapter.rename(path, targetPath);
+    });
+    this.app.vault.modify(file, content);
+    paths.length && new import_obsidian13.Notice(`\u5DF2\u79FB\u52A8 ${paths.length} \u81F3 ${targetFolder}`);
   }
   poster(element) {
     if (!this.settings.poster || !import_obsidian13.Platform.isMobile)
