@@ -49,9 +49,6 @@ export interface ToolboxSettings {
 
   blockReference: boolean;
 
-  searchForPlants: boolean;
-  searchForPlantsFolder: string;
-
   encryption: boolean;
   encryptionSupportImage: boolean;
   encryptionImageCompress: boolean;
@@ -65,11 +62,15 @@ export interface ToolboxSettings {
 
   gallery: boolean;
 
-  cleanClipboardContent: boolean;
-
   poster: boolean;
 
+  miscellaneous: string;
+  cleanClipboardContent: boolean;
   moveResourcesTo: boolean;
+  searchForPlants: boolean;
+  searchForPlantsFolder: string;
+  videoLinkFormat: boolean;
+  videoLinkFormatFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -111,9 +112,6 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   blockReference: true,
 
-  searchForPlants: true,
-  searchForPlantsFolder: '卡片盒/归档',
-
   encryption: true,
   encryptionSupportImage: true,
   encryptionImageCompress: false,
@@ -126,11 +124,15 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   gallery: true,
 
-  cleanClipboardContent: true,
-
   poster: true,
 
-  moveResourcesTo: true
+  miscellaneous: '剪切板内容格式化',
+  moveResourcesTo: false,
+  cleanClipboardContent: false,
+  searchForPlants: false,
+  searchForPlantsFolder: '卡片盒/归档',
+  videoLinkFormat: false,
+  videoLinkFormatFolder: ''
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -312,80 +314,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
       })
     );
 
-    new Setting(containerEl).setName('🔑 密码创建器').addToggle(cd =>
-      cd.setValue(this.plugin.settings.passwordCreator).onChange(async value => {
-        this.plugin.settings.passwordCreator = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-
-    if (this.plugin.settings.passwordCreator) {
-      new Setting(containerEl).setName('从指定字符集中随机生成密码').addText(cd =>
-        cd.setValue('' + this.plugin.settings.passwordCreatorMixedContent).onChange(async value => {
-          this.plugin.settings.passwordCreatorMixedContent = value;
-          await this.plugin.saveSettings();
-        })
-      );
-
-      new Setting(containerEl).setName('生成密码的长度').addText(cd =>
-        cd.setValue('' + this.plugin.settings.passwordCreatorLength).onChange(async value => {
-          this.plugin.settings.passwordCreatorLength = Number(value);
-          await this.plugin.saveSettings();
-        })
-      );
-    }
-
-    new Setting(containerEl)
-      .setName('🔗 多义笔记转跳')
-      .setDesc('to: "[[filename or path]]"')
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.polysemy).onChange(async value => {
-          this.plugin.settings.polysemy = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    new Setting(containerEl).setName('🏷️ 脚注重编号').addToggle(cd =>
-      cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async value => {
-        this.plugin.settings.footnoteRenumbering = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-
-    new Setting(containerEl)
-      .setName('📌 块引用')
-      .setDesc('获取光标所在行（块）的双链，方便复制到地方使用')
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.blockReference).onChange(async value => {
-          this.plugin.settings.blockReference = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    new Setting(containerEl)
-      .setName('🏵️ 查植物')
-      .setDesc('')
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.searchForPlants).onChange(async value => {
-          this.plugin.settings.searchForPlants = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    if (this.plugin.settings.readDataTracking) {
-      new Setting(containerEl).setName('放至哪个文件夹').addText(cd =>
-        cd.setValue('' + this.plugin.settings.searchForPlantsFolder).onChange(async value => {
-          this.plugin.settings.searchForPlantsFolder = value;
-          await this.plugin.saveSettings();
-        })
-      );
-    }
-
     new Setting(containerEl)
       .setName('🔒 笔记加密')
       .setDesc('本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。')
@@ -481,6 +409,60 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
     }
 
+    new Setting(containerEl).setName('🔑 密码创建器').addToggle(cd =>
+      cd.setValue(this.plugin.settings.passwordCreator).onChange(async value => {
+        this.plugin.settings.passwordCreator = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    if (this.plugin.settings.passwordCreator) {
+      new Setting(containerEl).setName('从指定字符集中随机生成密码').addText(cd =>
+        cd.setValue('' + this.plugin.settings.passwordCreatorMixedContent).onChange(async value => {
+          this.plugin.settings.passwordCreatorMixedContent = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl).setName('生成密码的长度').addText(cd =>
+        cd.setValue('' + this.plugin.settings.passwordCreatorLength).onChange(async value => {
+          this.plugin.settings.passwordCreatorLength = Number(value);
+          await this.plugin.saveSettings();
+        })
+      );
+    }
+
+    new Setting(containerEl)
+      .setName('🔗 多义笔记转跳')
+      .setDesc('to: "[[filename or path]]"')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.polysemy).onChange(async value => {
+          this.plugin.settings.polysemy = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+    new Setting(containerEl).setName('🏷️ 脚注重编号').addToggle(cd =>
+      cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async value => {
+        this.plugin.settings.footnoteRenumbering = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    new Setting(containerEl)
+      .setName('📌 块引用')
+      .setDesc('获取光标所在行（块）的双链，方便复制到地方使用')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.blockReference).onChange(async value => {
+          this.plugin.settings.blockReference = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
     new Setting(containerEl).setName('📸 画廊').addToggle(cd =>
       cd.setValue(this.plugin.settings.gallery).onChange(async value => {
         this.plugin.settings.gallery = value;
@@ -488,17 +470,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
         this.display();
       })
     );
-
-    new Setting(containerEl)
-      .setName('📀 剪切板文本格式化')
-      .setDesc('删除换行，空格和其他空白字符，英文单词以及英文和中文之间保留一个空格')
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async value => {
-          this.plugin.settings.cleanClipboardContent = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
 
     if (Platform.isMobile) {
       new Setting(containerEl)
@@ -514,14 +485,83 @@ export class ToolboxSettingTab extends PluginSettingTab {
     }
 
     new Setting(containerEl)
-      .setName('🗂️ 移动笔记中的资源至指定文件夹')
-      .setDesc('moveResourcesTo: "[[folder]]"')
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.moveResourcesTo).onChange(async value => {
-          this.plugin.settings.moveResourcesTo = value;
+      .setName('🏅 杂项')
+      .setDesc('定制化功能')
+      .addDropdown(cd =>
+        cd
+          .addOption('剪切板内容格式化', '剪切板内容格式化')
+          .addOption('视频链接格式化', '视频链接格式化')
+          .addOption('移动笔记中的资源至指定文件夹', '移动笔记中的资源至指定文件夹')
+          .addOption('查植物', '查植物')
+          .setValue(this.plugin.settings.miscellaneous)
+          .onChange(async value => {
+            this.plugin.settings.miscellaneous = value as any;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+      );
+
+    if (this.plugin.settings.miscellaneous === '剪切板内容格式化') {
+      new Setting(containerEl)
+        .setName('剪切板内容格式化')
+        .setDesc('删除换行，空格和其他空白字符，英文单词以及英文和中文之间保留一个空格')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async value => {
+            this.plugin.settings.cleanClipboardContent = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+    }
+    if (this.plugin.settings.miscellaneous === '移动笔记中的资源至指定文件夹') {
+      new Setting(containerEl)
+        .setName('移动笔记中的资源至指定文件夹')
+        .setDesc('moveResourcesTo: "[[folder]]"')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.moveResourcesTo).onChange(async value => {
+            this.plugin.settings.moveResourcesTo = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+    }
+
+    if (this.plugin.settings.miscellaneous === '查植物') {
+      new Setting(containerEl).setName('查植物').addToggle(cd =>
+        cd.setValue(this.plugin.settings.searchForPlants).onChange(async value => {
+          this.plugin.settings.searchForPlants = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
+
+      if (this.plugin.settings.searchForPlants) {
+        new Setting(containerEl).setName('放至哪个文件夹').addText(cd =>
+          cd.setValue('' + this.plugin.settings.searchForPlantsFolder).onChange(async value => {
+            this.plugin.settings.searchForPlantsFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
+    }
+
+    if (this.plugin.settings.miscellaneous === '视频链接格式化') {
+      new Setting(containerEl).setName('视频链接格式化').addToggle(cd =>
+        cd.setValue(this.plugin.settings.videoLinkFormat).onChange(async value => {
+          this.plugin.settings.videoLinkFormat = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+      if (this.plugin.settings.videoLinkFormat) {
+        new Setting(containerEl).setName('跟踪哪篇笔记').addText(cd =>
+          cd.setValue('' + this.plugin.settings.videoLinkFormatFolder).onChange(async value => {
+            this.plugin.settings.videoLinkFormatFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
+    }
   }
 }

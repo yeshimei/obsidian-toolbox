@@ -26,8 +26,8 @@ export default class Toolbox extends Plugin {
   startTime: number;
   async onload() {
     this.encryptionTempData = {};
-    // 加载插件设置页面
     await this.loadSettings();
+    this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
     // 画廊
     this.gallery();
@@ -36,21 +36,8 @@ export default class Toolbox extends Plugin {
     // 将视频第一帧作为海报
     Platform.isMobile && this.poster(document.body);
     // 阅读功能仅允许在移动端使用
-    if (!Platform.isMobile) {
-      Object.assign(this.settings, {
-        flip: false,
-        fullScreenMode: false,
-        readDataTracking: false,
-        highlight: false,
-        readingNotes: false,
-        readingPageStyles: false,
-        poster: false,
-        dialogue: false
-      });
-      this.saveSettings();
-    }
+    this.initPermissions();
 
-    this.debounceReadDataTracking = debounce(this.readDataTracking.bind(this), this.settings.readDataTrackingDelayTime);
     this.registerEvent(
       this.app.workspace.on('file-open', async file => {
         // document.body.onclick = evt => new Notice((evt.target as HTMLLIElement).className);
@@ -65,12 +52,9 @@ export default class Toolbox extends Plugin {
         this.toggleEncrypt(file);
         // 根据记住密码的行为判断是否清空本地存储的笔记密码
         this.ClearLocalNotePass();
-        // 当前笔记资源移动到对应文件夹内
-        this.moveResourcesTo(file, null);
       })
     );
 
-    // 预览与编辑模式切换的处理
     this.registerEvent(
       this.app.workspace.on('layout-change', () => {
         const sourceView = $(SOURCE_VIEW_CLASS);
@@ -79,6 +63,16 @@ export default class Toolbox extends Plugin {
         this.adjustPageStyle(sourceView, file);
         this.mask(sourceView, file);
         this.toggleEncrypt(file);
+      })
+    );
+
+    this.registerEvent(
+      this.app.vault.on('modify', f => {
+        const file = f as TFile;
+        // 当前笔记资源移动到对应文件夹内
+        this.moveResourcesTo(file, null);
+        // 插入视频
+        this.videoLinkFormat(file as TFile);
       })
     );
 
@@ -188,6 +182,40 @@ export default class Toolbox extends Plugin {
       });
   }
 
+  async videoLinkFormat(file: TFile) {
+    if (!this.settings.videoLinkFormat || file.path !== this.settings.videoLinkFormatFolder + '.md') return;
+    const content = await this.app.vault.read(file);
+    const videoLinkRegex = /\[\[(.*?\.(mp4|mkv|avi|mov|wmv|flv|webm))\]\]/g;
+    let match;
+
+    while ((match = videoLinkRegex.exec(content)) !== null) {
+      const videoLink = match[1];
+      new InputBox(this.app, {
+        title: videoLink,
+        name: '外链',
+        onSubmit: res => {
+          const link = res.split('/?').shift();
+          this.app.vault.modify(file, content.replace(`![[${videoLink}]]`, '').replace('[![[bilibili.png|15]]]', `[![[bilibili.png|15]]](${link}) [[${videoLink}|${videoLink.replace(/\..*?$/, '')}]]\n[![[bilibili.png|15]]]`));
+        }
+      }).open();
+    }
+  }
+
+  initPermissions() {
+    if (!Platform.isMobile) {
+      Object.assign(this.settings, {
+        flip: false,
+        fullScreenMode: false,
+        readDataTracking: false,
+        highlight: false,
+        readingNotes: false,
+        readingPageStyles: false,
+        poster: false,
+        dialogue: false
+      });
+      this.saveSettings();
+    }
+  }
   ClearLocalNotePass() {
     // 清空已经删除笔记的本地记录
     for (let key in this.settings.plugins.encryption) {
