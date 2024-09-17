@@ -490,7 +490,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       .addDropdown(cd =>
         cd
           .addOption('剪切板内容格式化', '剪切板内容格式化')
-          .addOption('视频链接格式化', '视频链接格式化')
+          .addOption('当笔记插入视频时重排版', '当笔记插入视频时重排版')
           .addOption('移动笔记中的资源至指定文件夹', '移动笔记中的资源至指定文件夹')
           .addOption('查植物', '查植物')
           .setValue(this.plugin.settings.miscellaneous)
@@ -545,8 +545,8 @@ export class ToolboxSettingTab extends PluginSettingTab {
       }
     }
 
-    if (this.plugin.settings.miscellaneous === '视频链接格式化') {
-      new Setting(containerEl).setName('视频链接格式化').addToggle(cd =>
+    if (this.plugin.settings.miscellaneous === '当笔记插入视频时重排版') {
+      new Setting(containerEl).setName('当笔记插入视频时重排版').addToggle(cd =>
         cd.setValue(this.plugin.settings.videoLinkFormat).onChange(async value => {
           this.plugin.settings.videoLinkFormat = value;
           await this.plugin.saveSettings();

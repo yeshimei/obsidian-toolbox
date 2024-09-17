@@ -12,6 +12,7 @@ import FuzzySuggest from './Modals/FuzzySuggest';
 import test from 'test/Test';
 import 'test';
 import PanelQA from './Modals/DoubleInputBox';
+import PanelHighlight from './Modals/PanelHighlight';
 
 const SOURCE_VIEW_CLASS = '.cm-scroller';
 const MASK_CLASS = '.__mask';
@@ -551,8 +552,8 @@ export default class Toolbox extends Plugin {
         // 点击划线，显示其评论
         if (target.hasClass(COMMENT_CLASS.slice(1))) {
           const text = target.textContent;
-          const { comment, date } = target.dataset;
-          new PanelExhibition(this.app, '评论', comment ? createElement('p', `${comment}${date ? '</br></br><i>' + date + '</i>' : ''}`) : '空空如也').open();
+          const { comment, date, tagging } = target.dataset;
+          new PanelExhibition(this.app, '评论', comment ? createElement('p', `${comment}${date ? ('</br></br><i>' + date + tagging ? '（' + tagging + '）' : '' + '</i>') : ''}`) : '空空如也').open();
         }
         // 点击双链，显示其内容
         else if (target.hasClass(OUT_LINK_CLASS.slice(1))) {
@@ -644,7 +645,7 @@ export default class Toolbox extends Plugin {
       .map(t => {
         const c = t.split('\n');
         const [title, id] = c[2].split('^');
-        c[2] = `## [${title}](${file.path}#^${id})`;
+        c[2] = `## [${title}](${file.path}#^${id})${this.settings.blockId ? ' ^' + md5(title) : ''}`;
         return c.slice(0, -2).join('\n');
       });
 
@@ -668,9 +669,9 @@ export default class Toolbox extends Plugin {
           const div = document.createElement('div');
           div.innerHTML = b;
           const el: any = div.firstChild;
-          const { comment, id } = el.dataset;
+          const { comment, id, tagging } = el.dataset;
           const text = el.textContent;
-          res.text = `> [!quote] [${text}](${file.path}#^${id}) ${comment ? '\n💬 ' + comment : ''}${this.settings.blockId ? ' ^' + md5(text) : ''}`;
+          res.text = `> [!quote] [${text}${tagging ? '（' + tagging + '）' : ''}](${file.path}#^${id}) ${comment ? '\n💬 ' + comment : ''}${this.settings.blockId ? ' ^' + md5(text) : ''}`;
           highlights++;
           if (comment) thinks++;
         } else {
@@ -706,20 +707,15 @@ export default class Toolbox extends Plugin {
   }
 
   highlight(editor: Editor, file: TFile) {
-    const onSubmit = (res: string) => {
+    const onSubmit = (res: string, tagging: string) => {
       let blockId = getBlock(this.app, editor, file);
-      res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ''}" data-id="${blockId}" data-date="${today(true)}">${text}</span>`;
+      res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ''}" data-id="${blockId}" data-tagging="${tagging}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
     };
 
     if (!this.settings.highlight) return;
     let text = editor.getSelection();
-    new InputBox(this.app, {
-      title: '划线',
-      name: '想法',
-      content: text,
-      onSubmit
-    }).open();
+    new PanelHighlight(this.app, text, onSubmit).open();
   }
 
   dialogue(editor: Editor) {
@@ -736,7 +732,7 @@ export default class Toolbox extends Plugin {
     let text = editor.getSelection();
     new PanelQA(this.app, {
       title: '讨论',
-      titleName: '标题（可选）',
+      titleName: '标题',
       textName: '内容',
       onSubmit
     }).open();
