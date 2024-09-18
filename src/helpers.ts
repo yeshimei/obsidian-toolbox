@@ -1,5 +1,32 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
+export function getHeadingHierarchy<T extends { [key: string]: any }>(headings: T[], line: number): T[] {
+  let currentHeading: T;
+  const hierarchy: T[] = [];
+
+  for (let i = headings.length - 1; i >= 0; i--) {
+    if (headings[i].position.start.line <= line) {
+      currentHeading = headings[i];
+      break;
+    }
+  }
+
+  if (!currentHeading) {
+    return hierarchy;
+  }
+
+  hierarchy.push(currentHeading);
+
+  for (let i = headings.indexOf(currentHeading) - 1; i >= 0; i--) {
+    if (headings[i].level < currentHeading.level) {
+      hierarchy.unshift(headings[i]);
+      currentHeading = headings[i];
+    }
+  }
+
+  return hierarchy;
+}
+
 export async function isLongScreenshot(arrayBuffer: ArrayBuffer, proportion = 2): Promise<boolean> {
   const blob = new Blob([arrayBuffer]);
   const url = URL.createObjectURL(blob);

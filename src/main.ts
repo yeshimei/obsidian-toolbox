@@ -1,13 +1,13 @@
 import Confirm from './Modals/Confirm';
 import InputBox from './Modals/InputBox';
 import { PanelSearchForWord } from './Modals/PanelSearchForWord';
-import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform, base64ToArrayBuffer, arrayBufferToBase64 } from 'obsidian';
+import { Plugin, Editor, Notice, TFile, MarkdownView, htmlToMarkdown, request, Platform } from 'obsidian';
 import { ToolboxSettings, DEFAULT_SETTINGS, ToolboxSettingTab } from './settings';
-import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, codeBlockParamParse, isImagePath, isImageEncrypt, isNoteEncrypt, getBasename, isVideoPath, mergeArrayBuffers, editorBlur, generateId } from './helpers';
+import { createElement, filterChineseAndPunctuation, getBlock, msTo, pick, removeDuplicates, requestUrlToHTML, today, trimNonChineseChars, uniqueBy, debounce, $, extractChineseParts, plantClassificationSystem, codeBlockParamParse, isNoteEncrypt, editorBlur, generateId, getHeadingHierarchy } from './helpers';
 import { md5 } from 'js-md5';
 import { PanelExhibition } from './Modals/PanelExhibition';
 import { PanelSearchForPlants } from './Modals/PanelSearchForPlants';
-import { AES256Helper, decrypt, encrypt, imageToBase64 } from './Encryption';
+import { AES256Helper, decrypt, encrypt, imageToBase64 } from './encryption';
 import FuzzySuggest from './Modals/FuzzySuggest';
 import test from 'test/Test';
 import 'test';
@@ -44,15 +44,20 @@ export default class Toolbox extends Plugin {
         // document.body.onclick = evt => new Notice((evt.target as HTMLLIElement).className);
         this.startTime = Date.now();
         const sourceView = $(SOURCE_VIEW_CLASS);
-        this.polysemy(file); // 多义笔记转跳
-        this.adjustPageStyle(sourceView, file); // 阅读页面
-        this.mask(sourceView, file); // 点击遮罩层翻页
+        // 多义笔记转跳
+        this.polysemy(file);
+        // 阅读页面
+        this.adjustPageStyle(sourceView, file);
+        // 点击遮罩层翻页
+        this.mask(sourceView, file);
         // 打开加密笔记时，弹出解密笔记输入框
         this.autoEncryptPopUp(file);
         // 加密笔记后隐藏其内容，防止意外改动
         this.toggleEncrypt(file);
         // 根据记住密码的行为判断是否清空本地存储的笔记密码
         this.ClearLocalNotePass();
+        // 点击人物关系笔记百分百切换不同的视图
+        this.toggleCharacterRelationship(file);
       })
     );
 
@@ -72,7 +77,7 @@ export default class Toolbox extends Plugin {
         const file = f as TFile;
         // 当前笔记资源移动到对应文件夹内
         this.moveResourcesTo(file, null);
-        // 插入视频
+        // 当笔记插入视频时重排版
         this.videoLinkFormat(file as TFile);
       })
     );
@@ -84,33 +89,45 @@ export default class Toolbox extends Plugin {
       callback: () => this.test()
     });
 
-    this.addCommand({
-      id: '移动当前笔记中的资源至',
-      name: '移动当前笔记中的资源至',
-      icon: 'clipboard-check',
-      editorCallback: (editor, view) => this.moveResourcesToPopup(view.file)
-    });
+    this.settings.characterRelationships &&
+      this.addCommand({
+        id: '创建人物关系',
+        name: '创建人物关系',
+        icon: 'clipboard-check',
+        editorCallback: (editor, view) => this.createCharacterRelationship(editor, view.file)
+      });
 
-    this.addCommand({
-      id: '剪切板文本格式化',
-      name: '剪切板文本格式化',
-      icon: 'clipboard-check',
-      editorCallback: (editor, view) => this.cleanClipboardContent(editor)
-    });
+    this.settings.moveResourcesTo &&
+      this.addCommand({
+        id: '移动当前笔记中的资源至',
+        name: '移动当前笔记中的资源至',
+        icon: 'clipboard-check',
+        editorCallback: (editor, view) => this.moveResourcesToPopup(view.file)
+      });
 
-    this.addCommand({
-      id: '加密笔记',
-      name: '加密笔记',
-      icon: 'lock',
-      editorCallback: (editor, view) => this.encryptPopUp(view.file)
-    });
+    this.settings.cleanClipboardContent &&
+      this.addCommand({
+        id: '剪切板文本格式化',
+        name: '剪切板文本格式化',
+        icon: 'clipboard-check',
+        editorCallback: (editor, view) => this.cleanClipboardContent(editor)
+      });
 
-    this.addCommand({
-      id: '解密笔记',
-      name: '解密笔记',
-      icon: 'lock-open',
-      editorCallback: (editor, view) => this.decryptPopUp(view.file)
-    });
+    this.settings.encryption &&
+      this.addCommand({
+        id: '加密笔记',
+        name: '加密笔记',
+        icon: 'lock',
+        editorCallback: (editor, view) => this.encryptPopUp(view.file)
+      });
+
+    this.settings.encryption &&
+      this.addCommand({
+        id: '解密笔记',
+        name: '解密笔记',
+        icon: 'lock-open',
+        editorCallback: (editor, view) => this.decryptPopUp(view.file)
+      });
 
     this.settings.passwordCreator &&
       this.addCommand({
@@ -183,6 +200,96 @@ export default class Toolbox extends Plugin {
       });
   }
 
+  async toggleCharacterRelationship(file: TFile) {
+    if (!this.hasRootFolder(file, this.settings.characterRelationshipsFolder)) return;
+    document.onclick = evt => {
+      const target = evt.target as HTMLElement;
+      if (target.hasClass('__character-relationship__')) {
+        const { id, path, title, progress } = target.dataset;
+        this.characterRelationships(file, title, path, id, Number(progress));
+      }
+    };
+  }
+
+  async createCharacterRelationship(editor: Editor, file: TFile) {
+    if (!this.hasReadingPage(file)) return;
+    const readingProgress = Number(this.getMetadata(file, 'readingProgress'));
+    const title = this.getMetadata(file, 'title');
+    if (readingProgress <= 0 || isNaN(readingProgress)) {
+      new Notice(`《${file.basename}》还未阅读`);
+      return;
+    }
+
+    // 创建人物关系笔记
+    const targetPath = `${this.settings.characterRelationshipsFolder}/${title}.md`;
+    let targetFile = this.app.vault.getFileByPath(targetPath);
+    if (!targetFile) {
+      targetFile = await this.app.vault.create(targetPath, '');
+    }
+
+    // 把光标所在行的标题结构变为面包屑标题
+    const headings = this.app.metadataCache.getFileCache(file)?.headings || [];
+    const position = editor.getCursor();
+    const hierarchy = getHeadingHierarchy(headings, position.line);
+    const headingText = hierarchy.reduce((res, ret) => (res += ret.heading + '/'), '').slice(0, -1);
+
+    // 人物关系笔记的内容
+    let blockId = getBlock(this.app, editor, file);
+    const progress = this.computerReadingProgress($(SOURCE_VIEW_CLASS));
+    await this.characterRelationships(targetFile, headingText, file.path, blockId, progress);
+    await this.app.workspace.getLeaf(true).openFile(targetFile);
+  }
+
+  async characterRelationships(file: TFile, title: string, path: string, id: string, progress: number) {
+    let content = await this.app.vault.read(file);
+    let els = createElement('div', content).querySelectorAll('.__character-relationship__') as any;
+    if (els.length === 0) {
+      if (content) {
+        new Notice('人物关系笔记已通过其他方式创建');
+        return;
+      }
+
+      content = `---\ntags: 人物关系\n---\n\n- [${title}](${path}#^${id}) - ==<span class="__character-relationship__" data-id="${id}" data-path="${path}" data-title="${title}" data-progress="${progress}" data-content="" data-state="open">${progress}%</span>==\n\n\`\`\`mermaid\nflowchart LR\n\`\`\``;
+    } else {
+      let mermaid = content.match(/^```mermaid[\s\S]+```/gm)[0];
+      els = Array.from(els).map((el: any) => {
+        const { id, path, title, progress, content, state } = el.dataset;
+        return {
+          id,
+          path,
+          title,
+          progress: Number(progress),
+          content: state === 'open' ? mermaid : content.replace(/\\n/g, '\n'),
+          state: 'close'
+        };
+      });
+      const index = els.findIndex((item: any) => item.progress >= progress);
+      const value = {
+        id,
+        path,
+        title,
+        progress: Number(progress),
+        content: '',
+        state: 'open'
+      };
+
+      mermaid = `\n\n\`\`\`mermaid\nflowchart LR\n\`\`\``;
+      if (els[index]?.progress === progress) {
+        els[index].state = 'open';
+        mermaid = els[index].content;
+      } else if (index > -1) {
+        els.splice(index, 0, value);
+      } else {
+        els.push(value);
+      }
+
+      mermaid = mermaid.replace(/\\n/g, '\n');
+      content = `---\ntags: 人物关系\n---\n\n${els.map((el: any) => `- [${el.title}](${el.path}#^${el.id}) - ${el.state === 'open' ? '==' : ''}<span class="__character-relationship__" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</span>${el.state === 'open' ? '==' : ''}`).join('\n')}\n\n${mermaid}`;
+    }
+
+    this.app.vault.modify(file, content);
+  }
+
   async videoLinkFormat(file: TFile) {
     if (!this.settings.videoLinkFormat || file.path !== this.settings.videoLinkFormatFolder + '.md') return;
     const content = await this.app.vault.read(file);
@@ -212,7 +319,8 @@ export default class Toolbox extends Plugin {
         readingNotes: false,
         readingPageStyles: false,
         poster: false,
-        dialogue: false
+        dialogue: false,
+        characterRelationships: false
       });
       this.saveSettings();
     }
@@ -291,6 +399,7 @@ export default class Toolbox extends Plugin {
     processVideos(element);
     observer.observe(element, { childList: true, subtree: true });
   }
+
   async cleanClipboardContent(editor: Editor) {
     const text = await navigator.clipboard.readText();
     const cleaned = text
@@ -493,7 +602,6 @@ export default class Toolbox extends Plugin {
     new Notice('块引用已复制至剪切板！');
   }
 
-  h(mask: HTMLElement) {}
   mask(el: HTMLElement, file: TFile) {
     if (!this.settings.flip) return;
     let timer: number, timer2: number, xStart: number, xEnd: number;
@@ -645,7 +753,7 @@ export default class Toolbox extends Plugin {
       .map(t => {
         const c = t.split('\n');
         const [title, id] = c[2].split('^');
-        c[2] = `## [${title}](${file.path}#^${id})${this.settings.blockId ? ' ^' + md5(title) : ''}`;
+        c[2] = `## [${title}](${file.path}#^${id})`;
         return c.slice(0, -2).join('\n');
       });
 
@@ -709,7 +817,7 @@ export default class Toolbox extends Plugin {
   highlight(editor: Editor, file: TFile) {
     const onSubmit = (res: string, tagging: string) => {
       let blockId = getBlock(this.app, editor, file);
-      res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ''}" data-id="${blockId}" data-tagging="${tagging}" data-date="${today(true)}">${text}</span>`;
+      res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ''}" data-id="${blockId}" data-tagging="${tagging || ''}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
     };
 
@@ -744,7 +852,7 @@ export default class Toolbox extends Plugin {
     this.app.fileManager.processFrontMatter(file, frontmatter => {
       if (readingDate && !completionDate) {
         // 阅读进度
-        frontmatter.readingProgress = parseFloat((((el.scrollTop + el.clientHeight) / el.scrollHeight) * 100).toFixed(2));
+        frontmatter.readingProgress = this.computerReadingProgress(el);
         // 阅读时长
         if (!frontmatter.readingTime) frontmatter.readingTime = 0;
         frontmatter.readingTime += Math.min(this.settings.readDataTrackingTimeout, Date.now() - this.startTime);
@@ -889,6 +997,10 @@ export default class Toolbox extends Plugin {
     this.updateFrontmatter(file, 'dialogue', dialogue);
   }
 
+  computerReadingProgress(el: Element) {
+    return parseFloat((((el.scrollTop + el.clientHeight) / el.scrollHeight) * 100).toFixed(2));
+  }
+
   getView() {
     return this.app.workspace.getActiveViewOfType(MarkdownView);
   }
@@ -910,8 +1022,7 @@ export default class Toolbox extends Plugin {
   }
 
   hasRootFolder(file: TFile, folderName: string) {
-    const args = file.path.split('/');
-    return args.length > 1 && args.shift() === folderName;
+    return new RegExp(`^${folderName}`).test(file.path);
   }
 
   hasTag(file: TFile, name: string) {

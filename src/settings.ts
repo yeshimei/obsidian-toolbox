@@ -36,6 +36,9 @@ export interface ToolboxSettings {
 
   dialogue: boolean;
 
+  characterRelationships: boolean;
+  characterRelationshipsFolder: string;
+
   readingNotes: boolean;
   readingNotesToFolder: string;
   outLink: boolean;
@@ -98,6 +101,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   highlight: true,
 
   dialogue: true,
+
+  characterRelationships: false,
+  characterRelationshipsFolder: '书库/人物关系',
 
   readingNotes: true,
   readingNotesToFolder: '书库/读书笔记',
@@ -246,6 +252,26 @@ export class ToolboxSettingTab extends PluginSettingTab {
             this.display();
           })
         );
+
+      new Setting(containerEl)
+        .setName('🕵️‍♀️ 人物关系')
+        .setDesc('根据阅读进度创建多张人物关系的 mermaid 图')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.characterRelationships).onChange(async value => {
+            this.plugin.settings.characterRelationships = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+
+      if (this.plugin.settings.characterRelationships) {
+        new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
+          cd.setValue('' + this.plugin.settings.characterRelationshipsFolder).onChange(async value => {
+            this.plugin.settings.characterRelationshipsFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
 
       new Setting(containerEl).setName('📙 同步读书笔记').addToggle(cd =>
         cd.setValue(this.plugin.settings.readingNotes).onChange(async value => {

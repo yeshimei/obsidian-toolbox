@@ -615,6 +615,27 @@ var import_obsidian3 = require("obsidian");
 
 // src/helpers.ts
 var import_obsidian2 = require("obsidian");
+function getHeadingHierarchy(headings, line) {
+  let currentHeading;
+  const hierarchy = [];
+  for (let i2 = headings.length - 1; i2 >= 0; i2--) {
+    if (headings[i2].position.start.line <= line) {
+      currentHeading = headings[i2];
+      break;
+    }
+  }
+  if (!currentHeading) {
+    return hierarchy;
+  }
+  hierarchy.push(currentHeading);
+  for (let i2 = headings.indexOf(currentHeading) - 1; i2 >= 0; i2--) {
+    if (headings[i2].level < currentHeading.level) {
+      hierarchy.unshift(headings[i2]);
+      currentHeading = headings[i2];
+    }
+  }
+  return hierarchy;
+}
 async function isLongScreenshot(arrayBuffer, proportion = 2) {
   const blob = new Blob([arrayBuffer]);
   const url = URL.createObjectURL(blob);
@@ -898,6 +919,8 @@ var DEFAULT_SETTINGS = {
   readDataTrackingDelayTime: 3 * 1e3,
   highlight: true,
   dialogue: true,
+  characterRelationships: false,
+  characterRelationshipsFolder: "\u4E66\u5E93/\u4EBA\u7269\u5173\u7CFB",
   readingNotes: true,
   readingNotesToFolder: "\u4E66\u5E93/\u8BFB\u4E66\u7B14\u8BB0",
   outLink: true,
@@ -1006,6 +1029,21 @@ var ToolboxSettingTab = class extends import_obsidian5.PluginSettingTab {
           this.display();
         })
       );
+      new import_obsidian5.Setting(containerEl).setName("\u{1F575}\uFE0F\u200D\u2640\uFE0F \u4EBA\u7269\u5173\u7CFB").setDesc("\u6839\u636E\u9605\u8BFB\u8FDB\u5EA6\u521B\u5EFA\u591A\u5F20\u4EBA\u7269\u5173\u7CFB\u7684 mermaid \u56FE").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.characterRelationships).onChange(async (value) => {
+          this.plugin.settings.characterRelationships = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+      if (this.plugin.settings.characterRelationships) {
+        new import_obsidian5.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+          (cd) => cd.setValue("" + this.plugin.settings.characterRelationshipsFolder).onChange(async (value) => {
+            this.plugin.settings.characterRelationshipsFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
       new import_obsidian5.Setting(containerEl).setName("\u{1F4D9} \u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0").addToggle(
         (cd) => cd.setValue(this.plugin.settings.readingNotes).onChange(async (value) => {
           this.plugin.settings.readingNotes = value;
@@ -3321,7 +3359,7 @@ function imageCompression(e2, t2) {
 }
 imageCompression.getDataUrlFromFile = getDataUrlFromFile, imageCompression.getFilefromDataUrl = getFilefromDataUrl, imageCompression.loadImage = loadImage, imageCompression.drawImageInCanvas = drawImageInCanvas, imageCompression.drawFileInCanvas = drawFileInCanvas, imageCompression.canvasToFile = canvasToFile, imageCompression.getExifOrientation = getExifOrientation, imageCompression.handleMaxWidthOrHeight = handleMaxWidthOrHeight, imageCompression.followExifOrientation = followExifOrientation, imageCompression.cleanupCanvasMemory = cleanupCanvasMemory, imageCompression.isAutoOrientationInBrowser = isAutoOrientationInBrowser, imageCompression.approximateBelowMaximumCanvasSizeOfBrowser = approximateBelowMaximumCanvasSizeOfBrowser, imageCompression.copyExifWithoutOrientation = copyExifWithoutOrientation, imageCompression.getBrowserName = getBrowserName, imageCompression.version = "2.0.2";
 
-// src/Encryption.ts
+// src/encryption.ts
 var import_obsidian8 = require("obsidian");
 
 // src/Modals/ProgressBarEncryption.ts
@@ -3364,7 +3402,7 @@ var ProgressBarEncryption = class {
   }
 };
 
-// src/Encryption.ts
+// src/encryption.ts
 var progress = new ProgressBarEncryption();
 function arrayBufferToFile(arrayBuffer, filename, mimeType) {
   const blob = new Blob([arrayBuffer], { type: mimeType });
@@ -4013,6 +4051,7 @@ var Toolbox = class extends import_obsidian14.Plugin {
         this.autoEncryptPopUp(file);
         this.toggleEncrypt(file);
         this.ClearLocalNotePass();
+        this.toggleCharacterRelationship(file);
       })
     );
     this.registerEvent(
@@ -4040,25 +4079,31 @@ var Toolbox = class extends import_obsidian14.Plugin {
       icon: "clipboard-check",
       callback: () => this.test()
     });
-    this.addCommand({
+    this.settings.characterRelationships && this.addCommand({
+      id: "\u521B\u5EFA\u4EBA\u7269\u5173\u7CFB",
+      name: "\u521B\u5EFA\u4EBA\u7269\u5173\u7CFB",
+      icon: "clipboard-check",
+      editorCallback: (editor, view) => this.createCharacterRelationship(editor, view.file)
+    });
+    this.settings.moveResourcesTo && this.addCommand({
       id: "\u79FB\u52A8\u5F53\u524D\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3",
       name: "\u79FB\u52A8\u5F53\u524D\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3",
       icon: "clipboard-check",
       editorCallback: (editor, view) => this.moveResourcesToPopup(view.file)
     });
-    this.addCommand({
+    this.settings.cleanClipboardContent && this.addCommand({
       id: "\u526A\u5207\u677F\u6587\u672C\u683C\u5F0F\u5316",
       name: "\u526A\u5207\u677F\u6587\u672C\u683C\u5F0F\u5316",
       icon: "clipboard-check",
       editorCallback: (editor, view) => this.cleanClipboardContent(editor)
     });
-    this.addCommand({
+    this.settings.encryption && this.addCommand({
       id: "\u52A0\u5BC6\u7B14\u8BB0",
       name: "\u52A0\u5BC6\u7B14\u8BB0",
       icon: "lock",
       editorCallback: (editor, view) => this.encryptPopUp(view.file)
     });
-    this.addCommand({
+    this.settings.encryption && this.addCommand({
       id: "\u89E3\u5BC6\u7B14\u8BB0",
       name: "\u89E3\u5BC6\u7B14\u8BB0",
       icon: "lock-open",
@@ -4119,6 +4164,105 @@ var Toolbox = class extends import_obsidian14.Plugin {
       callback: () => this.app.vault.getMarkdownFiles().filter((file) => this.hasReadingPage(file)).forEach((file) => this.syncNote(file))
     });
   }
+  async toggleCharacterRelationship(file) {
+    if (!this.hasRootFolder(file, this.settings.characterRelationshipsFolder))
+      return;
+    document.onclick = (evt) => {
+      const target = evt.target;
+      if (target.hasClass("__character-relationship__")) {
+        const { id, path, title, progress: progress2 } = target.dataset;
+        this.characterRelationships(file, title, path, id, Number(progress2));
+      }
+    };
+  }
+  async createCharacterRelationship(editor, file) {
+    var _a;
+    if (!this.hasReadingPage(file))
+      return;
+    const readingProgress = Number(this.getMetadata(file, "readingProgress"));
+    const title = this.getMetadata(file, "title");
+    if (readingProgress <= 0 || isNaN(readingProgress)) {
+      new import_obsidian14.Notice(`\u300A${file.basename}\u300B\u8FD8\u672A\u9605\u8BFB`);
+      return;
+    }
+    const targetPath = `${this.settings.characterRelationshipsFolder}/${title}.md`;
+    let targetFile = this.app.vault.getFileByPath(targetPath);
+    if (!targetFile) {
+      targetFile = await this.app.vault.create(targetPath, "");
+    }
+    const headings = ((_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.headings) || [];
+    const position = editor.getCursor();
+    const hierarchy = getHeadingHierarchy(headings, position.line);
+    const headingText = hierarchy.reduce((res, ret) => res += ret.heading + "/", "").slice(0, -1);
+    let blockId = getBlock(this.app, editor, file);
+    const progress2 = this.computerReadingProgress($(SOURCE_VIEW_CLASS));
+    await this.characterRelationships(targetFile, headingText, file.path, blockId, progress2);
+    await this.app.workspace.getLeaf(true).openFile(targetFile);
+  }
+  async characterRelationships(file, title, path, id, progress2) {
+    var _a;
+    let content = await this.app.vault.read(file);
+    let els = createElement("div", content).querySelectorAll(".__character-relationship__");
+    if (els.length === 0) {
+      if (content) {
+        new import_obsidian14.Notice("\u4EBA\u7269\u5173\u7CFB\u7B14\u8BB0\u5DF2\u901A\u8FC7\u5176\u4ED6\u65B9\u5F0F\u521B\u5EFA");
+        return;
+      }
+      content = `---
+tags: \u4EBA\u7269\u5173\u7CFB
+---
+
+- [${title}](${path}#^${id}) - ==<span class="__character-relationship__" data-id="${id}" data-path="${path}" data-title="${title}" data-progress="${progress2}" data-content="" data-state="open">${progress2}%</span>==
+
+\`\`\`mermaid
+flowchart LR
+\`\`\``;
+    } else {
+      let mermaid = content.match(/^```mermaid[\s\S]+```/gm)[0];
+      els = Array.from(els).map((el) => {
+        const { id: id2, path: path2, title: title2, progress: progress3, content: content2, state } = el.dataset;
+        return {
+          id: id2,
+          path: path2,
+          title: title2,
+          progress: Number(progress3),
+          content: state === "open" ? mermaid : content2.replace(/\\n/g, "\n"),
+          state: "close"
+        };
+      });
+      const index = els.findIndex((item) => item.progress >= progress2);
+      const value = {
+        id,
+        path,
+        title,
+        progress: Number(progress2),
+        content: "",
+        state: "open"
+      };
+      mermaid = `
+
+\`\`\`mermaid
+flowchart LR
+\`\`\``;
+      if (((_a = els[index]) == null ? void 0 : _a.progress) === progress2) {
+        els[index].state = "open";
+        mermaid = els[index].content;
+      } else if (index > -1) {
+        els.splice(index, 0, value);
+      } else {
+        els.push(value);
+      }
+      mermaid = mermaid.replace(/\\n/g, "\n");
+      content = `---
+tags: \u4EBA\u7269\u5173\u7CFB
+---
+
+${els.map((el) => `- [${el.title}](${el.path}#^${el.id}) - ${el.state === "open" ? "==" : ""}<span class="__character-relationship__" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</span>${el.state === "open" ? "==" : ""}`).join("\n")}
+
+${mermaid}`;
+    }
+    this.app.vault.modify(file, content);
+  }
   async videoLinkFormat(file) {
     if (!this.settings.videoLinkFormat || file.path !== this.settings.videoLinkFormatFolder + ".md")
       return;
@@ -4148,7 +4292,8 @@ var Toolbox = class extends import_obsidian14.Plugin {
         readingNotes: false,
         readingPageStyles: false,
         poster: false,
-        dialogue: false
+        dialogue: false,
+        characterRelationships: false
       });
       this.saveSettings();
     }
@@ -4405,8 +4550,6 @@ ${lifestyleForm}`;
     window.navigator.clipboard.writeText(`[[${file.path.replace("." + file.extension, "")}#^${blockId}|${file.basename}]]`);
     new import_obsidian14.Notice("\u5757\u5F15\u7528\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
   }
-  h(mask) {
-  }
   mask(el, file) {
     if (!this.settings.flip)
       return;
@@ -4542,7 +4685,7 @@ ${lifestyleForm}`;
     const d = (markdown.match(/==dialogue==[\s\S]*?==dialogue==/g) || []).reverse().map((t3) => t3.replace(/==dialogue==/g, "")).map((t3) => {
       const c2 = t3.split("\n");
       const [title, id] = c2[2].split("^");
-      c2[2] = `## [${title}](${file.path}#^${id})${this.settings.blockId ? " ^" + (0, import_js_md5.md5)(title) : ""}`;
+      c2[2] = `## [${title}](${file.path}#^${id})`;
       return c2.slice(0, -2).join("\n");
     });
     if (d.length) {
@@ -4598,7 +4741,7 @@ ${lifestyleForm}`;
   highlight(editor, file) {
     const onSubmit = (res, tagging) => {
       let blockId = getBlock(this.app, editor, file);
-      res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ""}" data-id="${blockId}" data-tagging="${tagging}" data-date="${today(true)}">${text}</span>`;
+      res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ""}" data-id="${blockId}" data-tagging="${tagging || ""}" data-date="${today(true)}">${text}</span>`;
       editor.replaceSelection(res);
     };
     if (!this.settings.highlight)
@@ -4639,7 +4782,7 @@ ${text2}
     let { readingProgress = 0, readingDate, completionDate } = ((_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) || {};
     this.app.fileManager.processFrontMatter(file, (frontmatter) => {
       if (readingDate && !completionDate) {
-        frontmatter.readingProgress = parseFloat(((el.scrollTop + el.clientHeight) / el.scrollHeight * 100).toFixed(2));
+        frontmatter.readingProgress = this.computerReadingProgress(el);
         if (!frontmatter.readingTime)
           frontmatter.readingTime = 0;
         frontmatter.readingTime += Math.min(this.settings.readDataTrackingTimeout, Date.now() - this.startTime);
@@ -4770,6 +4913,9 @@ ${text2}
     this.updateFrontmatter(file, "thinks", thinks);
     this.updateFrontmatter(file, "dialogue", dialogue);
   }
+  computerReadingProgress(el) {
+    return parseFloat(((el.scrollTop + el.clientHeight) / el.scrollHeight * 100).toFixed(2));
+  }
   getView() {
     return this.app.workspace.getActiveViewOfType(import_obsidian14.MarkdownView);
   }
@@ -4788,8 +4934,7 @@ ${text2}
     return file && file.extension === "md" && this.hasTag(file, "book") && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && this.getView().getMode() === "source";
   }
   hasRootFolder(file, folderName) {
-    const args = file.path.split("/");
-    return args.length > 1 && args.shift() === folderName;
+    return new RegExp(`^${folderName}`).test(file.path);
   }
   hasTag(file, name) {
     var _a, _b;
