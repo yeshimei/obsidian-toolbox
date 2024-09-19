@@ -1,29 +1,151 @@
 import imageCompression from 'browser-image-compression';
-import { arrayBufferToBase64, base64ToArrayBuffer, Notice } from 'obsidian';
-import { createFile, getBasename, insertString, isImagePath, isLongScreenshot, isResourceEncrypt, isVideoPath, mergeArrayBuffers } from './helpers';
-import ProgressBarEncryption from './Modals/ProgressBarEncryption';
-import Toolbox from './main';
+import { arrayBufferToBase64, base64ToArrayBuffer, Notice, TFile } from 'obsidian';
+import { $, createFile, getBasename, insertString, isImagePath, isLongScreenshot, isNoteEncrypt, isResourceEncrypt, isVideoPath, mergeArrayBuffers } from '../helpers';
+import ProgressBarEncryption from '../Modals/ProgressBarEncryption';
+import Toolbox from '../main';
+import Confirm from 'src/Modals/Confirm';
+import { md5 } from 'js-md5';
+import InputBox from 'src/Modals/InputBox';
 const progress = new ProgressBarEncryption();
 
-function arrayBufferToFile(arrayBuffer: ArrayBuffer, filename: string, mimeType: string): File {
-  const blob = new Blob([arrayBuffer], { type: mimeType });
-  return new File([blob], filename, { type: mimeType });
+export function encryptPopUpCommand(self: Toolbox) {
+  self.settings.encryption &&
+    self.addCommand({
+      id: '加密笔记',
+      name: '加密笔记',
+      icon: 'lock',
+      editorCallback: (editor, view) => encryptPopUp(self, view.file)
+    });
 }
 
-function fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result as ArrayBuffer);
-    };
-    reader.onerror = () => {
-      reject(new Error('File reading failed'));
-    };
-    reader.readAsArrayBuffer(file);
-  });
+export function decryptPopUpCommand(self: Toolbox) {
+  self.settings.encryption &&
+    self.addCommand({
+      id: '解密笔记',
+      name: '解密笔记',
+      icon: 'lock-open',
+      editorCallback: (editor, view) => decryptPopUp(self, view.file)
+    });
 }
 
-export async function imageToBase64(self: Toolbox, links: string[], pass: string, convert = true) {
+export async function encOrDecPopUp(self: Toolbox, file: TFile) {
+  const type = self.settings.encryptionRememberPassMode;
+  const tempPass = self.encryptionTempData[file.path];
+  const encrypted = isNoteEncrypt(await self.app.vault.cachedRead(file));
+  let { pass } = self.settings.plugins.encryption[file.path] || {};
+  if (file.extension === 'md' && encrypted && (type === 'notSave' || (type === 'always' && !pass) || (type === 'disposable' && !tempPass))) {
+    await decryptPopUp(self, file);
+  }
+
+  if ((type === 'always' && pass) || (type === 'disposable' && (pass = tempPass))) {
+    new Confirm(self.app, {
+      title: encrypted ? '解密这篇笔记？' : '加密这篇笔记？',
+      onSubmit: res => res && encryptionNote(self, file, pass, !encrypted)
+    }).open();
+  }
+}
+
+export async function toggleEncryptNote(self: Toolbox, file: TFile) {
+  const content = await self.app.vault.read(file);
+  const editorViewLine = $('.markdown-source-view .cm-content');
+  const previewViewLine = $('.markdown-preview-view p[dir="auto"]');
+
+  if (isNoteEncrypt(content)) {
+    editorViewLine?.hide();
+    previewViewLine?.hide();
+  } else {
+    editorViewLine?.show();
+    previewViewLine?.show();
+  }
+}
+
+export function clearNotePass(self: Toolbox) {
+  // 清空已经删除笔记的本地记录
+  for (let key in self.settings.plugins.encryption) {
+    if (!self.app.vault.getFileByPath(key)) delete self.settings.plugins.encryption[key];
+    self.saveSettings();
+  }
+  // 非永久记住密码，都清空本地密码
+  if (self.settings.encryptionRememberPassMode !== 'always') {
+    for (let key in self.settings.plugins.encryption) {
+      const data = self.settings.plugins.encryption[key];
+      if (data) data.pass = '';
+    }
+
+    self.saveSettings();
+  }
+}
+
+export async function encryptPopUp(self: Toolbox, file: TFile) {
+  if (!self.settings.encryption) return;
+  const onSubmit = (pass: string) => {
+    new Confirm(self.app, {
+      content: `请确认，加密密码为 ${pass} `,
+      onSubmit: res =>
+        res &&
+        new Confirm(self.app, {
+          content: `请最后一次确认，加密密码为 ${pass} `,
+          onSubmit: async res2 => res2 && encryptionNote(self, file, await AES256Helper.encrypt(md5(pass), pass))
+        }).open()
+    }).open();
+  };
+
+  new InputBox(self.app, {
+    title: '加密笔记',
+    name: '密码',
+    description: '注意，本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。将加密笔记中的文字，图片以及视频（默认不开启），加密后的资源文件覆盖源文件，也请做好备份',
+    onSubmit
+  }).open();
+}
+
+export async function decryptPopUp(self: Toolbox, file: TFile) {
+  if (!self.settings.encryption) return;
+  new InputBox(self.app, {
+    title: '解密笔记',
+    name: '密码',
+    onSubmit: async pass => encryptionNote(self, file, await AES256Helper.encrypt(md5(pass), pass), false)
+  }).open();
+}
+
+export async function encryptionNote(self: Toolbox, file: TFile, pass: string, convert = true) {
+  if (!self.settings.encryption || !pass) return;
+  let content = await self.app.vault.read(file);
+  if (!content) return;
+  let decryptContent;
+  // 如果笔记已加密，从插件数据获取图像路径，否则获取笔记中的图像路径
+  const isN = isNoteEncrypt(content);
+  if (convert) {
+    const localP = self.settings.plugins.encryption[file.path]?.pass;
+    const tP = self.encryptionTempData[file.path];
+    if (self.settings.encryptionImageCompress && (localP || tP) && pass !== (localP || tP)) {
+      return new Notice('请先关闭图片压缩，使用旧密码恢复原图，再修改新密码');
+    }
+    isN ? new Notice('笔记已加密') : (decryptContent = await encrypt(content, pass));
+  } else {
+    try {
+      isN ? (decryptContent = await decrypt(content.slice(32 + 1), pass)) : new Notice('笔记已解密');
+    } catch (e) {
+      new Notice('密码可能有误');
+    }
+  }
+
+  let links = isN ? self.settings.plugins.encryption[file.path]?.links || [] : Object.keys(self.app.metadataCache.resolvedLinks[file.path]);
+  if (decryptContent) {
+    const localLinks = await imageToBase64(self, links, pass, convert);
+    await self.app.vault.modify(file, (convert ? md5(file.path) + '%' : '') + decryptContent);
+    toggleEncryptNote(self, file);
+    self.settings.plugins.encryption[file.path] = {
+      pass: self.settings.encryptionRememberPassMode === 'always' ? pass : '',
+      links: localLinks
+    };
+    if (self.settings.encryptionRememberPassMode !== 'always') {
+      self.encryptionTempData[file.path] = pass;
+    }
+    await self.saveSettings();
+  }
+}
+
+async function imageToBase64(self: Toolbox, links: string[], pass: string, convert = true) {
   let index = 0;
   const chunkSize = Math.max(self.settings.encryptionChunkSize, 1024 * 1024);
   links = links.filter(isImagePath).concat(links.filter(isVideoPath));
@@ -185,6 +307,7 @@ export async function decrypt(encryptedText: string, pass: string): Promise<stri
   const decoder = new TextDecoder();
   return decoder.decode(decrypted);
 }
+
 export class AES256Helper {
   private static async getKeyMaterial(password: string): Promise<CryptoKey> {
     const enc = new TextEncoder();
@@ -248,4 +371,22 @@ export class AES256Helper {
     const dec = new TextDecoder();
     return dec.decode(decrypted);
   }
+}
+
+function arrayBufferToFile(arrayBuffer: ArrayBuffer, filename: string, mimeType: string): File {
+  const blob = new Blob([arrayBuffer], { type: mimeType });
+  return new File([blob], filename, { type: mimeType });
+}
+
+function fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(reader.result as ArrayBuffer);
+    };
+    reader.onerror = () => {
+      reject(new Error('File reading failed'));
+    };
+    reader.readAsArrayBuffer(file);
+  });
 }

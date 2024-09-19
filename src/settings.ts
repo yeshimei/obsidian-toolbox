@@ -69,7 +69,7 @@ export interface ToolboxSettings {
 
   miscellaneous: string;
   cleanClipboardContent: boolean;
-  moveResourcesTo: boolean;
+  resourceTo: boolean;
   searchForPlants: boolean;
   searchForPlantsFolder: string;
   videoLinkFormat: boolean;
@@ -133,7 +133,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   poster: true,
 
   miscellaneous: '剪切板内容格式化',
-  moveResourcesTo: false,
+  resourceTo: false,
   cleanClipboardContent: false,
   searchForPlants: false,
   searchForPlantsFolder: '卡片盒/归档',
@@ -542,10 +542,10 @@ export class ToolboxSettingTab extends PluginSettingTab {
     if (this.plugin.settings.miscellaneous === '移动笔记中的资源至指定文件夹') {
       new Setting(containerEl)
         .setName('移动笔记中的资源至指定文件夹')
-        .setDesc('moveResourcesTo: "[[folder]]"')
+        .setDesc('resourceTo: "[[folder]]"')
         .addToggle(cd =>
-          cd.setValue(this.plugin.settings.moveResourcesTo).onChange(async value => {
-            this.plugin.settings.moveResourcesTo = value;
+          cd.setValue(this.plugin.settings.resourceTo).onChange(async value => {
+            this.plugin.settings.resourceTo = value;
             await this.plugin.saveSettings();
             this.display();
           })

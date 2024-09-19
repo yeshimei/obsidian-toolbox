@@ -1,6 +1,5 @@
-import { AES256Helper, encrypt, decrypt } from 'src/encryption';
-import Toolbox from 'src/main';
-import { clearRootFFolder, create } from 'test';
+import { AES256Helper, encrypt, decrypt } from 'src/Commands/encryption';
+import { clearRootFFolder } from 'test';
 import test from './Test';
 import { isResourceEncrypt } from 'src/helpers';
 

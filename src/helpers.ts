@@ -1,45 +1,15 @@
 import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
 
-export function getHeadingHierarchy<T extends { [key: string]: any }>(headings: T[], line: number): T[] {
-  let currentHeading: T;
-  const hierarchy: T[] = [];
+export const SOURCE_VIEW_CLASS = '.cm-scroller';
+export const MASK_CLASS = '.__mask';
+export const MOBILE_HEADER_CLASS = '.view-header';
+export const MOBILE_NAVBAR_CLASS = '.mobile-navbar-actions';
+export const COMMENT_CLASS = '.__comment';
+export const OUT_LINK_CLASS = '.cm-underline';
+export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'];
 
-  for (let i = headings.length - 1; i >= 0; i--) {
-    if (headings[i].position.start.line <= line) {
-      currentHeading = headings[i];
-      break;
-    }
-  }
-
-  if (!currentHeading) {
-    return hierarchy;
-  }
-
-  hierarchy.push(currentHeading);
-
-  for (let i = headings.indexOf(currentHeading) - 1; i >= 0; i--) {
-    if (headings[i].level < currentHeading.level) {
-      hierarchy.unshift(headings[i]);
-      currentHeading = headings[i];
-    }
-  }
-
-  return hierarchy;
-}
-
-export async function isLongScreenshot(arrayBuffer: ArrayBuffer, proportion = 2): Promise<boolean> {
-  const blob = new Blob([arrayBuffer]);
-  const url = URL.createObjectURL(blob);
-
-  return new Promise(resolve => {
-    const img = new Image();
-    img.src = url;
-    img.onload = () => {
-      const aspectRatio = img.height / img.width;
-      resolve(aspectRatio > proportion);
-      URL.revokeObjectURL(url);
-    };
-  });
+export function computerReadingProgress(el: Element) {
+  return parseFloat((((el.scrollTop + el.clientHeight) / el.scrollHeight) * 100).toFixed(2));
 }
 
 export function insertString(original: string, index: number, insert: string) {
@@ -52,49 +22,6 @@ export async function createFile(app: App, path: string, cover = false) {
   let file = app.vault.getFileByPath(path);
   file ? cover && (await app.vault.modify(file, '')) : (file = await app.vault.create(path, ''));
   return file;
-}
-
-export function mergeArrayBuffers(buffer1: ArrayBuffer, buffer2: ArrayBuffer): ArrayBuffer {
-  const mergedBuffer = new ArrayBuffer(buffer1.byteLength + buffer2.byteLength);
-  const mergedView = new Uint8Array(mergedBuffer);
-
-  mergedView.set(new Uint8Array(buffer1), 0);
-  mergedView.set(new Uint8Array(buffer2), buffer1.byteLength);
-
-  return mergedBuffer;
-}
-
-export function getBasename(path: string): string {
-  return path.split('/').pop() || path;
-}
-
-export function isBase64(str: string): boolean {
-  if (str === '' || str.trim() === '') {
-    return false;
-  }
-
-  const base64Pattern = /^(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)?$/;
-  return base64Pattern.test(str);
-}
-
-export function isResourceEncrypt(str: string) {
-  return /^[a-z0-9]{24,32}:[a-z0-9]+$/.test(str); /* 分块，记录了 8 位的长度信息 */
-}
-
-export function isNoteEncrypt(str: string) {
-  return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str);
-}
-
-export function isImageEncrypt(str: string) {
-  return /^[a-z0-9:%]+$/.test(str);
-}
-
-export function isVideoPath(path: string) {
-  return /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(path);
-}
-
-export function isImagePath(path: string) {
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(path);
 }
 
 export function codeBlockParamParse(source: string, separator = '=') {
@@ -111,32 +38,6 @@ export function codeBlockParamParse(source: string, separator = '=') {
 export function editorBlur(app: App) {
   app.workspace.getActiveViewOfType(MarkdownView)?.editor?.blur();
   getSelection().removeAllRanges();
-}
-
-export const plantClassificationSystem: any = {
-  被子植物分类系统: `界: 植物界 \n门: 被子植物门`,
-  裸子植物分类系统: `界: 植物界 \n门: 裸子植物门`,
-  石松类和蕨类植物分类系统: `界: 植物界 \n门: 蕨类植物门`,
-  苔藓植物分类系统: `界: 植物界 \n门: 苔藓植物门`
-};
-
-export function extractChineseParts(inputString: string) {
-  const chineseParts = inputString.match(/[\u4e00-\u9fa5]+/g).reverse();
-  const yamlObject: any = {};
-  const sy = chineseParts.shift();
-  const keys = ['亚门', '纲', '亚纲', '超目', '科', '属'];
-  for (let i = 0; i < keys.length; i++) {
-    yamlObject[keys[i]] = chineseParts.find(text => text.indexOf(keys[i]) > -1) || '';
-  }
-  yamlObject['目'] = chineseParts.find(text => text.slice(-1) === '目' && text.slice(-2) !== '超目') || '';
-  return `${plantClassificationSystem[sy]}
-亚门: ${yamlObject['亚门']}
-纲: ${yamlObject['纲']}
-亚纲: ${yamlObject['亚纲']}
-超目: ${yamlObject['超目']}
-科: ${yamlObject['科']}
-目: ${yamlObject['目']}
-属: ${yamlObject['属']}`;
 }
 
 export function $(className: string) {
@@ -164,36 +65,29 @@ export async function requestUrlToHTML(url: string) {
   return div;
 }
 
-export function filterChineseAndPunctuation(str: string) {
-  const regex = /[\u4e00-\u9fa5。，、；;]/g;
-  return str.match(regex).join('');
+export function getBasename(path: string): string {
+  return path.split('/').pop() || path;
 }
 
-export function trimNonChineseChars(str: string) {
-  return str.replace(/^[^\u4e00-\u9fa5]+|[^\u4e00-\u9fa5]+$/g, '');
-}
+export function pick<T>(array: T[], count: number, unique: boolean = false): T[] {
+  const result: T[] = [];
+  const usedIndices: Set<number> = new Set();
 
-export function removeDuplicates<T>(arr: T[]) {
-  return arr.filter((item: T, index: number) => arr.indexOf(item) === index);
-}
+  for (let i = 0; i < count; i++) {
+    let randomIndex: number;
 
-export function pick<T>(arr: T[], n: number = 1, repeat = true): T[] {
-  if (n >= arr.length) {
-    return arr;
-  }
-  let result: T[] = [];
-  let picked: Set<number> = new Set();
-  for (let i = 0; i < n; i++) {
-    let index = Math.floor(Math.random() * arr.length);
-    if (!repeat) {
-      while (picked.has(index)) {
-        index = Math.floor(Math.random() * arr.length);
-      }
-      picked.add(index);
+    if (unique) {
+      do {
+        randomIndex = Math.floor(Math.random() * array.length);
+      } while (usedIndices.has(randomIndex));
+      usedIndices.add(randomIndex);
+    } else {
+      randomIndex = Math.floor(Math.random() * array.length);
     }
 
-    result.push(arr[index]);
+    result.push(array[randomIndex]);
   }
+
   return result;
 }
 
@@ -272,4 +166,45 @@ function shouldInsertAfter(block: any) {
   if (block.type) {
     return ['blockquote', 'code', 'table', 'comment', 'footnoteDefinition'].includes(block.type);
   }
+}
+
+export function isNoteEncrypt(str: string) {
+  return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str);
+}
+
+export function isResourceEncrypt(str: string) {
+  return /^[a-z0-9]{24,32}:[a-z0-9]+$/.test(str); /* 分块，记录了 8 位的长度信息 */
+}
+
+export function isVideoPath(path: string) {
+  return /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(path);
+}
+
+export function isImagePath(path: string) {
+  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(path);
+}
+
+export async function isLongScreenshot(arrayBuffer: ArrayBuffer, proportion = 2): Promise<boolean> {
+  const blob = new Blob([arrayBuffer]);
+  const url = URL.createObjectURL(blob);
+
+  return new Promise(resolve => {
+    const img = new Image();
+    img.src = url;
+    img.onload = () => {
+      const aspectRatio = img.height / img.width;
+      resolve(aspectRatio > proportion);
+      URL.revokeObjectURL(url);
+    };
+  });
+}
+
+export function mergeArrayBuffers(buffer1: ArrayBuffer, buffer2: ArrayBuffer): ArrayBuffer {
+  const mergedBuffer = new ArrayBuffer(buffer1.byteLength + buffer2.byteLength);
+  const mergedView = new Uint8Array(mergedBuffer);
+
+  mergedView.set(new Uint8Array(buffer1), 0);
+  mergedView.set(new Uint8Array(buffer2), buffer1.byteLength);
+
+  return mergedBuffer;
 }

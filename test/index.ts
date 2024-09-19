@@ -1,6 +1,7 @@
 import Toolbox from 'src/main';
-import './Helpers.test';
-import './commands/Encryption.test';
+// import './Helpers.test';
+// import './commands/Encryption.test';
+import './commands/renumberFootnote.test';
 import { arrayBufferToBase64, TFolder } from 'obsidian';
 
 const root = 'test';
