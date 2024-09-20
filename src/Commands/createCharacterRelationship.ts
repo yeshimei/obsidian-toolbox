@@ -12,11 +12,11 @@ export default function createCharacterRelationshipCommand(self: Toolbox) {
     });
 }
 
-export async function toggleCharacterRelationship(self: Toolbox, file: TFile) {
+export async function switchCharacterRelationship(self: Toolbox, file: TFile) {
   if (!self.hasRootFolder(file, self.settings.characterRelationshipsFolder)) return;
   document.onclick = evt => {
     const target = evt.target as HTMLElement;
-    if (target.hasClass('__character-relationship__')) {
+    if (target.hasClass('__character-relationship')) {
       const { id, path, title, progress } = target.dataset;
       characterRelationship(self, file, title, path, id, Number(progress));
     }
@@ -61,7 +61,7 @@ async function characterRelationship(self: Toolbox, file: TFile, title: string, 
       return;
     }
 
-    content = `---\ntags: 人物关系\n---\n\n- [${title}](${path}#^${id}) - ==<span class="__character-relationship__" data-id="${id}" data-path="${path}" data-title="${title}" data-progress="${progress}" data-content="" data-state="open">${progress}%</span>==\n\n\`\`\`mermaid\nflowchart LR\n\`\`\``;
+    content = `---\ntags: 人物关系\n---\n\n- [${title}](${path}#^${id}) - <span class="__character-relationship__ cm-highlight" data-id="${id}" data-path="${path}" data-title="${title}" data-progress="${progress}" data-content="" data-state="open">${progress}%</span>\n\n\`\`\`mermaid\nflowchart LR\n\`\`\``;
   } else {
     let mermaid = content.match(/^```mermaid[\s\S]+```/gm)[0];
     els = Array.from(els).map((el: any) => {
@@ -96,7 +96,7 @@ async function characterRelationship(self: Toolbox, file: TFile, title: string, 
     }
 
     mermaid = mermaid.replace(/\\n/g, '\n');
-    content = `---\ntags: 人物关系\n---\n\n${els.map((el: any) => `- [${el.title}](${el.path}#^${el.id}) - ${el.state === 'open' ? '==' : ''}<span class="__character-relationship__" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</span>${el.state === 'open' ? '==' : ''}`).join('\n')}\n\n${mermaid}`;
+    content = `---\ntags: 人物关系\n---\n\n${els.map((el: any) => `- [${el.title}](${el.path}#^${el.id}) - <span class="__character-relationship__ ${el.state === 'open' ? 'cm-highlight' : ''}" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</span>`).join('\n')}\n\n${mermaid}`;
   }
 
   self.app.vault.modify(file, content);

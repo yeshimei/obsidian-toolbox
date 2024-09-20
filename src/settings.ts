@@ -74,6 +74,7 @@ export interface ToolboxSettings {
   searchForPlantsFolder: string;
   videoLinkFormat: boolean;
   videoLinkFormatFolder: string;
+  switchLibrary: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -138,7 +139,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   searchForPlants: false,
   searchForPlantsFolder: '卡片盒/归档',
   videoLinkFormat: false,
-  videoLinkFormatFolder: ''
+  videoLinkFormatFolder: '',
+  switchLibrary: false
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -519,6 +521,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
           .addOption('当笔记插入视频时重排版', '当笔记插入视频时重排版')
           .addOption('移动笔记中的资源至指定文件夹', '移动笔记中的资源至指定文件夹')
           .addOption('查植物', '查植物')
+          .addOption('书库', '书库')
           .setValue(this.plugin.settings.miscellaneous)
           .onChange(async value => {
             this.plugin.settings.miscellaneous = value as any;
@@ -588,6 +591,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
           })
         );
       }
+    }
+
+    if (this.plugin.settings.miscellaneous === '书库') {
+      new Setting(containerEl).setName('书库').addToggle(cd =>
+        cd.setValue(this.plugin.settings.switchLibrary).onChange(async value => {
+          this.plugin.settings.switchLibrary = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
     }
   }
 }

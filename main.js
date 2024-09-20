@@ -630,7 +630,8 @@ var DEFAULT_SETTINGS = {
   searchForPlants: false,
   searchForPlantsFolder: "\u5361\u7247\u76D2/\u5F52\u6863",
   videoLinkFormat: false,
-  videoLinkFormatFolder: ""
+  videoLinkFormatFolder: "",
+  switchLibrary: false
 };
 var ToolboxSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
@@ -908,7 +909,7 @@ var ToolboxSettingTab = class extends import_obsidian.PluginSettingTab {
       );
     }
     new import_obsidian.Setting(containerEl).setName("\u{1F3C5} \u6742\u9879").setDesc("\u5B9A\u5236\u5316\u529F\u80FD").addDropdown(
-      (cd) => cd.addOption("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316", "\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addOption("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939", "\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").addOption("\u67E5\u690D\u7269", "\u67E5\u690D\u7269").setValue(this.plugin.settings.miscellaneous).onChange(async (value) => {
+      (cd) => cd.addOption("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316", "\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addOption("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939", "\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").addOption("\u67E5\u690D\u7269", "\u67E5\u690D\u7269").addOption("\u4E66\u5E93", "\u4E66\u5E93").setValue(this.plugin.settings.miscellaneous).onChange(async (value) => {
         this.plugin.settings.miscellaneous = value;
         await this.plugin.saveSettings();
         this.display();
@@ -966,6 +967,15 @@ var ToolboxSettingTab = class extends import_obsidian.PluginSettingTab {
         );
       }
     }
+    if (this.plugin.settings.miscellaneous === "\u4E66\u5E93") {
+      new import_obsidian.Setting(containerEl).setName("\u4E66\u5E93").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.switchLibrary).onChange(async (value) => {
+          this.plugin.settings.switchLibrary = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+    }
   }
 };
 
@@ -978,6 +988,13 @@ var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var imageSuffix = ["png", "jpg", "jpeg", "gif", "bmp", "svg"];
+function countOccurrences(arr) {
+  const occurrences = arr.reduce((acc, curr) => {
+    acc[curr] = (acc[curr] || 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(occurrences);
+}
 function computerReadingProgress(el) {
   return parseFloat(((el.scrollTop + el.clientHeight) / el.scrollHeight * 100).toFixed(2));
 }
@@ -4479,12 +4496,12 @@ function createCharacterRelationshipCommand(self2) {
     editorCallback: (editor, view) => createCharacterRelationship(self2, editor, view.file)
   });
 }
-async function toggleCharacterRelationship(self2, file) {
+async function switchCharacterRelationship(self2, file) {
   if (!self2.hasRootFolder(file, self2.settings.characterRelationshipsFolder))
     return;
   document.onclick = (evt) => {
     const target = evt.target;
-    if (target.hasClass("__character-relationship__")) {
+    if (target.hasClass("__character-relationship")) {
       const { id, path, title, progress: progress2 } = target.dataset;
       characterRelationship(self2, file, title, path, id, Number(progress2));
     }
@@ -4527,7 +4544,7 @@ async function characterRelationship(self2, file, title, path, id, progress2) {
 tags: \u4EBA\u7269\u5173\u7CFB
 ---
 
-- [${title}](${path}#^${id}) - ==<span class="__character-relationship__" data-id="${id}" data-path="${path}" data-title="${title}" data-progress="${progress2}" data-content="" data-state="open">${progress2}%</span>==
+- [${title}](${path}#^${id}) - <span class="__character-relationship__ cm-highlight" data-id="${id}" data-path="${path}" data-title="${title}" data-progress="${progress2}" data-content="" data-state="open">${progress2}%</span>
 
 \`\`\`mermaid
 flowchart LR
@@ -4572,7 +4589,7 @@ flowchart LR
 tags: \u4EBA\u7269\u5173\u7CFB
 ---
 
-${els.map((el) => `- [${el.title}](${el.path}#^${el.id}) - ${el.state === "open" ? "==" : ""}<span class="__character-relationship__" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</span>${el.state === "open" ? "==" : ""}`).join("\n")}
+${els.map((el) => `- [${el.title}](${el.path}#^${el.id}) - <span class="__character-relationship__ ${el.state === "open" ? "cm-highlight" : ""}" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</span>`).join("\n")}
 
 ${mermaid}`;
   }
@@ -4769,6 +4786,86 @@ async function syncNote(self2, file) {
   }
 }
 
+// src/Commands/Block.ts
+var Block = class {
+  constructor() {
+    this.blocks = [];
+  }
+  static getInstance() {
+    if (!Block.instance) {
+      Block.instance = new Block();
+    }
+    return Block.instance;
+  }
+  register(name, fn) {
+    this.blocks.push({
+      name,
+      fn
+    });
+  }
+  async exec(self2, file) {
+    let content = await self2.app.vault.read(file);
+    this.blocks.forEach(({ name, fn }) => {
+      content = content.replace(new RegExp(`(?<header>%%${name}(?<paramStringify>.*?)%%).+?(?<footer>%%${name}%%)`, "gs"), (...args) => {
+        let { header, footer, paramStringify } = args.pop();
+        let match;
+        let regex = /(\w+)=(\w+)/g;
+        let params = {};
+        while ((match = regex.exec(paramStringify)) !== null) {
+          params[match[1]] = match[2];
+        }
+        const content2 = fn(params, file);
+        return `${header}
+
+${content2}
+
+${footer}`;
+      });
+    });
+    await self2.app.vault.modify(file, content);
+  }
+};
+var Block_default = Block.getInstance();
+
+// src/Commands/switchLibrary.ts
+function switchLibrary(self2) {
+  if (!self2.settings.switchLibrary)
+    return;
+  let name = "\u5168\u90E8";
+  Block_default.register("\u4E66\u5E93", (args, file) => {
+    const files = self2.app.vault.getMarkdownFiles().filter((file2) => self2.hasReadingPage(file2, false));
+    const categories = files.map((file2) => self2.getMetadata(file2, "category")).filter(Boolean);
+    const categoryOccurrences = countOccurrences(categories);
+    categoryOccurrences.unshift(["\u5168\u90E8", files.length]);
+    document.onclick = (evt) => {
+      const target = evt.target;
+      if (target.hasClass("__library")) {
+        name = target.dataset.name;
+        Block_default.exec(self2, file);
+        evt.preventDefault();
+        evt.stopPropagation();
+      }
+    };
+    return categoryText(categoryOccurrences, name) + "\n\n" + dataviewJsContent(name);
+  });
+}
+function categoryText(occurrences, name) {
+  return occurrences.sort((a2, b) => b[1] - a2[1]).reduce((ret, res) => ret += `<span class="__library" data-name="${res[0]}" data-count=${res[1]} style="background-color: ${name === res[0] ? "var(--text-highlight-bg)" : "unset"}">${res[0]}\uFF08${res[1]}\uFF09</span> | `, "").slice(0, -2);
+}
+function dataviewJsContent(name) {
+  return `\`\`\`dataview
+table without id
+	embed(link(cover)) as "\u5C01\u9762" ,
+	choice(top, "\u{1F525}", "") + choice(completionDate, "\u{1F3C6}", "") + "\u300A[" + file.name + "](" + file.path + ")\u300B" + author,
+	 "[\u7B14\u8BB0](\u4E66\u5E93/\u8BFB\u4E66\u7B14\u8BB0/" + file.name +")" + choice(relationshipDiagram, " / [\u4EBA\u7269\u5173\u7CFB](\u4E66\u5E93/\u4EBA\u7269\u5173\u7CFB/" + title +")", ""),
+	choice(completionDate, "\u8FDB\u5EA6 100% <br>", choice(readingDate,choice(readingProgress, "\u8FDB\u5EA6 " + readingProgress + "% <br>", ""), "\u8FDB\u5EA6 \u672A\u8BFB<br>")) + choice(readingTimeFormat, "\u65F6\u957F "+ durationformat(dur(readingTimeFormat), "h'h'm'm's's'")+"<br>", "") + "\u8BA8\u8BBA " + dialogue + "<br>\u5212\u7EBF " + highlights + "<br>\u60F3\u6CD5 "  + thinks + "<br>\u51FA\u94FE " + outlinks ,
+	bookReview
+from "\u4E66\u5E93" and #book
+${name === "\u5168\u90E8" ? "" : `where category="${name}"`}
+sort top DESC, file.mtime DESC
+\`\`\``;
+}
+
 // src/main.ts
 var Toolbox = class extends import_obsidian25.Plugin {
   async onload() {
@@ -4794,17 +4891,19 @@ var Toolbox = class extends import_obsidian25.Plugin {
     blockReferenceCommand(this);
     resourcesToCommand(this);
     searchForPlantCommand(this);
+    switchLibrary(this);
     this.registerEvent(
       this.app.workspace.on("file-open", async (file) => {
         this.startTime = Date.now();
         const sourceView = $(SOURCE_VIEW_CLASS);
+        Block_default.exec(this, file);
         polysemy(this, file);
         adjustReadingPageStyle(this, sourceView, file);
         readingPageMask(this, sourceView, file);
         encOrDecPopUp(this, file);
         toggleEncryptNote(this, file);
         clearNotePass(this);
-        toggleCharacterRelationship(this, file);
+        switchCharacterRelationship(this, file);
       })
     );
     this.registerEvent(
@@ -4858,8 +4957,8 @@ var Toolbox = class extends import_obsidian25.Plugin {
     var _a, _b;
     return file && ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b[key]);
   }
-  hasReadingPage(file) {
-    return file && file.extension === "md" && this.hasTag(file, "book") && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && this.getView().getMode() === "source";
+  hasReadingPage(file, mode = true) {
+    return file && file.extension === "md" && this.hasTag(file, "book") && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === "source" : true);
   }
   hasRootFolder(file, folderName) {
     return new RegExp(`^${folderName}`).test(file.path);

@@ -19,12 +19,14 @@ import resourcesToCommand, { resourceTo } from './Commands/resourceTo';
 import dialogueCommand from './Commands/dialogue';
 import searchForPlantCommand from './Commands/searchForPlant';
 import searchForWordCommand from './Commands/searchForWord';
-import createCharacterRelationshipCommand, { toggleCharacterRelationship } from './Commands/createCharacterRelationship';
+import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
 import repositionVideo from './Commands/repositionVideo';
 import adjustReadingPageStyle from './Commands/adjustReadingPageStyle';
 import readingDataTracking from './Commands/readingDataTracking';
 import init from './Commands/init';
 import asyncNoteCommand from './Commands/syncNote';
+import switchLibrary from './Commands/switchLibrary';
+import Block from './Commands/Block';
 
 export default class Toolbox extends Plugin {
   encryptionTempData: any;
@@ -72,12 +74,16 @@ export default class Toolbox extends Plugin {
     resourcesToCommand(this);
     // 查植物
     searchForPlantCommand(this);
+    // 切换书库
+    switchLibrary(this);
 
     this.registerEvent(
       this.app.workspace.on('file-open', async file => {
         // document.body.onclick = evt => new Notice((evt.target as HTMLLIElement).className);
         this.startTime = Date.now();
         const sourceView = $(SOURCE_VIEW_CLASS);
+        // Block
+        Block.exec(this, file);
         // 多义笔记转跳
         polysemy(this, file);
         // 阅读页面
@@ -91,7 +97,7 @@ export default class Toolbox extends Plugin {
         // 根据记住密码的行为判断是否清空本地存储的笔记密码
         clearNotePass(this);
         // 切换人物关系视图
-        toggleCharacterRelationship(this, file);
+        switchCharacterRelationship(this, file);
       })
     );
 
@@ -152,8 +158,8 @@ export default class Toolbox extends Plugin {
     return file && this.app.metadataCache.getFileCache(file)?.frontmatter?.[key];
   }
 
-  hasReadingPage(file: TFile) {
-    return file && file.extension === 'md' && this.hasTag(file, 'book') && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && this.getView().getMode() === 'source';
+  hasReadingPage(file: TFile, mode = true) {
+    return file && file.extension === 'md' && this.hasTag(file, 'book') && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === 'source' : true);
   }
 
   hasRootFolder(file: TFile, folderName: string) {

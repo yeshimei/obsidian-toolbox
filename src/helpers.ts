@@ -8,6 +8,21 @@ export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'];
 
+/**
+ * 计算数组中每个字符串出现的次数。
+ *
+ * @param {string[]} arr - 要统计的字符串数组。
+ * @returns {{ [key: string]: number }} - 一个对象，其中键是字符串，值是该字符串在数组中出现的次数。
+ */
+export function countOccurrences(arr: string[]): [string, number][] {
+  const occurrences = arr.reduce((acc, curr) => {
+    acc[curr] = (acc[curr] || 0) + 1;
+    return acc;
+  }, {} as { [key: string]: number });
+
+  return Object.entries(occurrences);
+}
+
 export function computerReadingProgress(el: Element) {
   return parseFloat((((el.scrollTop + el.clientHeight) / el.scrollHeight) * 100).toFixed(2));
 }
