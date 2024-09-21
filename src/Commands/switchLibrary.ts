@@ -32,7 +32,7 @@ function dataviewJsContent(field: string, name: string) {
 table without id
 	embed(link(cover)) as "封面" ,
 	choice(top, "🔥", "") + choice(completionDate, "🏆", "") + "《[" + file.name + "](" + file.path + ")》" + author,
-	 "[笔记](书库/读书笔记/" + file.name +")" + choice(relationshipDiagram, " / [人物关系](书库/人物关系/" + title +")", ""),
+	 "[笔记](我的/读书笔记/" + file.name +")" + choice(relationshipDiagram, " / [人物关系](书库/人物关系/" + title +")", ""),
 	choice(completionDate, "进度 100% <br>", choice(readingDate,choice(readingProgress, "进度 " + readingProgress + "% <br>", ""), "进度 未读<br>")) + choice(readingTimeFormat, "时长 "+ durationformat(dur(readingTimeFormat), "h'h'm'm's's'")+"<br>", "") + "讨论 " + dialogue + "<br>划线 " + highlights + "<br>想法 "  + thinks + "<br>出链 " + outlinks ,
 	bookReview
 from "书库" and #book

@@ -11,6 +11,11 @@ export default async function clipboardFormatCommand(self: Toolbox) {
     });
 }
 
+/**
+ * 处理剪贴板内容并进行格式化。
+ * @param self - Toolbox 实例
+ * @param editor - 编辑器实例
+ */
 async function clipboardFormat(self: Toolbox, editor: Editor) {
   if (!self.settings.cleanClipboardContent) return;
   const text = await navigator.clipboard.readText();

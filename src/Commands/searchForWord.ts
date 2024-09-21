@@ -56,8 +56,8 @@ async function searchForWord(self: Toolbox, editor: Editor) {
       self.app.workspace.getLeaf(true).openFile(file);
     },
     async () => {
-      let content = htmlToMarkdown(JSummary.textContent);
-      if (!content) return;
+      const html = JSummary?.textContent;
+      let content = html ? htmlToMarkdown(html) : '';
       content = content.replace(/\[\d+\]/g, '');
       const filepath = '卡片盒/' + word + '.md';
       let file = self.app.vault.getFileByPath(filepath) || self.app.vault.getFileByPath('卡片盒/归档/' + word + '.md');

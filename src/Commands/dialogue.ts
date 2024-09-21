@@ -14,6 +14,7 @@ export default function dialogueCommand(self: Toolbox) {
 }
 
 function dialogue(self: Toolbox, editor: Editor) {
+  if (!self.settings.dialogue) return;
   const onSubmit = (title: string, text: string) => {
     let blockId = generateId();
     const cursor = editor.getCursor();
@@ -23,7 +24,6 @@ function dialogue(self: Toolbox, editor: Editor) {
     editor.replaceRange(newText, { line: cursor.line, ch: line.length });
   };
 
-  if (!self.settings.dialogue) return;
   new DoubleInputBox(self.app, {
     title: '讨论',
     titleName: '标题',

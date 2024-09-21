@@ -7,6 +7,7 @@ export default function init(self: Toolbox) {
       flip: false,
       fullScreenMode: false,
       readDataTracking: false,
+      searchForWords: true,
       highlight: false,
       readingNotes: false,
       readingPageStyles: false,

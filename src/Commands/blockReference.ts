@@ -1,4 +1,4 @@
-import { Notice, TFile, Editor } from 'obsidian';
+import { Editor, Notice, TFile } from 'obsidian';
 import { getBlock } from 'src/helpers';
 import Toolbox from 'src/main';
 
