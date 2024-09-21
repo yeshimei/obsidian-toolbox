@@ -1,5 +1,5 @@
-import Toolbox from 'src/main';
 import { TFile } from 'obsidian';
+import Toolbox from 'src/main';
 
 class Block {
   private static instance: Block;
@@ -23,7 +23,8 @@ class Block {
   async exec(self: Toolbox, file: TFile) {
     let content = await self.app.vault.read(file);
     this.blocks.forEach(({ name, fn }) => {
-      content = content.replace(new RegExp(`(?<header>%%${name}(?<paramStringify>.*?)%%).+?(?<footer>%%${name}%%)`, 'gs'), (...args) => {
+      const regex = new RegExp(`(?<header>%%${name}(?<paramStringify>.*?)%%).+?(?<footer>%%${name}%%)`, 'gs');
+      content = content.replace(regex, (...args) => {
         let { header, footer, paramStringify } = args.pop();
         let match;
         let regex = /(\w+)=(\w+)/g;

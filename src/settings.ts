@@ -75,6 +75,8 @@ export interface ToolboxSettings {
   videoLinkFormat: boolean;
   videoLinkFormatFolder: string;
   switchLibrary: boolean;
+  savePass: boolean;
+  savePassPath: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -140,7 +142,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   searchForPlantsFolder: '卡片盒/归档',
   videoLinkFormat: false,
   videoLinkFormatFolder: '',
-  switchLibrary: false
+  switchLibrary: false,
+  savePass: false,
+  savePassPath: '我的/其他/账号管理'
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -522,6 +526,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
           .addOption('移动笔记中的资源至指定文件夹', '移动笔记中的资源至指定文件夹')
           .addOption('查植物', '查植物')
           .addOption('书库', '书库')
+          .addOption('保存密码', '保存密码')
           .setValue(this.plugin.settings.miscellaneous)
           .onChange(async value => {
             this.plugin.settings.miscellaneous = value as any;
@@ -601,6 +606,25 @@ export class ToolboxSettingTab extends PluginSettingTab {
           this.display();
         })
       );
+    }
+
+    if (this.plugin.settings.miscellaneous === '保存密码') {
+      new Setting(containerEl).setName('保存密码').addToggle(cd =>
+        cd.setValue(this.plugin.settings.savePass).onChange(async value => {
+          this.plugin.settings.savePass = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+      if (this.plugin.settings.searchForPlants) {
+        new Setting(containerEl).setName('保存至哪篇笔记').addText(cd =>
+          cd.setValue('' + this.plugin.settings.savePassPath).onChange(async value => {
+            this.plugin.settings.savePassPath = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
     }
   }
 }

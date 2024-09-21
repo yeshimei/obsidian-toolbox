@@ -1,4 +1,4 @@
-import { App, Editor, TFile, moment, requestUrl, MarkdownView } from 'obsidian';
+import { App, Editor, MarkdownView, TFile, moment, requestUrl } from 'obsidian';
 
 export const SOURCE_VIEW_CLASS = '.cm-scroller';
 export const MASK_CLASS = '.__mask';
@@ -183,6 +183,7 @@ function shouldInsertAfter(block: any) {
   }
 }
 
+// 检查给定的字符串是否为加密笔记
 export function isNoteEncrypt(str: string) {
   return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str);
 }

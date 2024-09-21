@@ -1,11 +1,11 @@
 import imageCompression from 'browser-image-compression';
-import { arrayBufferToBase64, base64ToArrayBuffer, Notice, TFile } from 'obsidian';
-import { $, createFile, getBasename, insertString, isImagePath, isLongScreenshot, isNoteEncrypt, isResourceEncrypt, isVideoPath, mergeArrayBuffers } from '../helpers';
-import ProgressBarEncryption from '../Modals/ProgressBarEncryption';
-import Toolbox from '../main';
-import Confirm from 'src/Modals/Confirm';
 import { md5 } from 'js-md5';
+import { arrayBufferToBase64, base64ToArrayBuffer, Notice, TFile } from 'obsidian';
+import Confirm from 'src/Modals/Confirm';
 import InputBox from 'src/Modals/InputBox';
+import { $, createFile, getBasename, insertString, isImagePath, isLongScreenshot, isNoteEncrypt, isResourceEncrypt, isVideoPath, mergeArrayBuffers } from '../helpers';
+import Toolbox from '../main';
+import ProgressBarEncryption from '../Modals/ProgressBarEncryption';
 const progress = new ProgressBarEncryption();
 
 export function encryptPopUpCommand(self: Toolbox) {
