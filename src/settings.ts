@@ -77,6 +77,12 @@ export interface ToolboxSettings {
   switchLibrary: boolean;
   savePass: boolean;
   savePassPath: string;
+  chat: boolean;
+  chatUrl: string;
+  chatKey: string;
+  chatModel: string;
+  chatPromptFolder: string;
+  chatSaveFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -144,7 +150,13 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   videoLinkFormatFolder: '',
   switchLibrary: false,
   savePass: false,
-  savePassPath: '我的/其他/账号管理'
+  savePassPath: '我的/其他/账号管理',
+  chat: false,
+  chatUrl: 'https://api.deepseek.com/v1',
+  chatKey: '',
+  chatModel: 'deepseek-chat',
+  chatPromptFolder: 'CONFIG/PROMPTS',
+  chatSaveFolder: '我的/CHAT'
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -345,6 +357,50 @@ export class ToolboxSettingTab extends PluginSettingTab {
         this.display();
       })
     );
+
+    new Setting(containerEl).setName('🤖 AI Chat').addToggle(cd =>
+      cd.setValue(this.plugin.settings.chat).onChange(async value => {
+        this.plugin.settings.chat = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    if (this.plugin.settings.chat) {
+      new Setting(containerEl).setName('Url').addText(cd =>
+        cd.setValue('' + this.plugin.settings.chatUrl).onChange(async value => {
+          this.plugin.settings.chatUrl = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl).setName('Key').addText(cd =>
+        cd.setValue('' + this.plugin.settings.chatKey).onChange(async value => {
+          this.plugin.settings.chatKey = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl).setName('Model').addText(cd =>
+        cd.setValue('' + this.plugin.settings.chatModel).onChange(async value => {
+          this.plugin.settings.chatModel = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl).setName('Promats Folder').addText(cd =>
+        cd.setValue('' + this.plugin.settings.chatPromptFolder).onChange(async value => {
+          this.plugin.settings.chatPromptFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+      new Setting(containerEl).setName('将对话保存至哪个文件夹').addText(cd =>
+        cd.setValue('' + this.plugin.settings.chatSaveFolder).onChange(async value => {
+          this.plugin.settings.chatSaveFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+    }
 
     new Setting(containerEl)
       .setName('🔒 笔记加密')
@@ -617,7 +673,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
-      if (this.plugin.settings.searchForPlants) {
+      if (this.plugin.settings.savePass) {
         new Setting(containerEl).setName('保存至哪篇笔记').addText(cd =>
           cd.setValue('' + this.plugin.settings.savePassPath).onChange(async value => {
             this.plugin.settings.savePassPath = value;

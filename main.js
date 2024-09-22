@@ -579,7 +579,7 @@ __export(main_exports, {
   default: () => Toolbox
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian25 = require("obsidian");
+var import_obsidian26 = require("obsidian");
 
 // src/Commands/renumberFootnote.ts
 var import_obsidian = require("obsidian");
@@ -826,8 +826,8 @@ function codeBlockParamParse(source, separator = "=") {
   }, {});
 }
 function editorBlur(app) {
-  var _a, _b;
-  (_b = (_a = app.workspace.getActiveViewOfType(import_obsidian3.MarkdownView)) == null ? void 0 : _a.editor) == null ? void 0 : _b.blur();
+  var _a2, _b;
+  (_b = (_a2 = app.workspace.getActiveViewOfType(import_obsidian3.MarkdownView)) == null ? void 0 : _a2.editor) == null ? void 0 : _b.blur();
   getSelection().removeAllRanges();
 }
 function $(className) {
@@ -930,11 +930,11 @@ function shouldInsertAfter(block) {
     return ["blockquote", "code", "table", "comment", "footnoteDefinition"].includes(block.type);
   }
 }
-function isNoteEncrypt(str) {
-  return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str);
+function isNoteEncrypt(str2) {
+  return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str2);
 }
-function isResourceEncrypt(str) {
-  return /^[a-z0-9]{24,32}:[a-z0-9]+$/.test(str);
+function isResourceEncrypt(str2) {
+  return /^[a-z0-9]{24,32}:[a-z0-9]+$/.test(str2);
 }
 function isVideoPath(path) {
   return /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(path);
@@ -980,6 +980,5334 @@ function blockReference(self2, editor, file) {
   new import_obsidian4.Notice("\u5757\u5F15\u7528\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
 }
 
+// src/Commands/chat.ts
+var import_obsidian5 = require("obsidian");
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/error.mjs
+var error_exports = {};
+__export(error_exports, {
+  APIConnectionError: () => APIConnectionError,
+  APIConnectionTimeoutError: () => APIConnectionTimeoutError,
+  APIError: () => APIError,
+  APIUserAbortError: () => APIUserAbortError,
+  AuthenticationError: () => AuthenticationError,
+  BadRequestError: () => BadRequestError,
+  ConflictError: () => ConflictError,
+  ContentFilterFinishReasonError: () => ContentFilterFinishReasonError,
+  InternalServerError: () => InternalServerError,
+  LengthFinishReasonError: () => LengthFinishReasonError,
+  NotFoundError: () => NotFoundError,
+  OpenAIError: () => OpenAIError,
+  PermissionDeniedError: () => PermissionDeniedError,
+  RateLimitError: () => RateLimitError,
+  UnprocessableEntityError: () => UnprocessableEntityError
+});
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/version.mjs
+var VERSION = "4.63.0";
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/_shims/registry.mjs
+var auto = false;
+var kind = void 0;
+var fetch2 = void 0;
+var Request2 = void 0;
+var Response2 = void 0;
+var Headers2 = void 0;
+var FormData2 = void 0;
+var Blob2 = void 0;
+var File2 = void 0;
+var ReadableStream2 = void 0;
+var getMultipartRequestOptions = void 0;
+var getDefaultAgent = void 0;
+var fileFromPath = void 0;
+var isFsReadStream = void 0;
+function setShims(shims, options = { auto: false }) {
+  if (auto) {
+    throw new Error(`you must \`import 'openai/shims/${shims.kind}'\` before importing anything else from openai`);
+  }
+  if (kind) {
+    throw new Error(`can't \`import 'openai/shims/${shims.kind}'\` after \`import 'openai/shims/${kind}'\``);
+  }
+  auto = options.auto;
+  kind = shims.kind;
+  fetch2 = shims.fetch;
+  Request2 = shims.Request;
+  Response2 = shims.Response;
+  Headers2 = shims.Headers;
+  FormData2 = shims.FormData;
+  Blob2 = shims.Blob;
+  File2 = shims.File;
+  ReadableStream2 = shims.ReadableStream;
+  getMultipartRequestOptions = shims.getMultipartRequestOptions;
+  getDefaultAgent = shims.getDefaultAgent;
+  fileFromPath = shims.fileFromPath;
+  isFsReadStream = shims.isFsReadStream;
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/_shims/MultipartBody.mjs
+var MultipartBody = class {
+  constructor(body) {
+    this.body = body;
+  }
+  get [Symbol.toStringTag]() {
+    return "MultipartBody";
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/_shims/web-runtime.mjs
+function getRuntime({ manuallyImported } = {}) {
+  const recommendation = manuallyImported ? `You may need to use polyfills` : `Add one of these imports before your first \`import \u2026 from 'openai'\`:
+- \`import 'openai/shims/node'\` (if you're running on Node)
+- \`import 'openai/shims/web'\` (otherwise)
+`;
+  let _fetch, _Request, _Response, _Headers;
+  try {
+    _fetch = fetch;
+    _Request = Request;
+    _Response = Response;
+    _Headers = Headers;
+  } catch (error) {
+    throw new Error(`this environment is missing the following Web Fetch API type: ${error.message}. ${recommendation}`);
+  }
+  return {
+    kind: "web",
+    fetch: _fetch,
+    Request: _Request,
+    Response: _Response,
+    Headers: _Headers,
+    FormData: (
+      // @ts-ignore
+      typeof FormData !== "undefined" ? FormData : class FormData {
+        // @ts-ignore
+        constructor() {
+          throw new Error(`file uploads aren't supported in this environment yet as 'FormData' is undefined. ${recommendation}`);
+        }
+      }
+    ),
+    Blob: typeof Blob !== "undefined" ? Blob : class Blob {
+      constructor() {
+        throw new Error(`file uploads aren't supported in this environment yet as 'Blob' is undefined. ${recommendation}`);
+      }
+    },
+    File: (
+      // @ts-ignore
+      typeof File !== "undefined" ? File : class File {
+        // @ts-ignore
+        constructor() {
+          throw new Error(`file uploads aren't supported in this environment yet as 'File' is undefined. ${recommendation}`);
+        }
+      }
+    ),
+    ReadableStream: (
+      // @ts-ignore
+      typeof ReadableStream !== "undefined" ? ReadableStream : class ReadableStream {
+        // @ts-ignore
+        constructor() {
+          throw new Error(`streaming isn't supported in this environment yet as 'ReadableStream' is undefined. ${recommendation}`);
+        }
+      }
+    ),
+    getMultipartRequestOptions: async (form, opts) => ({
+      ...opts,
+      body: new MultipartBody(form)
+    }),
+    getDefaultAgent: (url) => void 0,
+    fileFromPath: () => {
+      throw new Error("The `fileFromPath` function is only supported in Node. See the README for more details: https://www.github.com/openai/openai-node#file-uploads");
+    },
+    isFsReadStream: (value) => false
+  };
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/_shims/index.mjs
+if (!kind)
+  setShims(getRuntime(), { auto: true });
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/streaming.mjs
+var Stream = class {
+  constructor(iterator, controller) {
+    this.iterator = iterator;
+    this.controller = controller;
+  }
+  static fromSSEResponse(response, controller) {
+    let consumed = false;
+    async function* iterator() {
+      if (consumed) {
+        throw new Error("Cannot iterate over a consumed stream, use `.tee()` to split the stream.");
+      }
+      consumed = true;
+      let done = false;
+      try {
+        for await (const sse of _iterSSEMessages(response, controller)) {
+          if (done)
+            continue;
+          if (sse.data.startsWith("[DONE]")) {
+            done = true;
+            continue;
+          }
+          if (sse.event === null) {
+            let data;
+            try {
+              data = JSON.parse(sse.data);
+            } catch (e2) {
+              console.error(`Could not parse message into JSON:`, sse.data);
+              console.error(`From chunk:`, sse.raw);
+              throw e2;
+            }
+            if (data && data.error) {
+              throw new APIError(void 0, data.error, void 0, void 0);
+            }
+            yield data;
+          } else {
+            let data;
+            try {
+              data = JSON.parse(sse.data);
+            } catch (e2) {
+              console.error(`Could not parse message into JSON:`, sse.data);
+              console.error(`From chunk:`, sse.raw);
+              throw e2;
+            }
+            if (sse.event == "error") {
+              throw new APIError(void 0, data.error, data.message, void 0);
+            }
+            yield { event: sse.event, data };
+          }
+        }
+        done = true;
+      } catch (e2) {
+        if (e2 instanceof Error && e2.name === "AbortError")
+          return;
+        throw e2;
+      } finally {
+        if (!done)
+          controller.abort();
+      }
+    }
+    return new Stream(iterator, controller);
+  }
+  /**
+   * Generates a Stream from a newline-separated ReadableStream
+   * where each item is a JSON value.
+   */
+  static fromReadableStream(readableStream, controller) {
+    let consumed = false;
+    async function* iterLines() {
+      const lineDecoder = new LineDecoder();
+      const iter = readableStreamAsyncIterable(readableStream);
+      for await (const chunk of iter) {
+        for (const line of lineDecoder.decode(chunk)) {
+          yield line;
+        }
+      }
+      for (const line of lineDecoder.flush()) {
+        yield line;
+      }
+    }
+    async function* iterator() {
+      if (consumed) {
+        throw new Error("Cannot iterate over a consumed stream, use `.tee()` to split the stream.");
+      }
+      consumed = true;
+      let done = false;
+      try {
+        for await (const line of iterLines()) {
+          if (done)
+            continue;
+          if (line)
+            yield JSON.parse(line);
+        }
+        done = true;
+      } catch (e2) {
+        if (e2 instanceof Error && e2.name === "AbortError")
+          return;
+        throw e2;
+      } finally {
+        if (!done)
+          controller.abort();
+      }
+    }
+    return new Stream(iterator, controller);
+  }
+  [Symbol.asyncIterator]() {
+    return this.iterator();
+  }
+  /**
+   * Splits the stream into two streams which can be
+   * independently read from at different speeds.
+   */
+  tee() {
+    const left = [];
+    const right = [];
+    const iterator = this.iterator();
+    const teeIterator = (queue) => {
+      return {
+        next: () => {
+          if (queue.length === 0) {
+            const result = iterator.next();
+            left.push(result);
+            right.push(result);
+          }
+          return queue.shift();
+        }
+      };
+    };
+    return [
+      new Stream(() => teeIterator(left), this.controller),
+      new Stream(() => teeIterator(right), this.controller)
+    ];
+  }
+  /**
+   * Converts this stream to a newline-separated ReadableStream of
+   * JSON stringified values in the stream
+   * which can be turned back into a Stream with `Stream.fromReadableStream()`.
+   */
+  toReadableStream() {
+    const self2 = this;
+    let iter;
+    const encoder = new TextEncoder();
+    return new ReadableStream2({
+      async start() {
+        iter = self2[Symbol.asyncIterator]();
+      },
+      async pull(ctrl) {
+        try {
+          const { value, done } = await iter.next();
+          if (done)
+            return ctrl.close();
+          const bytes = encoder.encode(JSON.stringify(value) + "\n");
+          ctrl.enqueue(bytes);
+        } catch (err) {
+          ctrl.error(err);
+        }
+      },
+      async cancel() {
+        var _a2;
+        await ((_a2 = iter.return) == null ? void 0 : _a2.call(iter));
+      }
+    });
+  }
+};
+async function* _iterSSEMessages(response, controller) {
+  if (!response.body) {
+    controller.abort();
+    throw new OpenAIError(`Attempted to iterate over a response with no body`);
+  }
+  const sseDecoder = new SSEDecoder();
+  const lineDecoder = new LineDecoder();
+  const iter = readableStreamAsyncIterable(response.body);
+  for await (const sseChunk of iterSSEChunks(iter)) {
+    for (const line of lineDecoder.decode(sseChunk)) {
+      const sse = sseDecoder.decode(line);
+      if (sse)
+        yield sse;
+    }
+  }
+  for (const line of lineDecoder.flush()) {
+    const sse = sseDecoder.decode(line);
+    if (sse)
+      yield sse;
+  }
+}
+async function* iterSSEChunks(iterator) {
+  let data = new Uint8Array();
+  for await (const chunk of iterator) {
+    if (chunk == null) {
+      continue;
+    }
+    const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk) : typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk;
+    let newData = new Uint8Array(data.length + binaryChunk.length);
+    newData.set(data);
+    newData.set(binaryChunk, data.length);
+    data = newData;
+    let patternIndex;
+    while ((patternIndex = findDoubleNewlineIndex(data)) !== -1) {
+      yield data.slice(0, patternIndex);
+      data = data.slice(patternIndex);
+    }
+  }
+  if (data.length > 0) {
+    yield data;
+  }
+}
+function findDoubleNewlineIndex(buffer) {
+  const newline = 10;
+  const carriage = 13;
+  for (let i2 = 0; i2 < buffer.length - 2; i2++) {
+    if (buffer[i2] === newline && buffer[i2 + 1] === newline) {
+      return i2 + 2;
+    }
+    if (buffer[i2] === carriage && buffer[i2 + 1] === carriage) {
+      return i2 + 2;
+    }
+    if (buffer[i2] === carriage && buffer[i2 + 1] === newline && i2 + 3 < buffer.length && buffer[i2 + 2] === carriage && buffer[i2 + 3] === newline) {
+      return i2 + 4;
+    }
+  }
+  return -1;
+}
+var SSEDecoder = class {
+  constructor() {
+    this.event = null;
+    this.data = [];
+    this.chunks = [];
+  }
+  decode(line) {
+    if (line.endsWith("\r")) {
+      line = line.substring(0, line.length - 1);
+    }
+    if (!line) {
+      if (!this.event && !this.data.length)
+        return null;
+      const sse = {
+        event: this.event,
+        data: this.data.join("\n"),
+        raw: this.chunks
+      };
+      this.event = null;
+      this.data = [];
+      this.chunks = [];
+      return sse;
+    }
+    this.chunks.push(line);
+    if (line.startsWith(":")) {
+      return null;
+    }
+    let [fieldname, _, value] = partition(line, ":");
+    if (value.startsWith(" ")) {
+      value = value.substring(1);
+    }
+    if (fieldname === "event") {
+      this.event = value;
+    } else if (fieldname === "data") {
+      this.data.push(value);
+    }
+    return null;
+  }
+};
+var LineDecoder = class {
+  constructor() {
+    this.buffer = [];
+    this.trailingCR = false;
+  }
+  decode(chunk) {
+    let text = this.decodeText(chunk);
+    if (this.trailingCR) {
+      text = "\r" + text;
+      this.trailingCR = false;
+    }
+    if (text.endsWith("\r")) {
+      this.trailingCR = true;
+      text = text.slice(0, -1);
+    }
+    if (!text) {
+      return [];
+    }
+    const trailingNewline = LineDecoder.NEWLINE_CHARS.has(text[text.length - 1] || "");
+    let lines = text.split(LineDecoder.NEWLINE_REGEXP);
+    if (trailingNewline) {
+      lines.pop();
+    }
+    if (lines.length === 1 && !trailingNewline) {
+      this.buffer.push(lines[0]);
+      return [];
+    }
+    if (this.buffer.length > 0) {
+      lines = [this.buffer.join("") + lines[0], ...lines.slice(1)];
+      this.buffer = [];
+    }
+    if (!trailingNewline) {
+      this.buffer = [lines.pop() || ""];
+    }
+    return lines;
+  }
+  decodeText(bytes) {
+    var _a2;
+    if (bytes == null)
+      return "";
+    if (typeof bytes === "string")
+      return bytes;
+    if (typeof Buffer !== "undefined") {
+      if (bytes instanceof Buffer) {
+        return bytes.toString();
+      }
+      if (bytes instanceof Uint8Array) {
+        return Buffer.from(bytes).toString();
+      }
+      throw new OpenAIError(`Unexpected: received non-Uint8Array (${bytes.constructor.name}) stream chunk in an environment with a global "Buffer" defined, which this library assumes to be Node. Please report this error.`);
+    }
+    if (typeof TextDecoder !== "undefined") {
+      if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) {
+        (_a2 = this.textDecoder) != null ? _a2 : this.textDecoder = new TextDecoder("utf8");
+        return this.textDecoder.decode(bytes);
+      }
+      throw new OpenAIError(`Unexpected: received non-Uint8Array/ArrayBuffer (${bytes.constructor.name}) in a web platform. Please report this error.`);
+    }
+    throw new OpenAIError(`Unexpected: neither Buffer nor TextDecoder are available as globals. Please report this error.`);
+  }
+  flush() {
+    if (!this.buffer.length && !this.trailingCR) {
+      return [];
+    }
+    const lines = [this.buffer.join("")];
+    this.buffer = [];
+    this.trailingCR = false;
+    return lines;
+  }
+};
+LineDecoder.NEWLINE_CHARS = /* @__PURE__ */ new Set(["\n", "\r"]);
+LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
+function partition(str2, delimiter) {
+  const index = str2.indexOf(delimiter);
+  if (index !== -1) {
+    return [str2.substring(0, index), delimiter, str2.substring(index + delimiter.length)];
+  }
+  return [str2, "", ""];
+}
+function readableStreamAsyncIterable(stream) {
+  if (stream[Symbol.asyncIterator])
+    return stream;
+  const reader = stream.getReader();
+  return {
+    async next() {
+      try {
+        const result = await reader.read();
+        if (result == null ? void 0 : result.done)
+          reader.releaseLock();
+        return result;
+      } catch (e2) {
+        reader.releaseLock();
+        throw e2;
+      }
+    },
+    async return() {
+      const cancelPromise = reader.cancel();
+      reader.releaseLock();
+      await cancelPromise;
+      return { done: true, value: void 0 };
+    },
+    [Symbol.asyncIterator]() {
+      return this;
+    }
+  };
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/uploads.mjs
+var isResponseLike = (value) => value != null && typeof value === "object" && typeof value.url === "string" && typeof value.blob === "function";
+var isFileLike = (value) => value != null && typeof value === "object" && typeof value.name === "string" && typeof value.lastModified === "number" && isBlobLike(value);
+var isBlobLike = (value) => value != null && typeof value === "object" && typeof value.size === "number" && typeof value.type === "string" && typeof value.text === "function" && typeof value.slice === "function" && typeof value.arrayBuffer === "function";
+var isUploadable = (value) => {
+  return isFileLike(value) || isResponseLike(value) || isFsReadStream(value);
+};
+async function toFile(value, name, options) {
+  var _a2, _b, _c;
+  value = await value;
+  if (isFileLike(value)) {
+    return value;
+  }
+  if (isResponseLike(value)) {
+    const blob = await value.blob();
+    name || (name = (_a2 = new URL(value.url).pathname.split(/[\\/]/).pop()) != null ? _a2 : "unknown_file");
+    const data = isBlobLike(blob) ? [await blob.arrayBuffer()] : [blob];
+    return new File2(data, name, options);
+  }
+  const bits = await getBytes(value);
+  name || (name = (_b = getName(value)) != null ? _b : "unknown_file");
+  if (!(options == null ? void 0 : options.type)) {
+    const type = (_c = bits[0]) == null ? void 0 : _c.type;
+    if (typeof type === "string") {
+      options = { ...options, type };
+    }
+  }
+  return new File2(bits, name, options);
+}
+async function getBytes(value) {
+  var _a2;
+  let parts = [];
+  if (typeof value === "string" || ArrayBuffer.isView(value) || // includes Uint8Array, Buffer, etc.
+  value instanceof ArrayBuffer) {
+    parts.push(value);
+  } else if (isBlobLike(value)) {
+    parts.push(await value.arrayBuffer());
+  } else if (isAsyncIterableIterator(value)) {
+    for await (const chunk of value) {
+      parts.push(chunk);
+    }
+  } else {
+    throw new Error(`Unexpected data type: ${typeof value}; constructor: ${(_a2 = value == null ? void 0 : value.constructor) == null ? void 0 : _a2.name}; props: ${propsForError(value)}`);
+  }
+  return parts;
+}
+function propsForError(value) {
+  const props = Object.getOwnPropertyNames(value);
+  return `[${props.map((p) => `"${p}"`).join(", ")}]`;
+}
+function getName(value) {
+  var _a2;
+  return getStringFromMaybeBuffer(value.name) || getStringFromMaybeBuffer(value.filename) || // For fs.ReadStream
+  ((_a2 = getStringFromMaybeBuffer(value.path)) == null ? void 0 : _a2.split(/[\\/]/).pop());
+}
+var getStringFromMaybeBuffer = (x) => {
+  if (typeof x === "string")
+    return x;
+  if (typeof Buffer !== "undefined" && x instanceof Buffer)
+    return String(x);
+  return void 0;
+};
+var isAsyncIterableIterator = (value) => value != null && typeof value === "object" && typeof value[Symbol.asyncIterator] === "function";
+var isMultipartBody = (body) => body && typeof body === "object" && body.body && body[Symbol.toStringTag] === "MultipartBody";
+var multipartFormRequestOptions = async (opts) => {
+  const form = await createForm(opts.body);
+  return getMultipartRequestOptions(form, opts);
+};
+var createForm = async (body) => {
+  const form = new FormData2();
+  await Promise.all(Object.entries(body || {}).map(([key, value]) => addFormValue(form, key, value)));
+  return form;
+};
+var addFormValue = async (form, key, value) => {
+  if (value === void 0)
+    return;
+  if (value == null) {
+    throw new TypeError(`Received null for "${key}"; to pass null in FormData, you must use the string 'null'`);
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    form.append(key, String(value));
+  } else if (isUploadable(value)) {
+    const file = await toFile(value);
+    form.append(key, file);
+  } else if (Array.isArray(value)) {
+    await Promise.all(value.map((entry) => addFormValue(form, key + "[]", entry)));
+  } else if (typeof value === "object") {
+    await Promise.all(Object.entries(value).map(([name, prop]) => addFormValue(form, `${key}[${name}]`, prop)));
+  } else {
+    throw new TypeError(`Invalid value given to form, expected a string, number, boolean, object, Array, File or Blob but got ${value} instead`);
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/core.mjs
+var __classPrivateFieldSet = function(receiver, state, value, kind2, f2) {
+  if (kind2 === "m")
+    throw new TypeError("Private method is not writable");
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a setter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot write private member to an object whose class did not declare it");
+  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+};
+var __classPrivateFieldGet = function(receiver, state, kind2, f2) {
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a getter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot read private member from an object whose class did not declare it");
+  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+};
+var _AbstractPage_client;
+async function defaultParseResponse(props) {
+  const { response } = props;
+  if (props.options.stream) {
+    debug("response", response.status, response.url, response.headers, response.body);
+    if (props.options.__streamClass) {
+      return props.options.__streamClass.fromSSEResponse(response, props.controller);
+    }
+    return Stream.fromSSEResponse(response, props.controller);
+  }
+  if (response.status === 204) {
+    return null;
+  }
+  if (props.options.__binaryResponse) {
+    return response;
+  }
+  const contentType = response.headers.get("content-type");
+  const isJSON = (contentType == null ? void 0 : contentType.includes("application/json")) || (contentType == null ? void 0 : contentType.includes("application/vnd.api+json"));
+  if (isJSON) {
+    const json = await response.json();
+    debug("response", response.status, response.url, response.headers, json);
+    return _addRequestID(json, response);
+  }
+  const text = await response.text();
+  debug("response", response.status, response.url, response.headers, text);
+  return text;
+}
+function _addRequestID(value, response) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+  return Object.defineProperty(value, "_request_id", {
+    value: response.headers.get("x-request-id"),
+    enumerable: false
+  });
+}
+var APIPromise = class extends Promise {
+  constructor(responsePromise, parseResponse = defaultParseResponse) {
+    super((resolve) => {
+      resolve(null);
+    });
+    this.responsePromise = responsePromise;
+    this.parseResponse = parseResponse;
+  }
+  _thenUnwrap(transform) {
+    return new APIPromise(this.responsePromise, async (props) => _addRequestID(transform(await this.parseResponse(props)), props.response));
+  }
+  /**
+   * Gets the raw `Response` instance instead of parsing the response
+   * data.
+   *
+   * If you want to parse the response body but still get the `Response`
+   * instance, you can use {@link withResponse()}.
+   *
+   * 👋 Getting the wrong TypeScript type for `Response`?
+   * Try setting `"moduleResolution": "NodeNext"` if you can,
+   * or add one of these imports before your first `import … from 'openai'`:
+   * - `import 'openai/shims/node'` (if you're running on Node)
+   * - `import 'openai/shims/web'` (otherwise)
+   */
+  asResponse() {
+    return this.responsePromise.then((p) => p.response);
+  }
+  /**
+   * Gets the parsed response data and the raw `Response` instance.
+   *
+   * If you just want to get the raw `Response` instance without parsing it,
+   * you can use {@link asResponse()}.
+   *
+   *
+   * 👋 Getting the wrong TypeScript type for `Response`?
+   * Try setting `"moduleResolution": "NodeNext"` if you can,
+   * or add one of these imports before your first `import … from 'openai'`:
+   * - `import 'openai/shims/node'` (if you're running on Node)
+   * - `import 'openai/shims/web'` (otherwise)
+   */
+  async withResponse() {
+    const [data, response] = await Promise.all([this.parse(), this.asResponse()]);
+    return { data, response };
+  }
+  parse() {
+    if (!this.parsedPromise) {
+      this.parsedPromise = this.responsePromise.then(this.parseResponse);
+    }
+    return this.parsedPromise;
+  }
+  then(onfulfilled, onrejected) {
+    return this.parse().then(onfulfilled, onrejected);
+  }
+  catch(onrejected) {
+    return this.parse().catch(onrejected);
+  }
+  finally(onfinally) {
+    return this.parse().finally(onfinally);
+  }
+};
+var APIClient = class {
+  constructor({
+    baseURL,
+    maxRetries = 2,
+    timeout = 6e5,
+    // 10 minutes
+    httpAgent,
+    fetch: overridenFetch
+  }) {
+    this.baseURL = baseURL;
+    this.maxRetries = validatePositiveInteger("maxRetries", maxRetries);
+    this.timeout = validatePositiveInteger("timeout", timeout);
+    this.httpAgent = httpAgent;
+    this.fetch = overridenFetch != null ? overridenFetch : fetch2;
+  }
+  authHeaders(opts) {
+    return {};
+  }
+  /**
+   * Override this to add your own default headers, for example:
+   *
+   *  {
+   *    ...super.defaultHeaders(),
+   *    Authorization: 'Bearer 123',
+   *  }
+   */
+  defaultHeaders(opts) {
+    return {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "User-Agent": this.getUserAgent(),
+      ...getPlatformHeaders(),
+      ...this.authHeaders(opts)
+    };
+  }
+  /**
+   * Override this to add your own headers validation:
+   */
+  validateHeaders(headers, customHeaders) {
+  }
+  defaultIdempotencyKey() {
+    return `stainless-node-retry-${uuid4()}`;
+  }
+  get(path, opts) {
+    return this.methodRequest("get", path, opts);
+  }
+  post(path, opts) {
+    return this.methodRequest("post", path, opts);
+  }
+  patch(path, opts) {
+    return this.methodRequest("patch", path, opts);
+  }
+  put(path, opts) {
+    return this.methodRequest("put", path, opts);
+  }
+  delete(path, opts) {
+    return this.methodRequest("delete", path, opts);
+  }
+  methodRequest(method, path, opts) {
+    return this.request(Promise.resolve(opts).then(async (opts2) => {
+      const body = opts2 && isBlobLike(opts2 == null ? void 0 : opts2.body) ? new DataView(await opts2.body.arrayBuffer()) : (opts2 == null ? void 0 : opts2.body) instanceof DataView ? opts2.body : (opts2 == null ? void 0 : opts2.body) instanceof ArrayBuffer ? new DataView(opts2.body) : opts2 && ArrayBuffer.isView(opts2 == null ? void 0 : opts2.body) ? new DataView(opts2.body.buffer) : opts2 == null ? void 0 : opts2.body;
+      return { method, path, ...opts2, body };
+    }));
+  }
+  getAPIList(path, Page2, opts) {
+    return this.requestAPIList(Page2, { method: "get", path, ...opts });
+  }
+  calculateContentLength(body) {
+    if (typeof body === "string") {
+      if (typeof Buffer !== "undefined") {
+        return Buffer.byteLength(body, "utf8").toString();
+      }
+      if (typeof TextEncoder !== "undefined") {
+        const encoder = new TextEncoder();
+        const encoded = encoder.encode(body);
+        return encoded.length.toString();
+      }
+    } else if (ArrayBuffer.isView(body)) {
+      return body.byteLength.toString();
+    }
+    return null;
+  }
+  buildRequest(options, { retryCount = 0 } = {}) {
+    var _a2, _b, _c, _d, _e, _f;
+    const { method, path, query, headers = {} } = options;
+    const body = ArrayBuffer.isView(options.body) || options.__binaryRequest && typeof options.body === "string" ? options.body : isMultipartBody(options.body) ? options.body.body : options.body ? JSON.stringify(options.body, null, 2) : null;
+    const contentLength = this.calculateContentLength(body);
+    const url = this.buildURL(path, query);
+    if ("timeout" in options)
+      validatePositiveInteger("timeout", options.timeout);
+    const timeout = (_a2 = options.timeout) != null ? _a2 : this.timeout;
+    const httpAgent = (_c = (_b = options.httpAgent) != null ? _b : this.httpAgent) != null ? _c : getDefaultAgent(url);
+    const minAgentTimeout = timeout + 1e3;
+    if (typeof ((_d = httpAgent == null ? void 0 : httpAgent.options) == null ? void 0 : _d.timeout) === "number" && minAgentTimeout > ((_e = httpAgent.options.timeout) != null ? _e : 0)) {
+      httpAgent.options.timeout = minAgentTimeout;
+    }
+    if (this.idempotencyHeader && method !== "get") {
+      if (!options.idempotencyKey)
+        options.idempotencyKey = this.defaultIdempotencyKey();
+      headers[this.idempotencyHeader] = options.idempotencyKey;
+    }
+    const reqHeaders = this.buildHeaders({ options, headers, contentLength, retryCount });
+    const req = {
+      method,
+      ...body && { body },
+      headers: reqHeaders,
+      ...httpAgent && { agent: httpAgent },
+      // @ts-ignore node-fetch uses a custom AbortSignal type that is
+      // not compatible with standard web types
+      signal: (_f = options.signal) != null ? _f : null
+    };
+    return { req, url, timeout };
+  }
+  buildHeaders({ options, headers, contentLength, retryCount }) {
+    const reqHeaders = {};
+    if (contentLength) {
+      reqHeaders["content-length"] = contentLength;
+    }
+    const defaultHeaders = this.defaultHeaders(options);
+    applyHeadersMut(reqHeaders, defaultHeaders);
+    applyHeadersMut(reqHeaders, headers);
+    if (isMultipartBody(options.body) && kind !== "node") {
+      delete reqHeaders["content-type"];
+    }
+    reqHeaders["x-stainless-retry-count"] = String(retryCount);
+    this.validateHeaders(reqHeaders, headers);
+    return reqHeaders;
+  }
+  /**
+   * Used as a callback for mutating the given `FinalRequestOptions` object.
+   */
+  async prepareOptions(options) {
+  }
+  /**
+   * Used as a callback for mutating the given `RequestInit` object.
+   *
+   * This is useful for cases where you want to add certain headers based off of
+   * the request properties, e.g. `method` or `url`.
+   */
+  async prepareRequest(request2, { url, options }) {
+  }
+  parseHeaders(headers) {
+    return !headers ? {} : Symbol.iterator in headers ? Object.fromEntries(Array.from(headers).map((header) => [...header])) : { ...headers };
+  }
+  makeStatusError(status, error, message, headers) {
+    return APIError.generate(status, error, message, headers);
+  }
+  request(options, remainingRetries = null) {
+    return new APIPromise(this.makeRequest(options, remainingRetries));
+  }
+  async makeRequest(optionsInput, retriesRemaining) {
+    var _a2, _b, _c;
+    const options = await optionsInput;
+    const maxRetries = (_a2 = options.maxRetries) != null ? _a2 : this.maxRetries;
+    if (retriesRemaining == null) {
+      retriesRemaining = maxRetries;
+    }
+    await this.prepareOptions(options);
+    const { req, url, timeout } = this.buildRequest(options, { retryCount: maxRetries - retriesRemaining });
+    await this.prepareRequest(req, { url, options });
+    debug("request", url, options, req.headers);
+    if ((_b = options.signal) == null ? void 0 : _b.aborted) {
+      throw new APIUserAbortError();
+    }
+    const controller = new AbortController();
+    const response = await this.fetchWithTimeout(url, req, timeout, controller).catch(castToError);
+    if (response instanceof Error) {
+      if ((_c = options.signal) == null ? void 0 : _c.aborted) {
+        throw new APIUserAbortError();
+      }
+      if (retriesRemaining) {
+        return this.retryRequest(options, retriesRemaining);
+      }
+      if (response.name === "AbortError") {
+        throw new APIConnectionTimeoutError();
+      }
+      throw new APIConnectionError({ cause: response });
+    }
+    const responseHeaders = createResponseHeaders(response.headers);
+    if (!response.ok) {
+      if (retriesRemaining && this.shouldRetry(response)) {
+        const retryMessage2 = `retrying, ${retriesRemaining} attempts remaining`;
+        debug(`response (error; ${retryMessage2})`, response.status, url, responseHeaders);
+        return this.retryRequest(options, retriesRemaining, responseHeaders);
+      }
+      const errText = await response.text().catch((e2) => castToError(e2).message);
+      const errJSON = safeJSON(errText);
+      const errMessage = errJSON ? void 0 : errText;
+      const retryMessage = retriesRemaining ? `(error; no more retries left)` : `(error; not retryable)`;
+      debug(`response (error; ${retryMessage})`, response.status, url, responseHeaders, errMessage);
+      const err = this.makeStatusError(response.status, errJSON, errMessage, responseHeaders);
+      throw err;
+    }
+    return { response, options, controller };
+  }
+  requestAPIList(Page2, options) {
+    const request2 = this.makeRequest(options, null);
+    return new PagePromise(this, request2, Page2);
+  }
+  buildURL(path, query) {
+    const url = isAbsoluteURL(path) ? new URL(path) : new URL(this.baseURL + (this.baseURL.endsWith("/") && path.startsWith("/") ? path.slice(1) : path));
+    const defaultQuery = this.defaultQuery();
+    if (!isEmptyObj(defaultQuery)) {
+      query = { ...defaultQuery, ...query };
+    }
+    if (typeof query === "object" && query && !Array.isArray(query)) {
+      url.search = this.stringifyQuery(query);
+    }
+    return url.toString();
+  }
+  stringifyQuery(query) {
+    return Object.entries(query).filter(([_, value]) => typeof value !== "undefined").map(([key, value]) => {
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+      }
+      if (value === null) {
+        return `${encodeURIComponent(key)}=`;
+      }
+      throw new OpenAIError(`Cannot stringify type ${typeof value}; Expected string, number, boolean, or null. If you need to pass nested query parameters, you can manually encode them, e.g. { query: { 'foo[key1]': value1, 'foo[key2]': value2 } }, and please open a GitHub issue requesting better support for your use case.`);
+    }).join("&");
+  }
+  async fetchWithTimeout(url, init2, ms, controller) {
+    const { signal, ...options } = init2 || {};
+    if (signal)
+      signal.addEventListener("abort", () => controller.abort());
+    const timeout = setTimeout(() => controller.abort(), ms);
+    return this.getRequestClient().fetch.call(void 0, url, { signal: controller.signal, ...options }).finally(() => {
+      clearTimeout(timeout);
+    });
+  }
+  getRequestClient() {
+    return { fetch: this.fetch };
+  }
+  shouldRetry(response) {
+    const shouldRetryHeader = response.headers.get("x-should-retry");
+    if (shouldRetryHeader === "true")
+      return true;
+    if (shouldRetryHeader === "false")
+      return false;
+    if (response.status === 408)
+      return true;
+    if (response.status === 409)
+      return true;
+    if (response.status === 429)
+      return true;
+    if (response.status >= 500)
+      return true;
+    return false;
+  }
+  async retryRequest(options, retriesRemaining, responseHeaders) {
+    var _a2;
+    let timeoutMillis;
+    const retryAfterMillisHeader = responseHeaders == null ? void 0 : responseHeaders["retry-after-ms"];
+    if (retryAfterMillisHeader) {
+      const timeoutMs = parseFloat(retryAfterMillisHeader);
+      if (!Number.isNaN(timeoutMs)) {
+        timeoutMillis = timeoutMs;
+      }
+    }
+    const retryAfterHeader = responseHeaders == null ? void 0 : responseHeaders["retry-after"];
+    if (retryAfterHeader && !timeoutMillis) {
+      const timeoutSeconds = parseFloat(retryAfterHeader);
+      if (!Number.isNaN(timeoutSeconds)) {
+        timeoutMillis = timeoutSeconds * 1e3;
+      } else {
+        timeoutMillis = Date.parse(retryAfterHeader) - Date.now();
+      }
+    }
+    if (!(timeoutMillis && 0 <= timeoutMillis && timeoutMillis < 60 * 1e3)) {
+      const maxRetries = (_a2 = options.maxRetries) != null ? _a2 : this.maxRetries;
+      timeoutMillis = this.calculateDefaultRetryTimeoutMillis(retriesRemaining, maxRetries);
+    }
+    await sleep(timeoutMillis);
+    return this.makeRequest(options, retriesRemaining - 1);
+  }
+  calculateDefaultRetryTimeoutMillis(retriesRemaining, maxRetries) {
+    const initialRetryDelay = 0.5;
+    const maxRetryDelay = 8;
+    const numRetries = maxRetries - retriesRemaining;
+    const sleepSeconds = Math.min(initialRetryDelay * Math.pow(2, numRetries), maxRetryDelay);
+    const jitter = 1 - Math.random() * 0.25;
+    return sleepSeconds * jitter * 1e3;
+  }
+  getUserAgent() {
+    return `${this.constructor.name}/JS ${VERSION}`;
+  }
+};
+var AbstractPage = class {
+  constructor(client, response, body, options) {
+    _AbstractPage_client.set(this, void 0);
+    __classPrivateFieldSet(this, _AbstractPage_client, client, "f");
+    this.options = options;
+    this.response = response;
+    this.body = body;
+  }
+  hasNextPage() {
+    const items = this.getPaginatedItems();
+    if (!items.length)
+      return false;
+    return this.nextPageInfo() != null;
+  }
+  async getNextPage() {
+    const nextInfo = this.nextPageInfo();
+    if (!nextInfo) {
+      throw new OpenAIError("No next page expected; please check `.hasNextPage()` before calling `.getNextPage()`.");
+    }
+    const nextOptions = { ...this.options };
+    if ("params" in nextInfo && typeof nextOptions.query === "object") {
+      nextOptions.query = { ...nextOptions.query, ...nextInfo.params };
+    } else if ("url" in nextInfo) {
+      const params = [...Object.entries(nextOptions.query || {}), ...nextInfo.url.searchParams.entries()];
+      for (const [key, value] of params) {
+        nextInfo.url.searchParams.set(key, value);
+      }
+      nextOptions.query = void 0;
+      nextOptions.path = nextInfo.url.toString();
+    }
+    return await __classPrivateFieldGet(this, _AbstractPage_client, "f").requestAPIList(this.constructor, nextOptions);
+  }
+  async *iterPages() {
+    let page = this;
+    yield page;
+    while (page.hasNextPage()) {
+      page = await page.getNextPage();
+      yield page;
+    }
+  }
+  async *[(_AbstractPage_client = /* @__PURE__ */ new WeakMap(), Symbol.asyncIterator)]() {
+    for await (const page of this.iterPages()) {
+      for (const item of page.getPaginatedItems()) {
+        yield item;
+      }
+    }
+  }
+};
+var PagePromise = class extends APIPromise {
+  constructor(client, request2, Page2) {
+    super(request2, async (props) => new Page2(client, props.response, await defaultParseResponse(props), props.options));
+  }
+  /**
+   * Allow auto-paginating iteration on an unawaited list call, eg:
+   *
+   *    for await (const item of client.items.list()) {
+   *      console.log(item)
+   *    }
+   */
+  async *[Symbol.asyncIterator]() {
+    const page = await this;
+    for await (const item of page) {
+      yield item;
+    }
+  }
+};
+var createResponseHeaders = (headers) => {
+  return new Proxy(Object.fromEntries(
+    // @ts-ignore
+    headers.entries()
+  ), {
+    get(target, name) {
+      const key = name.toString();
+      return target[key.toLowerCase()] || target[key];
+    }
+  });
+};
+var requestOptionsKeys = {
+  method: true,
+  path: true,
+  query: true,
+  body: true,
+  headers: true,
+  maxRetries: true,
+  stream: true,
+  timeout: true,
+  httpAgent: true,
+  signal: true,
+  idempotencyKey: true,
+  __binaryRequest: true,
+  __binaryResponse: true,
+  __streamClass: true
+};
+var isRequestOptions = (obj) => {
+  return typeof obj === "object" && obj !== null && !isEmptyObj(obj) && Object.keys(obj).every((k) => hasOwn(requestOptionsKeys, k));
+};
+var getPlatformProperties = () => {
+  var _a2, _b;
+  if (typeof Deno !== "undefined" && Deno.build != null) {
+    return {
+      "X-Stainless-Lang": "js",
+      "X-Stainless-Package-Version": VERSION,
+      "X-Stainless-OS": normalizePlatform(Deno.build.os),
+      "X-Stainless-Arch": normalizeArch(Deno.build.arch),
+      "X-Stainless-Runtime": "deno",
+      "X-Stainless-Runtime-Version": typeof Deno.version === "string" ? Deno.version : (_b = (_a2 = Deno.version) == null ? void 0 : _a2.deno) != null ? _b : "unknown"
+    };
+  }
+  if (typeof EdgeRuntime !== "undefined") {
+    return {
+      "X-Stainless-Lang": "js",
+      "X-Stainless-Package-Version": VERSION,
+      "X-Stainless-OS": "Unknown",
+      "X-Stainless-Arch": `other:${EdgeRuntime}`,
+      "X-Stainless-Runtime": "edge",
+      "X-Stainless-Runtime-Version": process.version
+    };
+  }
+  if (Object.prototype.toString.call(typeof process !== "undefined" ? process : 0) === "[object process]") {
+    return {
+      "X-Stainless-Lang": "js",
+      "X-Stainless-Package-Version": VERSION,
+      "X-Stainless-OS": normalizePlatform(process.platform),
+      "X-Stainless-Arch": normalizeArch(process.arch),
+      "X-Stainless-Runtime": "node",
+      "X-Stainless-Runtime-Version": process.version
+    };
+  }
+  const browserInfo = getBrowserInfo();
+  if (browserInfo) {
+    return {
+      "X-Stainless-Lang": "js",
+      "X-Stainless-Package-Version": VERSION,
+      "X-Stainless-OS": "Unknown",
+      "X-Stainless-Arch": "unknown",
+      "X-Stainless-Runtime": `browser:${browserInfo.browser}`,
+      "X-Stainless-Runtime-Version": browserInfo.version
+    };
+  }
+  return {
+    "X-Stainless-Lang": "js",
+    "X-Stainless-Package-Version": VERSION,
+    "X-Stainless-OS": "Unknown",
+    "X-Stainless-Arch": "unknown",
+    "X-Stainless-Runtime": "unknown",
+    "X-Stainless-Runtime-Version": "unknown"
+  };
+};
+function getBrowserInfo() {
+  if (typeof navigator === "undefined" || !navigator) {
+    return null;
+  }
+  const browserPatterns = [
+    { key: "edge", pattern: /Edge(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+    { key: "ie", pattern: /MSIE(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+    { key: "ie", pattern: /Trident(?:.*rv\:(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+    { key: "chrome", pattern: /Chrome(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+    { key: "firefox", pattern: /Firefox(?:\W+(\d+)\.(\d+)(?:\.(\d+))?)?/ },
+    { key: "safari", pattern: /(?:Version\W+(\d+)\.(\d+)(?:\.(\d+))?)?(?:\W+Mobile\S*)?\W+Safari/ }
+  ];
+  for (const { key, pattern } of browserPatterns) {
+    const match = pattern.exec(navigator.userAgent);
+    if (match) {
+      const major = match[1] || 0;
+      const minor = match[2] || 0;
+      const patch = match[3] || 0;
+      return { browser: key, version: `${major}.${minor}.${patch}` };
+    }
+  }
+  return null;
+}
+var normalizeArch = (arch) => {
+  if (arch === "x32")
+    return "x32";
+  if (arch === "x86_64" || arch === "x64")
+    return "x64";
+  if (arch === "arm")
+    return "arm";
+  if (arch === "aarch64" || arch === "arm64")
+    return "arm64";
+  if (arch)
+    return `other:${arch}`;
+  return "unknown";
+};
+var normalizePlatform = (platform) => {
+  platform = platform.toLowerCase();
+  if (platform.includes("ios"))
+    return "iOS";
+  if (platform === "android")
+    return "Android";
+  if (platform === "darwin")
+    return "MacOS";
+  if (platform === "win32")
+    return "Windows";
+  if (platform === "freebsd")
+    return "FreeBSD";
+  if (platform === "openbsd")
+    return "OpenBSD";
+  if (platform === "linux")
+    return "Linux";
+  if (platform)
+    return `Other:${platform}`;
+  return "Unknown";
+};
+var _platformHeaders;
+var getPlatformHeaders = () => {
+  return _platformHeaders != null ? _platformHeaders : _platformHeaders = getPlatformProperties();
+};
+var safeJSON = (text) => {
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    return void 0;
+  }
+};
+var startsWithSchemeRegexp = new RegExp("^(?:[a-z]+:)?//", "i");
+var isAbsoluteURL = (url) => {
+  return startsWithSchemeRegexp.test(url);
+};
+var sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+var validatePositiveInteger = (name, n) => {
+  if (typeof n !== "number" || !Number.isInteger(n)) {
+    throw new OpenAIError(`${name} must be an integer`);
+  }
+  if (n < 0) {
+    throw new OpenAIError(`${name} must be a positive integer`);
+  }
+  return n;
+};
+var castToError = (err) => {
+  if (err instanceof Error)
+    return err;
+  if (typeof err === "object" && err !== null) {
+    try {
+      return new Error(JSON.stringify(err));
+    } catch (e2) {
+    }
+  }
+  return new Error(err);
+};
+var readEnv = (env) => {
+  var _a2, _b, _c, _d, _e, _f;
+  if (typeof process !== "undefined") {
+    return (_c = (_b = (_a2 = process.env) == null ? void 0 : _a2[env]) == null ? void 0 : _b.trim()) != null ? _c : void 0;
+  }
+  if (typeof Deno !== "undefined") {
+    return (_f = (_e = (_d = Deno.env) == null ? void 0 : _d.get) == null ? void 0 : _e.call(_d, env)) == null ? void 0 : _f.trim();
+  }
+  return void 0;
+};
+function isEmptyObj(obj) {
+  if (!obj)
+    return true;
+  for (const _k in obj)
+    return false;
+  return true;
+}
+function hasOwn(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+function applyHeadersMut(targetHeaders, newHeaders) {
+  for (const k in newHeaders) {
+    if (!hasOwn(newHeaders, k))
+      continue;
+    const lowerKey = k.toLowerCase();
+    if (!lowerKey)
+      continue;
+    const val = newHeaders[k];
+    if (val === null) {
+      delete targetHeaders[lowerKey];
+    } else if (val !== void 0) {
+      targetHeaders[lowerKey] = val;
+    }
+  }
+}
+function debug(action, ...args) {
+  var _a2;
+  if (typeof process !== "undefined" && ((_a2 = process == null ? void 0 : process.env) == null ? void 0 : _a2["DEBUG"]) === "true") {
+    console.log(`OpenAI:DEBUG:${action}`, ...args);
+  }
+}
+var uuid4 = () => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c2) => {
+    const r2 = Math.random() * 16 | 0;
+    const v = c2 === "x" ? r2 : r2 & 3 | 8;
+    return v.toString(16);
+  });
+};
+var isRunningInBrowser = () => {
+  return (
+    // @ts-ignore
+    typeof window !== "undefined" && // @ts-ignore
+    typeof window.document !== "undefined" && // @ts-ignore
+    typeof navigator !== "undefined"
+  );
+};
+function isObj(obj) {
+  return obj != null && typeof obj === "object" && !Array.isArray(obj);
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/error.mjs
+var OpenAIError = class extends Error {
+};
+var APIError = class extends OpenAIError {
+  constructor(status, error, message, headers) {
+    super(`${APIError.makeMessage(status, error, message)}`);
+    this.status = status;
+    this.headers = headers;
+    this.request_id = headers == null ? void 0 : headers["x-request-id"];
+    const data = error;
+    this.error = data;
+    this.code = data == null ? void 0 : data["code"];
+    this.param = data == null ? void 0 : data["param"];
+    this.type = data == null ? void 0 : data["type"];
+  }
+  static makeMessage(status, error, message) {
+    const msg = (error == null ? void 0 : error.message) ? typeof error.message === "string" ? error.message : JSON.stringify(error.message) : error ? JSON.stringify(error) : message;
+    if (status && msg) {
+      return `${status} ${msg}`;
+    }
+    if (status) {
+      return `${status} status code (no body)`;
+    }
+    if (msg) {
+      return msg;
+    }
+    return "(no status code or body)";
+  }
+  static generate(status, errorResponse, message, headers) {
+    if (!status) {
+      return new APIConnectionError({ message, cause: castToError(errorResponse) });
+    }
+    const error = errorResponse == null ? void 0 : errorResponse["error"];
+    if (status === 400) {
+      return new BadRequestError(status, error, message, headers);
+    }
+    if (status === 401) {
+      return new AuthenticationError(status, error, message, headers);
+    }
+    if (status === 403) {
+      return new PermissionDeniedError(status, error, message, headers);
+    }
+    if (status === 404) {
+      return new NotFoundError(status, error, message, headers);
+    }
+    if (status === 409) {
+      return new ConflictError(status, error, message, headers);
+    }
+    if (status === 422) {
+      return new UnprocessableEntityError(status, error, message, headers);
+    }
+    if (status === 429) {
+      return new RateLimitError(status, error, message, headers);
+    }
+    if (status >= 500) {
+      return new InternalServerError(status, error, message, headers);
+    }
+    return new APIError(status, error, message, headers);
+  }
+};
+var APIUserAbortError = class extends APIError {
+  constructor({ message } = {}) {
+    super(void 0, void 0, message || "Request was aborted.", void 0);
+    this.status = void 0;
+  }
+};
+var APIConnectionError = class extends APIError {
+  constructor({ message, cause }) {
+    super(void 0, void 0, message || "Connection error.", void 0);
+    this.status = void 0;
+    if (cause)
+      this.cause = cause;
+  }
+};
+var APIConnectionTimeoutError = class extends APIConnectionError {
+  constructor({ message } = {}) {
+    super({ message: message != null ? message : "Request timed out." });
+  }
+};
+var BadRequestError = class extends APIError {
+  constructor() {
+    super(...arguments);
+    this.status = 400;
+  }
+};
+var AuthenticationError = class extends APIError {
+  constructor() {
+    super(...arguments);
+    this.status = 401;
+  }
+};
+var PermissionDeniedError = class extends APIError {
+  constructor() {
+    super(...arguments);
+    this.status = 403;
+  }
+};
+var NotFoundError = class extends APIError {
+  constructor() {
+    super(...arguments);
+    this.status = 404;
+  }
+};
+var ConflictError = class extends APIError {
+  constructor() {
+    super(...arguments);
+    this.status = 409;
+  }
+};
+var UnprocessableEntityError = class extends APIError {
+  constructor() {
+    super(...arguments);
+    this.status = 422;
+  }
+};
+var RateLimitError = class extends APIError {
+  constructor() {
+    super(...arguments);
+    this.status = 429;
+  }
+};
+var InternalServerError = class extends APIError {
+};
+var LengthFinishReasonError = class extends OpenAIError {
+  constructor() {
+    super(`Could not parse response content as the length limit was reached`);
+  }
+};
+var ContentFilterFinishReasonError = class extends OpenAIError {
+  constructor() {
+    super(`Could not parse response content as the request was rejected by the content filter`);
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/internal/qs/formats.mjs
+var default_format = "RFC3986";
+var formatters = {
+  RFC1738: (v) => String(v).replace(/%20/g, "+"),
+  RFC3986: (v) => String(v)
+};
+var RFC1738 = "RFC1738";
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/internal/qs/utils.mjs
+var is_array = Array.isArray;
+var hex_table = (() => {
+  const array = [];
+  for (let i2 = 0; i2 < 256; ++i2) {
+    array.push("%" + ((i2 < 16 ? "0" : "") + i2.toString(16)).toUpperCase());
+  }
+  return array;
+})();
+var limit = 1024;
+var encode = (str2, _defaultEncoder, charset, _kind, format) => {
+  if (str2.length === 0) {
+    return str2;
+  }
+  let string = str2;
+  if (typeof str2 === "symbol") {
+    string = Symbol.prototype.toString.call(str2);
+  } else if (typeof str2 !== "string") {
+    string = String(str2);
+  }
+  if (charset === "iso-8859-1") {
+    return escape(string).replace(/%u[0-9a-f]{4}/gi, function($0) {
+      return "%26%23" + parseInt($0.slice(2), 16) + "%3B";
+    });
+  }
+  let out = "";
+  for (let j = 0; j < string.length; j += limit) {
+    const segment = string.length >= limit ? string.slice(j, j + limit) : string;
+    const arr = [];
+    for (let i2 = 0; i2 < segment.length; ++i2) {
+      let c2 = segment.charCodeAt(i2);
+      if (c2 === 45 || // -
+      c2 === 46 || // .
+      c2 === 95 || // _
+      c2 === 126 || // ~
+      c2 >= 48 && c2 <= 57 || // 0-9
+      c2 >= 65 && c2 <= 90 || // a-z
+      c2 >= 97 && c2 <= 122 || // A-Z
+      format === RFC1738 && (c2 === 40 || c2 === 41)) {
+        arr[arr.length] = segment.charAt(i2);
+        continue;
+      }
+      if (c2 < 128) {
+        arr[arr.length] = hex_table[c2];
+        continue;
+      }
+      if (c2 < 2048) {
+        arr[arr.length] = hex_table[192 | c2 >> 6] + hex_table[128 | c2 & 63];
+        continue;
+      }
+      if (c2 < 55296 || c2 >= 57344) {
+        arr[arr.length] = hex_table[224 | c2 >> 12] + hex_table[128 | c2 >> 6 & 63] + hex_table[128 | c2 & 63];
+        continue;
+      }
+      i2 += 1;
+      c2 = 65536 + ((c2 & 1023) << 10 | segment.charCodeAt(i2) & 1023);
+      arr[arr.length] = hex_table[240 | c2 >> 18] + hex_table[128 | c2 >> 12 & 63] + hex_table[128 | c2 >> 6 & 63] + hex_table[128 | c2 & 63];
+    }
+    out += arr.join("");
+  }
+  return out;
+};
+function is_buffer(obj) {
+  if (!obj || typeof obj !== "object") {
+    return false;
+  }
+  return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
+}
+function maybe_map(val, fn) {
+  if (is_array(val)) {
+    const mapped = [];
+    for (let i2 = 0; i2 < val.length; i2 += 1) {
+      mapped.push(fn(val[i2]));
+    }
+    return mapped;
+  }
+  return fn(val);
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/internal/qs/stringify.mjs
+var has = Object.prototype.hasOwnProperty;
+var array_prefix_generators = {
+  brackets(prefix) {
+    return String(prefix) + "[]";
+  },
+  comma: "comma",
+  indices(prefix, key) {
+    return String(prefix) + "[" + key + "]";
+  },
+  repeat(prefix) {
+    return String(prefix);
+  }
+};
+var is_array2 = Array.isArray;
+var push = Array.prototype.push;
+var push_to_array = function(arr, value_or_array) {
+  push.apply(arr, is_array2(value_or_array) ? value_or_array : [value_or_array]);
+};
+var to_ISO = Date.prototype.toISOString;
+var defaults = {
+  addQueryPrefix: false,
+  allowDots: false,
+  allowEmptyArrays: false,
+  arrayFormat: "indices",
+  charset: "utf-8",
+  charsetSentinel: false,
+  delimiter: "&",
+  encode: true,
+  encodeDotInKeys: false,
+  encoder: encode,
+  encodeValuesOnly: false,
+  format: default_format,
+  formatter: formatters[default_format],
+  /** @deprecated */
+  indices: false,
+  serializeDate(date) {
+    return to_ISO.call(date);
+  },
+  skipNulls: false,
+  strictNullHandling: false
+};
+function is_non_nullish_primitive(v) {
+  return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "symbol" || typeof v === "bigint";
+}
+var sentinel = {};
+function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, allowEmptyArrays, strictNullHandling, skipNulls, encodeDotInKeys, encoder, filter, sort, allowDots, serializeDate, format, formatter, encodeValuesOnly, charset, sideChannel) {
+  let obj = object;
+  let tmp_sc = sideChannel;
+  let step = 0;
+  let find_flag = false;
+  while ((tmp_sc = tmp_sc.get(sentinel)) !== void 0 && !find_flag) {
+    const pos = tmp_sc.get(object);
+    step += 1;
+    if (typeof pos !== "undefined") {
+      if (pos === step) {
+        throw new RangeError("Cyclic object value");
+      } else {
+        find_flag = true;
+      }
+    }
+    if (typeof tmp_sc.get(sentinel) === "undefined") {
+      step = 0;
+    }
+  }
+  if (typeof filter === "function") {
+    obj = filter(prefix, obj);
+  } else if (obj instanceof Date) {
+    obj = serializeDate == null ? void 0 : serializeDate(obj);
+  } else if (generateArrayPrefix === "comma" && is_array2(obj)) {
+    obj = maybe_map(obj, function(value) {
+      if (value instanceof Date) {
+        return serializeDate == null ? void 0 : serializeDate(value);
+      }
+      return value;
+    });
+  }
+  if (obj === null) {
+    if (strictNullHandling) {
+      return encoder && !encodeValuesOnly ? (
+        // @ts-expect-error
+        encoder(prefix, defaults.encoder, charset, "key", format)
+      ) : prefix;
+    }
+    obj = "";
+  }
+  if (is_non_nullish_primitive(obj) || is_buffer(obj)) {
+    if (encoder) {
+      const key_value = encodeValuesOnly ? prefix : encoder(prefix, defaults.encoder, charset, "key", format);
+      return [
+        (formatter == null ? void 0 : formatter(key_value)) + "=" + // @ts-expect-error
+        (formatter == null ? void 0 : formatter(encoder(obj, defaults.encoder, charset, "value", format)))
+      ];
+    }
+    return [(formatter == null ? void 0 : formatter(prefix)) + "=" + (formatter == null ? void 0 : formatter(String(obj)))];
+  }
+  const values = [];
+  if (typeof obj === "undefined") {
+    return values;
+  }
+  let obj_keys;
+  if (generateArrayPrefix === "comma" && is_array2(obj)) {
+    if (encodeValuesOnly && encoder) {
+      obj = maybe_map(obj, encoder);
+    }
+    obj_keys = [{ value: obj.length > 0 ? obj.join(",") || null : void 0 }];
+  } else if (is_array2(filter)) {
+    obj_keys = filter;
+  } else {
+    const keys = Object.keys(obj);
+    obj_keys = sort ? keys.sort(sort) : keys;
+  }
+  const encoded_prefix = encodeDotInKeys ? String(prefix).replace(/\./g, "%2E") : String(prefix);
+  const adjusted_prefix = commaRoundTrip && is_array2(obj) && obj.length === 1 ? encoded_prefix + "[]" : encoded_prefix;
+  if (allowEmptyArrays && is_array2(obj) && obj.length === 0) {
+    return adjusted_prefix + "[]";
+  }
+  for (let j = 0; j < obj_keys.length; ++j) {
+    const key = obj_keys[j];
+    const value = (
+      // @ts-ignore
+      typeof key === "object" && typeof key.value !== "undefined" ? key.value : obj[key]
+    );
+    if (skipNulls && value === null) {
+      continue;
+    }
+    const encoded_key = allowDots && encodeDotInKeys ? key.replace(/\./g, "%2E") : key;
+    const key_prefix = is_array2(obj) ? typeof generateArrayPrefix === "function" ? generateArrayPrefix(adjusted_prefix, encoded_key) : adjusted_prefix : adjusted_prefix + (allowDots ? "." + encoded_key : "[" + encoded_key + "]");
+    sideChannel.set(object, step);
+    const valueSideChannel = /* @__PURE__ */ new WeakMap();
+    valueSideChannel.set(sentinel, sideChannel);
+    push_to_array(values, inner_stringify(
+      value,
+      key_prefix,
+      generateArrayPrefix,
+      commaRoundTrip,
+      allowEmptyArrays,
+      strictNullHandling,
+      skipNulls,
+      encodeDotInKeys,
+      // @ts-ignore
+      generateArrayPrefix === "comma" && encodeValuesOnly && is_array2(obj) ? null : encoder,
+      filter,
+      sort,
+      allowDots,
+      serializeDate,
+      format,
+      formatter,
+      encodeValuesOnly,
+      charset,
+      valueSideChannel
+    ));
+  }
+  return values;
+}
+function normalize_stringify_options(opts = defaults) {
+  if (typeof opts.allowEmptyArrays !== "undefined" && typeof opts.allowEmptyArrays !== "boolean") {
+    throw new TypeError("`allowEmptyArrays` option can only be `true` or `false`, when provided");
+  }
+  if (typeof opts.encodeDotInKeys !== "undefined" && typeof opts.encodeDotInKeys !== "boolean") {
+    throw new TypeError("`encodeDotInKeys` option can only be `true` or `false`, when provided");
+  }
+  if (opts.encoder !== null && typeof opts.encoder !== "undefined" && typeof opts.encoder !== "function") {
+    throw new TypeError("Encoder has to be a function.");
+  }
+  const charset = opts.charset || defaults.charset;
+  if (typeof opts.charset !== "undefined" && opts.charset !== "utf-8" && opts.charset !== "iso-8859-1") {
+    throw new TypeError("The charset option must be either utf-8, iso-8859-1, or undefined");
+  }
+  let format = default_format;
+  if (typeof opts.format !== "undefined") {
+    if (!has.call(formatters, opts.format)) {
+      throw new TypeError("Unknown format option provided.");
+    }
+    format = opts.format;
+  }
+  const formatter = formatters[format];
+  let filter = defaults.filter;
+  if (typeof opts.filter === "function" || is_array2(opts.filter)) {
+    filter = opts.filter;
+  }
+  let arrayFormat;
+  if (opts.arrayFormat && opts.arrayFormat in array_prefix_generators) {
+    arrayFormat = opts.arrayFormat;
+  } else if ("indices" in opts) {
+    arrayFormat = opts.indices ? "indices" : "repeat";
+  } else {
+    arrayFormat = defaults.arrayFormat;
+  }
+  if ("commaRoundTrip" in opts && typeof opts.commaRoundTrip !== "boolean") {
+    throw new TypeError("`commaRoundTrip` must be a boolean, or absent");
+  }
+  const allowDots = typeof opts.allowDots === "undefined" ? !!opts.encodeDotInKeys === true ? true : defaults.allowDots : !!opts.allowDots;
+  return {
+    addQueryPrefix: typeof opts.addQueryPrefix === "boolean" ? opts.addQueryPrefix : defaults.addQueryPrefix,
+    // @ts-ignore
+    allowDots,
+    allowEmptyArrays: typeof opts.allowEmptyArrays === "boolean" ? !!opts.allowEmptyArrays : defaults.allowEmptyArrays,
+    arrayFormat,
+    charset,
+    charsetSentinel: typeof opts.charsetSentinel === "boolean" ? opts.charsetSentinel : defaults.charsetSentinel,
+    commaRoundTrip: !!opts.commaRoundTrip,
+    delimiter: typeof opts.delimiter === "undefined" ? defaults.delimiter : opts.delimiter,
+    encode: typeof opts.encode === "boolean" ? opts.encode : defaults.encode,
+    encodeDotInKeys: typeof opts.encodeDotInKeys === "boolean" ? opts.encodeDotInKeys : defaults.encodeDotInKeys,
+    encoder: typeof opts.encoder === "function" ? opts.encoder : defaults.encoder,
+    encodeValuesOnly: typeof opts.encodeValuesOnly === "boolean" ? opts.encodeValuesOnly : defaults.encodeValuesOnly,
+    filter,
+    format,
+    formatter,
+    serializeDate: typeof opts.serializeDate === "function" ? opts.serializeDate : defaults.serializeDate,
+    skipNulls: typeof opts.skipNulls === "boolean" ? opts.skipNulls : defaults.skipNulls,
+    // @ts-ignore
+    sort: typeof opts.sort === "function" ? opts.sort : null,
+    strictNullHandling: typeof opts.strictNullHandling === "boolean" ? opts.strictNullHandling : defaults.strictNullHandling
+  };
+}
+function stringify(object, opts = {}) {
+  let obj = object;
+  const options = normalize_stringify_options(opts);
+  let obj_keys;
+  let filter;
+  if (typeof options.filter === "function") {
+    filter = options.filter;
+    obj = filter("", obj);
+  } else if (is_array2(options.filter)) {
+    filter = options.filter;
+    obj_keys = filter;
+  }
+  const keys = [];
+  if (typeof obj !== "object" || obj === null) {
+    return "";
+  }
+  const generateArrayPrefix = array_prefix_generators[options.arrayFormat];
+  const commaRoundTrip = generateArrayPrefix === "comma" && options.commaRoundTrip;
+  if (!obj_keys) {
+    obj_keys = Object.keys(obj);
+  }
+  if (options.sort) {
+    obj_keys.sort(options.sort);
+  }
+  const sideChannel = /* @__PURE__ */ new WeakMap();
+  for (let i2 = 0; i2 < obj_keys.length; ++i2) {
+    const key = obj_keys[i2];
+    if (options.skipNulls && obj[key] === null) {
+      continue;
+    }
+    push_to_array(keys, inner_stringify(
+      obj[key],
+      key,
+      // @ts-expect-error
+      generateArrayPrefix,
+      commaRoundTrip,
+      options.allowEmptyArrays,
+      options.strictNullHandling,
+      options.skipNulls,
+      options.encodeDotInKeys,
+      options.encode ? options.encoder : null,
+      options.filter,
+      options.sort,
+      options.allowDots,
+      options.serializeDate,
+      options.format,
+      options.formatter,
+      options.encodeValuesOnly,
+      options.charset,
+      sideChannel
+    ));
+  }
+  const joined = keys.join(options.delimiter);
+  let prefix = options.addQueryPrefix === true ? "?" : "";
+  if (options.charsetSentinel) {
+    if (options.charset === "iso-8859-1") {
+      prefix += "utf8=%26%2310003%3B&";
+    } else {
+      prefix += "utf8=%E2%9C%93&";
+    }
+  }
+  return joined.length > 0 ? prefix + joined : "";
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/pagination.mjs
+var Page = class extends AbstractPage {
+  constructor(client, response, body, options) {
+    super(client, response, body, options);
+    this.data = body.data || [];
+    this.object = body.object;
+  }
+  getPaginatedItems() {
+    var _a2;
+    return (_a2 = this.data) != null ? _a2 : [];
+  }
+  // @deprecated Please use `nextPageInfo()` instead
+  /**
+   * This page represents a response that isn't actually paginated at the API level
+   * so there will never be any next page params.
+   */
+  nextPageParams() {
+    return null;
+  }
+  nextPageInfo() {
+    return null;
+  }
+};
+var CursorPage = class extends AbstractPage {
+  constructor(client, response, body, options) {
+    super(client, response, body, options);
+    this.data = body.data || [];
+  }
+  getPaginatedItems() {
+    var _a2;
+    return (_a2 = this.data) != null ? _a2 : [];
+  }
+  // @deprecated Please use `nextPageInfo()` instead
+  nextPageParams() {
+    const info = this.nextPageInfo();
+    if (!info)
+      return null;
+    if ("params" in info)
+      return info.params;
+    const params = Object.fromEntries(info.url.searchParams);
+    if (!Object.keys(params).length)
+      return null;
+    return params;
+  }
+  nextPageInfo() {
+    var _a2;
+    const data = this.getPaginatedItems();
+    if (!data.length) {
+      return null;
+    }
+    const id = (_a2 = data[data.length - 1]) == null ? void 0 : _a2.id;
+    if (!id) {
+      return null;
+    }
+    return { params: { after: id } };
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resource.mjs
+var APIResource = class {
+  constructor(client) {
+    this._client = client;
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/chat/completions.mjs
+var Completions = class extends APIResource {
+  create(body, options) {
+    var _a2;
+    return this._client.post("/chat/completions", { body, ...options, stream: (_a2 = body.stream) != null ? _a2 : false });
+  }
+};
+(function(Completions4) {
+})(Completions || (Completions = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/chat/chat.mjs
+var Chat = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.completions = new Completions(this._client);
+  }
+};
+(function(Chat3) {
+  Chat3.Completions = Completions;
+})(Chat || (Chat = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/audio/speech.mjs
+var Speech = class extends APIResource {
+  /**
+   * Generates audio from the input text.
+   */
+  create(body, options) {
+    return this._client.post("/audio/speech", { body, ...options, __binaryResponse: true });
+  }
+};
+(function(Speech2) {
+})(Speech || (Speech = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/audio/transcriptions.mjs
+var Transcriptions = class extends APIResource {
+  /**
+   * Transcribes audio into the input language.
+   */
+  create(body, options) {
+    return this._client.post("/audio/transcriptions", multipartFormRequestOptions({ body, ...options }));
+  }
+};
+(function(Transcriptions2) {
+})(Transcriptions || (Transcriptions = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/audio/translations.mjs
+var Translations = class extends APIResource {
+  /**
+   * Translates audio into English.
+   */
+  create(body, options) {
+    return this._client.post("/audio/translations", multipartFormRequestOptions({ body, ...options }));
+  }
+};
+(function(Translations2) {
+})(Translations || (Translations = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/audio/audio.mjs
+var Audio = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.transcriptions = new Transcriptions(this._client);
+    this.translations = new Translations(this._client);
+    this.speech = new Speech(this._client);
+  }
+};
+(function(Audio2) {
+  Audio2.Transcriptions = Transcriptions;
+  Audio2.Translations = Translations;
+  Audio2.Speech = Speech;
+})(Audio || (Audio = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/batches.mjs
+var Batches = class extends APIResource {
+  /**
+   * Creates and executes a batch from an uploaded file of requests
+   */
+  create(body, options) {
+    return this._client.post("/batches", { body, ...options });
+  }
+  /**
+   * Retrieves a batch.
+   */
+  retrieve(batchId, options) {
+    return this._client.get(`/batches/${batchId}`, options);
+  }
+  list(query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list({}, query);
+    }
+    return this._client.getAPIList("/batches", BatchesPage, { query, ...options });
+  }
+  /**
+   * Cancels an in-progress batch. The batch will be in status `cancelling` for up to
+   * 10 minutes, before changing to `cancelled`, where it will have partial results
+   * (if any) available in the output file.
+   */
+  cancel(batchId, options) {
+    return this._client.post(`/batches/${batchId}/cancel`, options);
+  }
+};
+var BatchesPage = class extends CursorPage {
+};
+(function(Batches2) {
+  Batches2.BatchesPage = BatchesPage;
+})(Batches || (Batches = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/assistants.mjs
+var Assistants = class extends APIResource {
+  /**
+   * Create an assistant with a model and instructions.
+   */
+  create(body, options) {
+    return this._client.post("/assistants", {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Retrieves an assistant.
+   */
+  retrieve(assistantId, options) {
+    return this._client.get(`/assistants/${assistantId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Modifies an assistant.
+   */
+  update(assistantId, body, options) {
+    return this._client.post(`/assistants/${assistantId}`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  list(query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list({}, query);
+    }
+    return this._client.getAPIList("/assistants", AssistantsPage, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Delete an assistant.
+   */
+  del(assistantId, options) {
+    return this._client.delete(`/assistants/${assistantId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+};
+var AssistantsPage = class extends CursorPage {
+};
+(function(Assistants2) {
+  Assistants2.AssistantsPage = AssistantsPage;
+})(Assistants || (Assistants = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/RunnableFunction.mjs
+function isRunnableFunctionWithParse(fn) {
+  return typeof fn.parse === "function";
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/chatCompletionUtils.mjs
+var isAssistantMessage = (message) => {
+  return (message == null ? void 0 : message.role) === "assistant";
+};
+var isFunctionMessage = (message) => {
+  return (message == null ? void 0 : message.role) === "function";
+};
+var isToolMessage = (message) => {
+  return (message == null ? void 0 : message.role) === "tool";
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/EventStream.mjs
+var __classPrivateFieldSet2 = function(receiver, state, value, kind2, f2) {
+  if (kind2 === "m")
+    throw new TypeError("Private method is not writable");
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a setter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot write private member to an object whose class did not declare it");
+  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+};
+var __classPrivateFieldGet2 = function(receiver, state, kind2, f2) {
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a getter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot read private member from an object whose class did not declare it");
+  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+};
+var _EventStream_instances;
+var _EventStream_connectedPromise;
+var _EventStream_resolveConnectedPromise;
+var _EventStream_rejectConnectedPromise;
+var _EventStream_endPromise;
+var _EventStream_resolveEndPromise;
+var _EventStream_rejectEndPromise;
+var _EventStream_listeners;
+var _EventStream_ended;
+var _EventStream_errored;
+var _EventStream_aborted;
+var _EventStream_catchingPromiseCreated;
+var _EventStream_handleError;
+var EventStream = class {
+  constructor() {
+    _EventStream_instances.add(this);
+    this.controller = new AbortController();
+    _EventStream_connectedPromise.set(this, void 0);
+    _EventStream_resolveConnectedPromise.set(this, () => {
+    });
+    _EventStream_rejectConnectedPromise.set(this, () => {
+    });
+    _EventStream_endPromise.set(this, void 0);
+    _EventStream_resolveEndPromise.set(this, () => {
+    });
+    _EventStream_rejectEndPromise.set(this, () => {
+    });
+    _EventStream_listeners.set(this, {});
+    _EventStream_ended.set(this, false);
+    _EventStream_errored.set(this, false);
+    _EventStream_aborted.set(this, false);
+    _EventStream_catchingPromiseCreated.set(this, false);
+    __classPrivateFieldSet2(this, _EventStream_connectedPromise, new Promise((resolve, reject) => {
+      __classPrivateFieldSet2(this, _EventStream_resolveConnectedPromise, resolve, "f");
+      __classPrivateFieldSet2(this, _EventStream_rejectConnectedPromise, reject, "f");
+    }), "f");
+    __classPrivateFieldSet2(this, _EventStream_endPromise, new Promise((resolve, reject) => {
+      __classPrivateFieldSet2(this, _EventStream_resolveEndPromise, resolve, "f");
+      __classPrivateFieldSet2(this, _EventStream_rejectEndPromise, reject, "f");
+    }), "f");
+    __classPrivateFieldGet2(this, _EventStream_connectedPromise, "f").catch(() => {
+    });
+    __classPrivateFieldGet2(this, _EventStream_endPromise, "f").catch(() => {
+    });
+  }
+  _run(executor) {
+    setTimeout(() => {
+      executor().then(() => {
+        this._emitFinal();
+        this._emit("end");
+      }, __classPrivateFieldGet2(this, _EventStream_instances, "m", _EventStream_handleError).bind(this));
+    }, 0);
+  }
+  _connected() {
+    if (this.ended)
+      return;
+    __classPrivateFieldGet2(this, _EventStream_resolveConnectedPromise, "f").call(this);
+    this._emit("connect");
+  }
+  get ended() {
+    return __classPrivateFieldGet2(this, _EventStream_ended, "f");
+  }
+  get errored() {
+    return __classPrivateFieldGet2(this, _EventStream_errored, "f");
+  }
+  get aborted() {
+    return __classPrivateFieldGet2(this, _EventStream_aborted, "f");
+  }
+  abort() {
+    this.controller.abort();
+  }
+  /**
+   * Adds the listener function to the end of the listeners array for the event.
+   * No checks are made to see if the listener has already been added. Multiple calls passing
+   * the same combination of event and listener will result in the listener being added, and
+   * called, multiple times.
+   * @returns this ChatCompletionStream, so that calls can be chained
+   */
+  on(event, listener) {
+    const listeners = __classPrivateFieldGet2(this, _EventStream_listeners, "f")[event] || (__classPrivateFieldGet2(this, _EventStream_listeners, "f")[event] = []);
+    listeners.push({ listener });
+    return this;
+  }
+  /**
+   * Removes the specified listener from the listener array for the event.
+   * off() will remove, at most, one instance of a listener from the listener array. If any single
+   * listener has been added multiple times to the listener array for the specified event, then
+   * off() must be called multiple times to remove each instance.
+   * @returns this ChatCompletionStream, so that calls can be chained
+   */
+  off(event, listener) {
+    const listeners = __classPrivateFieldGet2(this, _EventStream_listeners, "f")[event];
+    if (!listeners)
+      return this;
+    const index = listeners.findIndex((l2) => l2.listener === listener);
+    if (index >= 0)
+      listeners.splice(index, 1);
+    return this;
+  }
+  /**
+   * Adds a one-time listener function for the event. The next time the event is triggered,
+   * this listener is removed and then invoked.
+   * @returns this ChatCompletionStream, so that calls can be chained
+   */
+  once(event, listener) {
+    const listeners = __classPrivateFieldGet2(this, _EventStream_listeners, "f")[event] || (__classPrivateFieldGet2(this, _EventStream_listeners, "f")[event] = []);
+    listeners.push({ listener, once: true });
+    return this;
+  }
+  /**
+   * This is similar to `.once()`, but returns a Promise that resolves the next time
+   * the event is triggered, instead of calling a listener callback.
+   * @returns a Promise that resolves the next time given event is triggered,
+   * or rejects if an error is emitted.  (If you request the 'error' event,
+   * returns a promise that resolves with the error).
+   *
+   * Example:
+   *
+   *   const message = await stream.emitted('message') // rejects if the stream errors
+   */
+  emitted(event) {
+    return new Promise((resolve, reject) => {
+      __classPrivateFieldSet2(this, _EventStream_catchingPromiseCreated, true, "f");
+      if (event !== "error")
+        this.once("error", reject);
+      this.once(event, resolve);
+    });
+  }
+  async done() {
+    __classPrivateFieldSet2(this, _EventStream_catchingPromiseCreated, true, "f");
+    await __classPrivateFieldGet2(this, _EventStream_endPromise, "f");
+  }
+  _emit(event, ...args) {
+    if (__classPrivateFieldGet2(this, _EventStream_ended, "f")) {
+      return;
+    }
+    if (event === "end") {
+      __classPrivateFieldSet2(this, _EventStream_ended, true, "f");
+      __classPrivateFieldGet2(this, _EventStream_resolveEndPromise, "f").call(this);
+    }
+    const listeners = __classPrivateFieldGet2(this, _EventStream_listeners, "f")[event];
+    if (listeners) {
+      __classPrivateFieldGet2(this, _EventStream_listeners, "f")[event] = listeners.filter((l2) => !l2.once);
+      listeners.forEach(({ listener }) => listener(...args));
+    }
+    if (event === "abort") {
+      const error = args[0];
+      if (!__classPrivateFieldGet2(this, _EventStream_catchingPromiseCreated, "f") && !(listeners == null ? void 0 : listeners.length)) {
+        Promise.reject(error);
+      }
+      __classPrivateFieldGet2(this, _EventStream_rejectConnectedPromise, "f").call(this, error);
+      __classPrivateFieldGet2(this, _EventStream_rejectEndPromise, "f").call(this, error);
+      this._emit("end");
+      return;
+    }
+    if (event === "error") {
+      const error = args[0];
+      if (!__classPrivateFieldGet2(this, _EventStream_catchingPromiseCreated, "f") && !(listeners == null ? void 0 : listeners.length)) {
+        Promise.reject(error);
+      }
+      __classPrivateFieldGet2(this, _EventStream_rejectConnectedPromise, "f").call(this, error);
+      __classPrivateFieldGet2(this, _EventStream_rejectEndPromise, "f").call(this, error);
+      this._emit("end");
+    }
+  }
+  _emitFinal() {
+  }
+};
+_EventStream_connectedPromise = /* @__PURE__ */ new WeakMap(), _EventStream_resolveConnectedPromise = /* @__PURE__ */ new WeakMap(), _EventStream_rejectConnectedPromise = /* @__PURE__ */ new WeakMap(), _EventStream_endPromise = /* @__PURE__ */ new WeakMap(), _EventStream_resolveEndPromise = /* @__PURE__ */ new WeakMap(), _EventStream_rejectEndPromise = /* @__PURE__ */ new WeakMap(), _EventStream_listeners = /* @__PURE__ */ new WeakMap(), _EventStream_ended = /* @__PURE__ */ new WeakMap(), _EventStream_errored = /* @__PURE__ */ new WeakMap(), _EventStream_aborted = /* @__PURE__ */ new WeakMap(), _EventStream_catchingPromiseCreated = /* @__PURE__ */ new WeakMap(), _EventStream_instances = /* @__PURE__ */ new WeakSet(), _EventStream_handleError = function _EventStream_handleError2(error) {
+  __classPrivateFieldSet2(this, _EventStream_errored, true, "f");
+  if (error instanceof Error && error.name === "AbortError") {
+    error = new APIUserAbortError();
+  }
+  if (error instanceof APIUserAbortError) {
+    __classPrivateFieldSet2(this, _EventStream_aborted, true, "f");
+    return this._emit("abort", error);
+  }
+  if (error instanceof OpenAIError) {
+    return this._emit("error", error);
+  }
+  if (error instanceof Error) {
+    const openAIError = new OpenAIError(error.message);
+    openAIError.cause = error;
+    return this._emit("error", openAIError);
+  }
+  return this._emit("error", new OpenAIError(String(error)));
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/parser.mjs
+function isAutoParsableResponseFormat(response_format) {
+  return (response_format == null ? void 0 : response_format["$brand"]) === "auto-parseable-response-format";
+}
+function isAutoParsableTool(tool) {
+  return (tool == null ? void 0 : tool["$brand"]) === "auto-parseable-tool";
+}
+function maybeParseChatCompletion(completion, params) {
+  if (!params || !hasAutoParseableInput(params)) {
+    return {
+      ...completion,
+      choices: completion.choices.map((choice) => {
+        var _a2;
+        return {
+          ...choice,
+          message: { ...choice.message, parsed: null, tool_calls: (_a2 = choice.message.tool_calls) != null ? _a2 : [] }
+        };
+      })
+    };
+  }
+  return parseChatCompletion(completion, params);
+}
+function parseChatCompletion(completion, params) {
+  const choices = completion.choices.map((choice) => {
+    var _a2, _b;
+    if (choice.finish_reason === "length") {
+      throw new LengthFinishReasonError();
+    }
+    if (choice.finish_reason === "content_filter") {
+      throw new ContentFilterFinishReasonError();
+    }
+    return {
+      ...choice,
+      message: {
+        ...choice.message,
+        tool_calls: (_b = (_a2 = choice.message.tool_calls) == null ? void 0 : _a2.map((toolCall) => parseToolCall(params, toolCall))) != null ? _b : [],
+        parsed: choice.message.content && !choice.message.refusal ? parseResponseFormat(params, choice.message.content) : null
+      }
+    };
+  });
+  return { ...completion, choices };
+}
+function parseResponseFormat(params, content) {
+  var _a2, _b;
+  if (((_a2 = params.response_format) == null ? void 0 : _a2.type) !== "json_schema") {
+    return null;
+  }
+  if (((_b = params.response_format) == null ? void 0 : _b.type) === "json_schema") {
+    if ("$parseRaw" in params.response_format) {
+      const response_format = params.response_format;
+      return response_format.$parseRaw(content);
+    }
+    return JSON.parse(content);
+  }
+  return null;
+}
+function parseToolCall(params, toolCall) {
+  var _a2;
+  const inputTool = (_a2 = params.tools) == null ? void 0 : _a2.find((inputTool2) => {
+    var _a3;
+    return ((_a3 = inputTool2.function) == null ? void 0 : _a3.name) === toolCall.function.name;
+  });
+  return {
+    ...toolCall,
+    function: {
+      ...toolCall.function,
+      parsed_arguments: isAutoParsableTool(inputTool) ? inputTool.$parseRaw(toolCall.function.arguments) : (inputTool == null ? void 0 : inputTool.function.strict) ? JSON.parse(toolCall.function.arguments) : null
+    }
+  };
+}
+function shouldParseToolCall(params, toolCall) {
+  var _a2;
+  if (!params) {
+    return false;
+  }
+  const inputTool = (_a2 = params.tools) == null ? void 0 : _a2.find((inputTool2) => {
+    var _a3;
+    return ((_a3 = inputTool2.function) == null ? void 0 : _a3.name) === toolCall.function.name;
+  });
+  return isAutoParsableTool(inputTool) || (inputTool == null ? void 0 : inputTool.function.strict) || false;
+}
+function hasAutoParseableInput(params) {
+  var _a2, _b;
+  if (isAutoParsableResponseFormat(params.response_format)) {
+    return true;
+  }
+  return (_b = (_a2 = params.tools) == null ? void 0 : _a2.some((t2) => isAutoParsableTool(t2) || t2.type === "function" && t2.function.strict === true)) != null ? _b : false;
+}
+function validateInputTools(tools) {
+  for (const tool of tools != null ? tools : []) {
+    if (tool.type !== "function") {
+      throw new OpenAIError(`Currently only \`function\` tool types support auto-parsing; Received \`${tool.type}\``);
+    }
+    if (tool.function.strict !== true) {
+      throw new OpenAIError(`The \`${tool.function.name}\` tool is not marked with \`strict: true\`. Only strict function tools can be auto-parsed`);
+    }
+  }
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/AbstractChatCompletionRunner.mjs
+var __classPrivateFieldGet3 = function(receiver, state, kind2, f2) {
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a getter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot read private member from an object whose class did not declare it");
+  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+};
+var _AbstractChatCompletionRunner_instances;
+var _AbstractChatCompletionRunner_getFinalContent;
+var _AbstractChatCompletionRunner_getFinalMessage;
+var _AbstractChatCompletionRunner_getFinalFunctionCall;
+var _AbstractChatCompletionRunner_getFinalFunctionCallResult;
+var _AbstractChatCompletionRunner_calculateTotalUsage;
+var _AbstractChatCompletionRunner_validateParams;
+var _AbstractChatCompletionRunner_stringifyFunctionCallResult;
+var DEFAULT_MAX_CHAT_COMPLETIONS = 10;
+var AbstractChatCompletionRunner = class extends EventStream {
+  constructor() {
+    super(...arguments);
+    _AbstractChatCompletionRunner_instances.add(this);
+    this._chatCompletions = [];
+    this.messages = [];
+  }
+  _addChatCompletion(chatCompletion) {
+    var _a2;
+    this._chatCompletions.push(chatCompletion);
+    this._emit("chatCompletion", chatCompletion);
+    const message = (_a2 = chatCompletion.choices[0]) == null ? void 0 : _a2.message;
+    if (message)
+      this._addMessage(message);
+    return chatCompletion;
+  }
+  _addMessage(message, emit = true) {
+    if (!("content" in message))
+      message.content = null;
+    this.messages.push(message);
+    if (emit) {
+      this._emit("message", message);
+      if ((isFunctionMessage(message) || isToolMessage(message)) && message.content) {
+        this._emit("functionCallResult", message.content);
+      } else if (isAssistantMessage(message) && message.function_call) {
+        this._emit("functionCall", message.function_call);
+      } else if (isAssistantMessage(message) && message.tool_calls) {
+        for (const tool_call of message.tool_calls) {
+          if (tool_call.type === "function") {
+            this._emit("functionCall", tool_call.function);
+          }
+        }
+      }
+    }
+  }
+  /**
+   * @returns a promise that resolves with the final ChatCompletion, or rejects
+   * if an error occurred or the stream ended prematurely without producing a ChatCompletion.
+   */
+  async finalChatCompletion() {
+    await this.done();
+    const completion = this._chatCompletions[this._chatCompletions.length - 1];
+    if (!completion)
+      throw new OpenAIError("stream ended without producing a ChatCompletion");
+    return completion;
+  }
+  /**
+   * @returns a promise that resolves with the content of the final ChatCompletionMessage, or rejects
+   * if an error occurred or the stream ended prematurely without producing a ChatCompletionMessage.
+   */
+  async finalContent() {
+    await this.done();
+    return __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalContent).call(this);
+  }
+  /**
+   * @returns a promise that resolves with the the final assistant ChatCompletionMessage response,
+   * or rejects if an error occurred or the stream ended prematurely without producing a ChatCompletionMessage.
+   */
+  async finalMessage() {
+    await this.done();
+    return __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalMessage).call(this);
+  }
+  /**
+   * @returns a promise that resolves with the content of the final FunctionCall, or rejects
+   * if an error occurred or the stream ended prematurely without producing a ChatCompletionMessage.
+   */
+  async finalFunctionCall() {
+    await this.done();
+    return __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCall).call(this);
+  }
+  async finalFunctionCallResult() {
+    await this.done();
+    return __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCallResult).call(this);
+  }
+  async totalUsage() {
+    await this.done();
+    return __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_calculateTotalUsage).call(this);
+  }
+  allChatCompletions() {
+    return [...this._chatCompletions];
+  }
+  _emitFinal() {
+    const completion = this._chatCompletions[this._chatCompletions.length - 1];
+    if (completion)
+      this._emit("finalChatCompletion", completion);
+    const finalMessage = __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalMessage).call(this);
+    if (finalMessage)
+      this._emit("finalMessage", finalMessage);
+    const finalContent = __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalContent).call(this);
+    if (finalContent)
+      this._emit("finalContent", finalContent);
+    const finalFunctionCall = __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCall).call(this);
+    if (finalFunctionCall)
+      this._emit("finalFunctionCall", finalFunctionCall);
+    const finalFunctionCallResult = __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCallResult).call(this);
+    if (finalFunctionCallResult != null)
+      this._emit("finalFunctionCallResult", finalFunctionCallResult);
+    if (this._chatCompletions.some((c2) => c2.usage)) {
+      this._emit("totalUsage", __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_calculateTotalUsage).call(this));
+    }
+  }
+  async _createChatCompletion(client, params, options) {
+    const signal = options == null ? void 0 : options.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_validateParams).call(this, params);
+    const chatCompletion = await client.chat.completions.create({ ...params, stream: false }, { ...options, signal: this.controller.signal });
+    this._connected();
+    return this._addChatCompletion(parseChatCompletion(chatCompletion, params));
+  }
+  async _runChatCompletion(client, params, options) {
+    for (const message of params.messages) {
+      this._addMessage(message, false);
+    }
+    return await this._createChatCompletion(client, params, options);
+  }
+  async _runFunctions(client, params, options) {
+    var _a2;
+    const role = "function";
+    const { function_call = "auto", stream, ...restParams } = params;
+    const singleFunctionToCall = typeof function_call !== "string" && (function_call == null ? void 0 : function_call.name);
+    const { maxChatCompletions = DEFAULT_MAX_CHAT_COMPLETIONS } = options || {};
+    const functionsByName = {};
+    for (const f2 of params.functions) {
+      functionsByName[f2.name || f2.function.name] = f2;
+    }
+    const functions = params.functions.map((f2) => ({
+      name: f2.name || f2.function.name,
+      parameters: f2.parameters,
+      description: f2.description
+    }));
+    for (const message of params.messages) {
+      this._addMessage(message, false);
+    }
+    for (let i2 = 0; i2 < maxChatCompletions; ++i2) {
+      const chatCompletion = await this._createChatCompletion(client, {
+        ...restParams,
+        function_call,
+        functions,
+        messages: [...this.messages]
+      }, options);
+      const message = (_a2 = chatCompletion.choices[0]) == null ? void 0 : _a2.message;
+      if (!message) {
+        throw new OpenAIError(`missing message in ChatCompletion response`);
+      }
+      if (!message.function_call)
+        return;
+      const { name, arguments: args } = message.function_call;
+      const fn = functionsByName[name];
+      if (!fn) {
+        const content2 = `Invalid function_call: ${JSON.stringify(name)}. Available options are: ${functions.map((f2) => JSON.stringify(f2.name)).join(", ")}. Please try again`;
+        this._addMessage({ role, name, content: content2 });
+        continue;
+      } else if (singleFunctionToCall && singleFunctionToCall !== name) {
+        const content2 = `Invalid function_call: ${JSON.stringify(name)}. ${JSON.stringify(singleFunctionToCall)} requested. Please try again`;
+        this._addMessage({ role, name, content: content2 });
+        continue;
+      }
+      let parsed;
+      try {
+        parsed = isRunnableFunctionWithParse(fn) ? await fn.parse(args) : args;
+      } catch (error) {
+        this._addMessage({
+          role,
+          name,
+          content: error instanceof Error ? error.message : String(error)
+        });
+        continue;
+      }
+      const rawContent = await fn.function(parsed, this);
+      const content = __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_stringifyFunctionCallResult).call(this, rawContent);
+      this._addMessage({ role, name, content });
+      if (singleFunctionToCall)
+        return;
+    }
+  }
+  async _runTools(client, params, options) {
+    var _a2, _b, _c;
+    const role = "tool";
+    const { tool_choice = "auto", stream, ...restParams } = params;
+    const singleFunctionToCall = typeof tool_choice !== "string" && ((_a2 = tool_choice == null ? void 0 : tool_choice.function) == null ? void 0 : _a2.name);
+    const { maxChatCompletions = DEFAULT_MAX_CHAT_COMPLETIONS } = options || {};
+    const inputTools = params.tools.map((tool) => {
+      if (isAutoParsableTool(tool)) {
+        if (!tool.$callback) {
+          throw new OpenAIError("Tool given to `.runTools()` that does not have an associated function");
+        }
+        return {
+          type: "function",
+          function: {
+            function: tool.$callback,
+            name: tool.function.name,
+            description: tool.function.description || "",
+            parameters: tool.function.parameters,
+            parse: tool.$parseRaw,
+            strict: true
+          }
+        };
+      }
+      return tool;
+    });
+    const functionsByName = {};
+    for (const f2 of inputTools) {
+      if (f2.type === "function") {
+        functionsByName[f2.function.name || f2.function.function.name] = f2.function;
+      }
+    }
+    const tools = "tools" in params ? inputTools.map((t2) => t2.type === "function" ? {
+      type: "function",
+      function: {
+        name: t2.function.name || t2.function.function.name,
+        parameters: t2.function.parameters,
+        description: t2.function.description,
+        strict: t2.function.strict
+      }
+    } : t2) : void 0;
+    for (const message of params.messages) {
+      this._addMessage(message, false);
+    }
+    for (let i2 = 0; i2 < maxChatCompletions; ++i2) {
+      const chatCompletion = await this._createChatCompletion(client, {
+        ...restParams,
+        tool_choice,
+        tools,
+        messages: [...this.messages]
+      }, options);
+      const message = (_b = chatCompletion.choices[0]) == null ? void 0 : _b.message;
+      if (!message) {
+        throw new OpenAIError(`missing message in ChatCompletion response`);
+      }
+      if (!((_c = message.tool_calls) == null ? void 0 : _c.length)) {
+        return;
+      }
+      for (const tool_call of message.tool_calls) {
+        if (tool_call.type !== "function")
+          continue;
+        const tool_call_id = tool_call.id;
+        const { name, arguments: args } = tool_call.function;
+        const fn = functionsByName[name];
+        if (!fn) {
+          const content2 = `Invalid tool_call: ${JSON.stringify(name)}. Available options are: ${Object.keys(functionsByName).map((name2) => JSON.stringify(name2)).join(", ")}. Please try again`;
+          this._addMessage({ role, tool_call_id, content: content2 });
+          continue;
+        } else if (singleFunctionToCall && singleFunctionToCall !== name) {
+          const content2 = `Invalid tool_call: ${JSON.stringify(name)}. ${JSON.stringify(singleFunctionToCall)} requested. Please try again`;
+          this._addMessage({ role, tool_call_id, content: content2 });
+          continue;
+        }
+        let parsed;
+        try {
+          parsed = isRunnableFunctionWithParse(fn) ? await fn.parse(args) : args;
+        } catch (error) {
+          const content2 = error instanceof Error ? error.message : String(error);
+          this._addMessage({ role, tool_call_id, content: content2 });
+          continue;
+        }
+        const rawContent = await fn.function(parsed, this);
+        const content = __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_stringifyFunctionCallResult).call(this, rawContent);
+        this._addMessage({ role, tool_call_id, content });
+        if (singleFunctionToCall) {
+          return;
+        }
+      }
+    }
+    return;
+  }
+};
+_AbstractChatCompletionRunner_instances = /* @__PURE__ */ new WeakSet(), _AbstractChatCompletionRunner_getFinalContent = function _AbstractChatCompletionRunner_getFinalContent2() {
+  var _a2;
+  return (_a2 = __classPrivateFieldGet3(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalMessage).call(this).content) != null ? _a2 : null;
+}, _AbstractChatCompletionRunner_getFinalMessage = function _AbstractChatCompletionRunner_getFinalMessage2() {
+  var _a2, _b;
+  let i2 = this.messages.length;
+  while (i2-- > 0) {
+    const message = this.messages[i2];
+    if (isAssistantMessage(message)) {
+      const { function_call, ...rest } = message;
+      const ret = {
+        ...rest,
+        content: (_a2 = message.content) != null ? _a2 : null,
+        refusal: (_b = message.refusal) != null ? _b : null
+      };
+      if (function_call) {
+        ret.function_call = function_call;
+      }
+      return ret;
+    }
+  }
+  throw new OpenAIError("stream ended without producing a ChatCompletionMessage with role=assistant");
+}, _AbstractChatCompletionRunner_getFinalFunctionCall = function _AbstractChatCompletionRunner_getFinalFunctionCall2() {
+  var _a2, _b;
+  for (let i2 = this.messages.length - 1; i2 >= 0; i2--) {
+    const message = this.messages[i2];
+    if (isAssistantMessage(message) && (message == null ? void 0 : message.function_call)) {
+      return message.function_call;
+    }
+    if (isAssistantMessage(message) && ((_a2 = message == null ? void 0 : message.tool_calls) == null ? void 0 : _a2.length)) {
+      return (_b = message.tool_calls.at(-1)) == null ? void 0 : _b.function;
+    }
+  }
+  return;
+}, _AbstractChatCompletionRunner_getFinalFunctionCallResult = function _AbstractChatCompletionRunner_getFinalFunctionCallResult2() {
+  for (let i2 = this.messages.length - 1; i2 >= 0; i2--) {
+    const message = this.messages[i2];
+    if (isFunctionMessage(message) && message.content != null) {
+      return message.content;
+    }
+    if (isToolMessage(message) && message.content != null && typeof message.content === "string" && this.messages.some((x) => {
+      var _a2;
+      return x.role === "assistant" && ((_a2 = x.tool_calls) == null ? void 0 : _a2.some((y) => y.type === "function" && y.id === message.tool_call_id));
+    })) {
+      return message.content;
+    }
+  }
+  return;
+}, _AbstractChatCompletionRunner_calculateTotalUsage = function _AbstractChatCompletionRunner_calculateTotalUsage2() {
+  const total = {
+    completion_tokens: 0,
+    prompt_tokens: 0,
+    total_tokens: 0
+  };
+  for (const { usage } of this._chatCompletions) {
+    if (usage) {
+      total.completion_tokens += usage.completion_tokens;
+      total.prompt_tokens += usage.prompt_tokens;
+      total.total_tokens += usage.total_tokens;
+    }
+  }
+  return total;
+}, _AbstractChatCompletionRunner_validateParams = function _AbstractChatCompletionRunner_validateParams2(params) {
+  if (params.n != null && params.n > 1) {
+    throw new OpenAIError("ChatCompletion convenience helpers only support n=1 at this time. To use n>1, please use chat.completions.create() directly.");
+  }
+}, _AbstractChatCompletionRunner_stringifyFunctionCallResult = function _AbstractChatCompletionRunner_stringifyFunctionCallResult2(rawContent) {
+  return typeof rawContent === "string" ? rawContent : rawContent === void 0 ? "undefined" : JSON.stringify(rawContent);
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/ChatCompletionRunner.mjs
+var ChatCompletionRunner = class extends AbstractChatCompletionRunner {
+  /** @deprecated - please use `runTools` instead. */
+  static runFunctions(client, params, options) {
+    const runner = new ChatCompletionRunner();
+    const opts = {
+      ...options,
+      headers: { ...options == null ? void 0 : options.headers, "X-Stainless-Helper-Method": "runFunctions" }
+    };
+    runner._run(() => runner._runFunctions(client, params, opts));
+    return runner;
+  }
+  static runTools(client, params, options) {
+    const runner = new ChatCompletionRunner();
+    const opts = {
+      ...options,
+      headers: { ...options == null ? void 0 : options.headers, "X-Stainless-Helper-Method": "runTools" }
+    };
+    runner._run(() => runner._runTools(client, params, opts));
+    return runner;
+  }
+  _addMessage(message, emit = true) {
+    super._addMessage(message, emit);
+    if (isAssistantMessage(message) && message.content) {
+      this._emit("content", message.content);
+    }
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/_vendor/partial-json-parser/parser.mjs
+var STR = 1;
+var NUM = 2;
+var ARR = 4;
+var OBJ = 8;
+var NULL = 16;
+var BOOL = 32;
+var NAN = 64;
+var INFINITY = 128;
+var MINUS_INFINITY = 256;
+var INF = INFINITY | MINUS_INFINITY;
+var SPECIAL = NULL | BOOL | INF | NAN;
+var ATOM = STR | NUM | SPECIAL;
+var COLLECTION = ARR | OBJ;
+var ALL = ATOM | COLLECTION;
+var Allow = {
+  STR,
+  NUM,
+  ARR,
+  OBJ,
+  NULL,
+  BOOL,
+  NAN,
+  INFINITY,
+  MINUS_INFINITY,
+  INF,
+  SPECIAL,
+  ATOM,
+  COLLECTION,
+  ALL
+};
+var PartialJSON = class extends Error {
+};
+var MalformedJSON = class extends Error {
+};
+function parseJSON(jsonString, allowPartial = Allow.ALL) {
+  if (typeof jsonString !== "string") {
+    throw new TypeError(`expecting str, got ${typeof jsonString}`);
+  }
+  if (!jsonString.trim()) {
+    throw new Error(`${jsonString} is empty`);
+  }
+  return _parseJSON(jsonString.trim(), allowPartial);
+}
+var _parseJSON = (jsonString, allow) => {
+  const length = jsonString.length;
+  let index = 0;
+  const markPartialJSON = (msg) => {
+    throw new PartialJSON(`${msg} at position ${index}`);
+  };
+  const throwMalformedError = (msg) => {
+    throw new MalformedJSON(`${msg} at position ${index}`);
+  };
+  const parseAny = () => {
+    skipBlank();
+    if (index >= length)
+      markPartialJSON("Unexpected end of input");
+    if (jsonString[index] === '"')
+      return parseStr();
+    if (jsonString[index] === "{")
+      return parseObj();
+    if (jsonString[index] === "[")
+      return parseArr();
+    if (jsonString.substring(index, index + 4) === "null" || Allow.NULL & allow && length - index < 4 && "null".startsWith(jsonString.substring(index))) {
+      index += 4;
+      return null;
+    }
+    if (jsonString.substring(index, index + 4) === "true" || Allow.BOOL & allow && length - index < 4 && "true".startsWith(jsonString.substring(index))) {
+      index += 4;
+      return true;
+    }
+    if (jsonString.substring(index, index + 5) === "false" || Allow.BOOL & allow && length - index < 5 && "false".startsWith(jsonString.substring(index))) {
+      index += 5;
+      return false;
+    }
+    if (jsonString.substring(index, index + 8) === "Infinity" || Allow.INFINITY & allow && length - index < 8 && "Infinity".startsWith(jsonString.substring(index))) {
+      index += 8;
+      return Infinity;
+    }
+    if (jsonString.substring(index, index + 9) === "-Infinity" || Allow.MINUS_INFINITY & allow && 1 < length - index && length - index < 9 && "-Infinity".startsWith(jsonString.substring(index))) {
+      index += 9;
+      return -Infinity;
+    }
+    if (jsonString.substring(index, index + 3) === "NaN" || Allow.NAN & allow && length - index < 3 && "NaN".startsWith(jsonString.substring(index))) {
+      index += 3;
+      return NaN;
+    }
+    return parseNum();
+  };
+  const parseStr = () => {
+    const start = index;
+    let escape2 = false;
+    index++;
+    while (index < length && (jsonString[index] !== '"' || escape2 && jsonString[index - 1] === "\\")) {
+      escape2 = jsonString[index] === "\\" ? !escape2 : false;
+      index++;
+    }
+    if (jsonString.charAt(index) == '"') {
+      try {
+        return JSON.parse(jsonString.substring(start, ++index - Number(escape2)));
+      } catch (e2) {
+        throwMalformedError(String(e2));
+      }
+    } else if (Allow.STR & allow) {
+      try {
+        return JSON.parse(jsonString.substring(start, index - Number(escape2)) + '"');
+      } catch (e2) {
+        return JSON.parse(jsonString.substring(start, jsonString.lastIndexOf("\\")) + '"');
+      }
+    }
+    markPartialJSON("Unterminated string literal");
+  };
+  const parseObj = () => {
+    index++;
+    skipBlank();
+    const obj = {};
+    try {
+      while (jsonString[index] !== "}") {
+        skipBlank();
+        if (index >= length && Allow.OBJ & allow)
+          return obj;
+        const key = parseStr();
+        skipBlank();
+        index++;
+        try {
+          const value = parseAny();
+          Object.defineProperty(obj, key, { value, writable: true, enumerable: true, configurable: true });
+        } catch (e2) {
+          if (Allow.OBJ & allow)
+            return obj;
+          else
+            throw e2;
+        }
+        skipBlank();
+        if (jsonString[index] === ",")
+          index++;
+      }
+    } catch (e2) {
+      if (Allow.OBJ & allow)
+        return obj;
+      else
+        markPartialJSON("Expected '}' at end of object");
+    }
+    index++;
+    return obj;
+  };
+  const parseArr = () => {
+    index++;
+    const arr = [];
+    try {
+      while (jsonString[index] !== "]") {
+        arr.push(parseAny());
+        skipBlank();
+        if (jsonString[index] === ",") {
+          index++;
+        }
+      }
+    } catch (e2) {
+      if (Allow.ARR & allow) {
+        return arr;
+      }
+      markPartialJSON("Expected ']' at end of array");
+    }
+    index++;
+    return arr;
+  };
+  const parseNum = () => {
+    if (index === 0) {
+      if (jsonString === "-" && Allow.NUM & allow)
+        markPartialJSON("Not sure what '-' is");
+      try {
+        return JSON.parse(jsonString);
+      } catch (e2) {
+        if (Allow.NUM & allow) {
+          try {
+            if ("." === jsonString[jsonString.length - 1])
+              return JSON.parse(jsonString.substring(0, jsonString.lastIndexOf(".")));
+            return JSON.parse(jsonString.substring(0, jsonString.lastIndexOf("e")));
+          } catch (e3) {
+          }
+        }
+        throwMalformedError(String(e2));
+      }
+    }
+    const start = index;
+    if (jsonString[index] === "-")
+      index++;
+    while (jsonString[index] && !",]}".includes(jsonString[index]))
+      index++;
+    if (index == length && !(Allow.NUM & allow))
+      markPartialJSON("Unterminated number literal");
+    try {
+      return JSON.parse(jsonString.substring(start, index));
+    } catch (e2) {
+      if (jsonString.substring(start, index) === "-" && Allow.NUM & allow)
+        markPartialJSON("Not sure what '-' is");
+      try {
+        return JSON.parse(jsonString.substring(start, jsonString.lastIndexOf("e")));
+      } catch (e3) {
+        throwMalformedError(String(e3));
+      }
+    }
+  };
+  const skipBlank = () => {
+    while (index < length && " \n\r	".includes(jsonString[index])) {
+      index++;
+    }
+  };
+  return parseAny();
+};
+var partialParse = (input) => parseJSON(input, Allow.ALL ^ Allow.NUM);
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/ChatCompletionStream.mjs
+var __classPrivateFieldSet3 = function(receiver, state, value, kind2, f2) {
+  if (kind2 === "m")
+    throw new TypeError("Private method is not writable");
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a setter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot write private member to an object whose class did not declare it");
+  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+};
+var __classPrivateFieldGet4 = function(receiver, state, kind2, f2) {
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a getter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot read private member from an object whose class did not declare it");
+  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+};
+var _ChatCompletionStream_instances;
+var _ChatCompletionStream_params;
+var _ChatCompletionStream_choiceEventStates;
+var _ChatCompletionStream_currentChatCompletionSnapshot;
+var _ChatCompletionStream_beginRequest;
+var _ChatCompletionStream_getChoiceEventState;
+var _ChatCompletionStream_addChunk;
+var _ChatCompletionStream_emitToolCallDoneEvent;
+var _ChatCompletionStream_emitContentDoneEvents;
+var _ChatCompletionStream_endRequest;
+var _ChatCompletionStream_getAutoParseableResponseFormat;
+var _ChatCompletionStream_accumulateChatCompletion;
+var ChatCompletionStream = class extends AbstractChatCompletionRunner {
+  constructor(params) {
+    super();
+    _ChatCompletionStream_instances.add(this);
+    _ChatCompletionStream_params.set(this, void 0);
+    _ChatCompletionStream_choiceEventStates.set(this, void 0);
+    _ChatCompletionStream_currentChatCompletionSnapshot.set(this, void 0);
+    __classPrivateFieldSet3(this, _ChatCompletionStream_params, params, "f");
+    __classPrivateFieldSet3(this, _ChatCompletionStream_choiceEventStates, [], "f");
+  }
+  get currentChatCompletionSnapshot() {
+    return __classPrivateFieldGet4(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f");
+  }
+  /**
+   * Intended for use on the frontend, consuming a stream produced with
+   * `.toReadableStream()` on the backend.
+   *
+   * Note that messages sent to the model do not appear in `.on('message')`
+   * in this context.
+   */
+  static fromReadableStream(stream) {
+    const runner = new ChatCompletionStream(null);
+    runner._run(() => runner._fromReadableStream(stream));
+    return runner;
+  }
+  static createChatCompletion(client, params, options) {
+    const runner = new ChatCompletionStream(params);
+    runner._run(() => runner._runChatCompletion(client, { ...params, stream: true }, { ...options, headers: { ...options == null ? void 0 : options.headers, "X-Stainless-Helper-Method": "stream" } }));
+    return runner;
+  }
+  async _createChatCompletion(client, params, options) {
+    var _a2;
+    super._createChatCompletion;
+    const signal = options == null ? void 0 : options.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_beginRequest).call(this);
+    const stream = await client.chat.completions.create({ ...params, stream: true }, { ...options, signal: this.controller.signal });
+    this._connected();
+    for await (const chunk of stream) {
+      __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_addChunk).call(this, chunk);
+    }
+    if ((_a2 = stream.controller.signal) == null ? void 0 : _a2.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addChatCompletion(__classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_endRequest).call(this));
+  }
+  async _fromReadableStream(readableStream, options) {
+    var _a2;
+    const signal = options == null ? void 0 : options.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_beginRequest).call(this);
+    this._connected();
+    const stream = Stream.fromReadableStream(readableStream, this.controller);
+    let chatId;
+    for await (const chunk of stream) {
+      if (chatId && chatId !== chunk.id) {
+        this._addChatCompletion(__classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_endRequest).call(this));
+      }
+      __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_addChunk).call(this, chunk);
+      chatId = chunk.id;
+    }
+    if ((_a2 = stream.controller.signal) == null ? void 0 : _a2.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addChatCompletion(__classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_endRequest).call(this));
+  }
+  [(_ChatCompletionStream_params = /* @__PURE__ */ new WeakMap(), _ChatCompletionStream_choiceEventStates = /* @__PURE__ */ new WeakMap(), _ChatCompletionStream_currentChatCompletionSnapshot = /* @__PURE__ */ new WeakMap(), _ChatCompletionStream_instances = /* @__PURE__ */ new WeakSet(), _ChatCompletionStream_beginRequest = function _ChatCompletionStream_beginRequest2() {
+    if (this.ended)
+      return;
+    __classPrivateFieldSet3(this, _ChatCompletionStream_currentChatCompletionSnapshot, void 0, "f");
+  }, _ChatCompletionStream_getChoiceEventState = function _ChatCompletionStream_getChoiceEventState2(choice) {
+    let state = __classPrivateFieldGet4(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index];
+    if (state) {
+      return state;
+    }
+    state = {
+      content_done: false,
+      refusal_done: false,
+      logprobs_content_done: false,
+      logprobs_refusal_done: false,
+      done_tool_calls: /* @__PURE__ */ new Set(),
+      current_tool_call_index: null
+    };
+    __classPrivateFieldGet4(this, _ChatCompletionStream_choiceEventStates, "f")[choice.index] = state;
+    return state;
+  }, _ChatCompletionStream_addChunk = function _ChatCompletionStream_addChunk2(chunk) {
+    var _a2, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t;
+    if (this.ended)
+      return;
+    const completion = __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_accumulateChatCompletion).call(this, chunk);
+    this._emit("chunk", chunk, completion);
+    for (const choice of chunk.choices) {
+      const choiceSnapshot = completion.choices[choice.index];
+      if (choice.delta.content != null && ((_a2 = choiceSnapshot.message) == null ? void 0 : _a2.role) === "assistant" && ((_b = choiceSnapshot.message) == null ? void 0 : _b.content)) {
+        this._emit("content", choice.delta.content, choiceSnapshot.message.content);
+        this._emit("content.delta", {
+          delta: choice.delta.content,
+          snapshot: choiceSnapshot.message.content,
+          parsed: choiceSnapshot.message.parsed
+        });
+      }
+      if (choice.delta.refusal != null && ((_c = choiceSnapshot.message) == null ? void 0 : _c.role) === "assistant" && ((_d = choiceSnapshot.message) == null ? void 0 : _d.refusal)) {
+        this._emit("refusal.delta", {
+          delta: choice.delta.refusal,
+          snapshot: choiceSnapshot.message.refusal
+        });
+      }
+      if (((_e = choice.logprobs) == null ? void 0 : _e.content) != null && ((_f = choiceSnapshot.message) == null ? void 0 : _f.role) === "assistant") {
+        this._emit("logprobs.content.delta", {
+          content: (_g = choice.logprobs) == null ? void 0 : _g.content,
+          snapshot: (_i = (_h = choiceSnapshot.logprobs) == null ? void 0 : _h.content) != null ? _i : []
+        });
+      }
+      if (((_j = choice.logprobs) == null ? void 0 : _j.refusal) != null && ((_k = choiceSnapshot.message) == null ? void 0 : _k.role) === "assistant") {
+        this._emit("logprobs.refusal.delta", {
+          refusal: (_l = choice.logprobs) == null ? void 0 : _l.refusal,
+          snapshot: (_n = (_m = choiceSnapshot.logprobs) == null ? void 0 : _m.refusal) != null ? _n : []
+        });
+      }
+      const state = __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+      if (choiceSnapshot.finish_reason) {
+        __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitContentDoneEvents).call(this, choiceSnapshot);
+        if (state.current_tool_call_index != null) {
+          __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state.current_tool_call_index);
+        }
+      }
+      for (const toolCall of (_o = choice.delta.tool_calls) != null ? _o : []) {
+        if (state.current_tool_call_index !== toolCall.index) {
+          __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitContentDoneEvents).call(this, choiceSnapshot);
+          if (state.current_tool_call_index != null) {
+            __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_emitToolCallDoneEvent).call(this, choiceSnapshot, state.current_tool_call_index);
+          }
+        }
+        state.current_tool_call_index = toolCall.index;
+      }
+      for (const toolCallDelta of (_p = choice.delta.tool_calls) != null ? _p : []) {
+        const toolCallSnapshot = (_q = choiceSnapshot.message.tool_calls) == null ? void 0 : _q[toolCallDelta.index];
+        if (!(toolCallSnapshot == null ? void 0 : toolCallSnapshot.type)) {
+          continue;
+        }
+        if ((toolCallSnapshot == null ? void 0 : toolCallSnapshot.type) === "function") {
+          this._emit("tool_calls.function.arguments.delta", {
+            name: (_r = toolCallSnapshot.function) == null ? void 0 : _r.name,
+            index: toolCallDelta.index,
+            arguments: toolCallSnapshot.function.arguments,
+            parsed_arguments: toolCallSnapshot.function.parsed_arguments,
+            arguments_delta: (_t = (_s = toolCallDelta.function) == null ? void 0 : _s.arguments) != null ? _t : ""
+          });
+        } else {
+          assertNever(toolCallSnapshot == null ? void 0 : toolCallSnapshot.type);
+        }
+      }
+    }
+  }, _ChatCompletionStream_emitToolCallDoneEvent = function _ChatCompletionStream_emitToolCallDoneEvent2(choiceSnapshot, toolCallIndex) {
+    var _a2, _b, _c;
+    const state = __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+    if (state.done_tool_calls.has(toolCallIndex)) {
+      return;
+    }
+    const toolCallSnapshot = (_a2 = choiceSnapshot.message.tool_calls) == null ? void 0 : _a2[toolCallIndex];
+    if (!toolCallSnapshot) {
+      throw new Error("no tool call snapshot");
+    }
+    if (!toolCallSnapshot.type) {
+      throw new Error("tool call snapshot missing `type`");
+    }
+    if (toolCallSnapshot.type === "function") {
+      const inputTool = (_c = (_b = __classPrivateFieldGet4(this, _ChatCompletionStream_params, "f")) == null ? void 0 : _b.tools) == null ? void 0 : _c.find((tool) => tool.type === "function" && tool.function.name === toolCallSnapshot.function.name);
+      this._emit("tool_calls.function.arguments.done", {
+        name: toolCallSnapshot.function.name,
+        index: toolCallIndex,
+        arguments: toolCallSnapshot.function.arguments,
+        parsed_arguments: isAutoParsableTool(inputTool) ? inputTool.$parseRaw(toolCallSnapshot.function.arguments) : (inputTool == null ? void 0 : inputTool.function.strict) ? JSON.parse(toolCallSnapshot.function.arguments) : null
+      });
+    } else {
+      assertNever(toolCallSnapshot.type);
+    }
+  }, _ChatCompletionStream_emitContentDoneEvents = function _ChatCompletionStream_emitContentDoneEvents2(choiceSnapshot) {
+    var _a2, _b;
+    const state = __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getChoiceEventState).call(this, choiceSnapshot);
+    if (choiceSnapshot.message.content && !state.content_done) {
+      state.content_done = true;
+      const responseFormat = __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getAutoParseableResponseFormat).call(this);
+      this._emit("content.done", {
+        content: choiceSnapshot.message.content,
+        parsed: responseFormat ? responseFormat.$parseRaw(choiceSnapshot.message.content) : null
+      });
+    }
+    if (choiceSnapshot.message.refusal && !state.refusal_done) {
+      state.refusal_done = true;
+      this._emit("refusal.done", { refusal: choiceSnapshot.message.refusal });
+    }
+    if (((_a2 = choiceSnapshot.logprobs) == null ? void 0 : _a2.content) && !state.logprobs_content_done) {
+      state.logprobs_content_done = true;
+      this._emit("logprobs.content.done", { content: choiceSnapshot.logprobs.content });
+    }
+    if (((_b = choiceSnapshot.logprobs) == null ? void 0 : _b.refusal) && !state.logprobs_refusal_done) {
+      state.logprobs_refusal_done = true;
+      this._emit("logprobs.refusal.done", { refusal: choiceSnapshot.logprobs.refusal });
+    }
+  }, _ChatCompletionStream_endRequest = function _ChatCompletionStream_endRequest2() {
+    if (this.ended) {
+      throw new OpenAIError(`stream has ended, this shouldn't happen`);
+    }
+    const snapshot = __classPrivateFieldGet4(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f");
+    if (!snapshot) {
+      throw new OpenAIError(`request ended without sending any chunks`);
+    }
+    __classPrivateFieldSet3(this, _ChatCompletionStream_currentChatCompletionSnapshot, void 0, "f");
+    __classPrivateFieldSet3(this, _ChatCompletionStream_choiceEventStates, [], "f");
+    return finalizeChatCompletion(snapshot, __classPrivateFieldGet4(this, _ChatCompletionStream_params, "f"));
+  }, _ChatCompletionStream_getAutoParseableResponseFormat = function _ChatCompletionStream_getAutoParseableResponseFormat2() {
+    var _a2;
+    const responseFormat = (_a2 = __classPrivateFieldGet4(this, _ChatCompletionStream_params, "f")) == null ? void 0 : _a2.response_format;
+    if (isAutoParsableResponseFormat(responseFormat)) {
+      return responseFormat;
+    }
+    return null;
+  }, _ChatCompletionStream_accumulateChatCompletion = function _ChatCompletionStream_accumulateChatCompletion2(chunk) {
+    var _a3, _b2, _c2, _d2, _e, _f;
+    var _a2, _b, _c, _d;
+    let snapshot = __classPrivateFieldGet4(this, _ChatCompletionStream_currentChatCompletionSnapshot, "f");
+    const { choices, ...rest } = chunk;
+    if (!snapshot) {
+      snapshot = __classPrivateFieldSet3(this, _ChatCompletionStream_currentChatCompletionSnapshot, {
+        ...rest,
+        choices: []
+      }, "f");
+    } else {
+      Object.assign(snapshot, rest);
+    }
+    for (const { delta, finish_reason, index, logprobs = null, ...other } of chunk.choices) {
+      let choice = snapshot.choices[index];
+      if (!choice) {
+        choice = snapshot.choices[index] = { finish_reason, index, message: {}, logprobs, ...other };
+      }
+      if (logprobs) {
+        if (!choice.logprobs) {
+          choice.logprobs = Object.assign({}, logprobs);
+        } else {
+          const { content: content2, refusal: refusal2, ...rest3 } = logprobs;
+          assertIsEmpty(rest3);
+          Object.assign(choice.logprobs, rest3);
+          if (content2) {
+            (_a3 = (_a2 = choice.logprobs).content) != null ? _a3 : _a2.content = [];
+            choice.logprobs.content.push(...content2);
+          }
+          if (refusal2) {
+            (_b2 = (_b = choice.logprobs).refusal) != null ? _b2 : _b.refusal = [];
+            choice.logprobs.refusal.push(...refusal2);
+          }
+        }
+      }
+      if (finish_reason) {
+        choice.finish_reason = finish_reason;
+        if (__classPrivateFieldGet4(this, _ChatCompletionStream_params, "f") && hasAutoParseableInput(__classPrivateFieldGet4(this, _ChatCompletionStream_params, "f"))) {
+          if (finish_reason === "length") {
+            throw new LengthFinishReasonError();
+          }
+          if (finish_reason === "content_filter") {
+            throw new ContentFilterFinishReasonError();
+          }
+        }
+      }
+      Object.assign(choice, other);
+      if (!delta)
+        continue;
+      const { content, refusal, function_call, role, tool_calls, ...rest2 } = delta;
+      assertIsEmpty(rest2);
+      Object.assign(choice.message, rest2);
+      if (refusal) {
+        choice.message.refusal = (choice.message.refusal || "") + refusal;
+      }
+      if (role)
+        choice.message.role = role;
+      if (function_call) {
+        if (!choice.message.function_call) {
+          choice.message.function_call = function_call;
+        } else {
+          if (function_call.name)
+            choice.message.function_call.name = function_call.name;
+          if (function_call.arguments) {
+            (_c2 = (_c = choice.message.function_call).arguments) != null ? _c2 : _c.arguments = "";
+            choice.message.function_call.arguments += function_call.arguments;
+          }
+        }
+      }
+      if (content) {
+        choice.message.content = (choice.message.content || "") + content;
+        if (!choice.message.refusal && __classPrivateFieldGet4(this, _ChatCompletionStream_instances, "m", _ChatCompletionStream_getAutoParseableResponseFormat).call(this)) {
+          choice.message.parsed = partialParse(choice.message.content);
+        }
+      }
+      if (tool_calls) {
+        if (!choice.message.tool_calls)
+          choice.message.tool_calls = [];
+        for (const { index: index2, id, type, function: fn, ...rest3 } of tool_calls) {
+          const tool_call = (_d2 = (_d = choice.message.tool_calls)[index2]) != null ? _d2 : _d[index2] = {};
+          Object.assign(tool_call, rest3);
+          if (id)
+            tool_call.id = id;
+          if (type)
+            tool_call.type = type;
+          if (fn)
+            (_f = tool_call.function) != null ? _f : tool_call.function = { name: (_e = fn.name) != null ? _e : "", arguments: "" };
+          if (fn == null ? void 0 : fn.name)
+            tool_call.function.name = fn.name;
+          if (fn == null ? void 0 : fn.arguments) {
+            tool_call.function.arguments += fn.arguments;
+            if (shouldParseToolCall(__classPrivateFieldGet4(this, _ChatCompletionStream_params, "f"), tool_call)) {
+              tool_call.function.parsed_arguments = partialParse(tool_call.function.arguments);
+            }
+          }
+        }
+      }
+    }
+    return snapshot;
+  }, Symbol.asyncIterator)]() {
+    const pushQueue = [];
+    const readQueue = [];
+    let done = false;
+    this.on("chunk", (chunk) => {
+      const reader = readQueue.shift();
+      if (reader) {
+        reader.resolve(chunk);
+      } else {
+        pushQueue.push(chunk);
+      }
+    });
+    this.on("end", () => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.resolve(void 0);
+      }
+      readQueue.length = 0;
+    });
+    this.on("abort", (err) => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.reject(err);
+      }
+      readQueue.length = 0;
+    });
+    this.on("error", (err) => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.reject(err);
+      }
+      readQueue.length = 0;
+    });
+    return {
+      next: async () => {
+        if (!pushQueue.length) {
+          if (done) {
+            return { value: void 0, done: true };
+          }
+          return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
+        }
+        const chunk = pushQueue.shift();
+        return { value: chunk, done: false };
+      },
+      return: async () => {
+        this.abort();
+        return { value: void 0, done: true };
+      }
+    };
+  }
+  toReadableStream() {
+    const stream = new Stream(this[Symbol.asyncIterator].bind(this), this.controller);
+    return stream.toReadableStream();
+  }
+};
+function finalizeChatCompletion(snapshot, params) {
+  const { id, choices, created, model, system_fingerprint, ...rest } = snapshot;
+  const completion = {
+    ...rest,
+    id,
+    choices: choices.map(({ message, finish_reason, index, logprobs, ...choiceRest }) => {
+      var _a2, _b, _c;
+      if (!finish_reason) {
+        throw new OpenAIError(`missing finish_reason for choice ${index}`);
+      }
+      const { content = null, function_call, tool_calls, ...messageRest } = message;
+      const role = message.role;
+      if (!role) {
+        throw new OpenAIError(`missing role for choice ${index}`);
+      }
+      if (function_call) {
+        const { arguments: args, name } = function_call;
+        if (args == null) {
+          throw new OpenAIError(`missing function_call.arguments for choice ${index}`);
+        }
+        if (!name) {
+          throw new OpenAIError(`missing function_call.name for choice ${index}`);
+        }
+        return {
+          ...choiceRest,
+          message: {
+            content,
+            function_call: { arguments: args, name },
+            role,
+            refusal: (_a2 = message.refusal) != null ? _a2 : null
+          },
+          finish_reason,
+          index,
+          logprobs
+        };
+      }
+      if (tool_calls) {
+        return {
+          ...choiceRest,
+          index,
+          finish_reason,
+          logprobs,
+          message: {
+            ...messageRest,
+            role,
+            content,
+            refusal: (_b = message.refusal) != null ? _b : null,
+            tool_calls: tool_calls.map((tool_call, i2) => {
+              const { function: fn, type, id: id2, ...toolRest } = tool_call;
+              const { arguments: args, name, ...fnRest } = fn || {};
+              if (id2 == null) {
+                throw new OpenAIError(`missing choices[${index}].tool_calls[${i2}].id
+${str(snapshot)}`);
+              }
+              if (type == null) {
+                throw new OpenAIError(`missing choices[${index}].tool_calls[${i2}].type
+${str(snapshot)}`);
+              }
+              if (name == null) {
+                throw new OpenAIError(`missing choices[${index}].tool_calls[${i2}].function.name
+${str(snapshot)}`);
+              }
+              if (args == null) {
+                throw new OpenAIError(`missing choices[${index}].tool_calls[${i2}].function.arguments
+${str(snapshot)}`);
+              }
+              return { ...toolRest, id: id2, type, function: { ...fnRest, name, arguments: args } };
+            })
+          }
+        };
+      }
+      return {
+        ...choiceRest,
+        message: { ...messageRest, content, role, refusal: (_c = message.refusal) != null ? _c : null },
+        finish_reason,
+        index,
+        logprobs
+      };
+    }),
+    created,
+    model,
+    object: "chat.completion",
+    ...system_fingerprint ? { system_fingerprint } : {}
+  };
+  return maybeParseChatCompletion(completion, params);
+}
+function str(x) {
+  return JSON.stringify(x);
+}
+function assertIsEmpty(obj) {
+  return;
+}
+function assertNever(_x) {
+}
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/ChatCompletionStreamingRunner.mjs
+var ChatCompletionStreamingRunner = class extends ChatCompletionStream {
+  static fromReadableStream(stream) {
+    const runner = new ChatCompletionStreamingRunner(null);
+    runner._run(() => runner._fromReadableStream(stream));
+    return runner;
+  }
+  /** @deprecated - please use `runTools` instead. */
+  static runFunctions(client, params, options) {
+    const runner = new ChatCompletionStreamingRunner(null);
+    const opts = {
+      ...options,
+      headers: { ...options == null ? void 0 : options.headers, "X-Stainless-Helper-Method": "runFunctions" }
+    };
+    runner._run(() => runner._runFunctions(client, params, opts));
+    return runner;
+  }
+  static runTools(client, params, options) {
+    const runner = new ChatCompletionStreamingRunner(
+      // @ts-expect-error TODO these types are incompatible
+      params
+    );
+    const opts = {
+      ...options,
+      headers: { ...options == null ? void 0 : options.headers, "X-Stainless-Helper-Method": "runTools" }
+    };
+    runner._run(() => runner._runTools(client, params, opts));
+    return runner;
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/chat/completions.mjs
+var Completions2 = class extends APIResource {
+  parse(body, options) {
+    validateInputTools(body.tools);
+    return this._client.chat.completions.create(body, {
+      ...options,
+      headers: {
+        ...options == null ? void 0 : options.headers,
+        "X-Stainless-Helper-Method": "beta.chat.completions.parse"
+      }
+    })._thenUnwrap((completion) => parseChatCompletion(completion, body));
+  }
+  runFunctions(body, options) {
+    if (body.stream) {
+      return ChatCompletionStreamingRunner.runFunctions(this._client, body, options);
+    }
+    return ChatCompletionRunner.runFunctions(this._client, body, options);
+  }
+  runTools(body, options) {
+    if (body.stream) {
+      return ChatCompletionStreamingRunner.runTools(this._client, body, options);
+    }
+    return ChatCompletionRunner.runTools(this._client, body, options);
+  }
+  /**
+   * Creates a chat completion stream
+   */
+  stream(body, options) {
+    return ChatCompletionStream.createChatCompletion(this._client, body, options);
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/chat/chat.mjs
+var Chat2 = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.completions = new Completions2(this._client);
+  }
+};
+(function(Chat3) {
+  Chat3.Completions = Completions2;
+})(Chat2 || (Chat2 = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/AssistantStream.mjs
+var __classPrivateFieldGet5 = function(receiver, state, kind2, f2) {
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a getter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot read private member from an object whose class did not declare it");
+  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+};
+var __classPrivateFieldSet4 = function(receiver, state, value, kind2, f2) {
+  if (kind2 === "m")
+    throw new TypeError("Private method is not writable");
+  if (kind2 === "a" && !f2)
+    throw new TypeError("Private accessor was defined without a setter");
+  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+    throw new TypeError("Cannot write private member to an object whose class did not declare it");
+  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+};
+var _AssistantStream_instances;
+var _AssistantStream_events;
+var _AssistantStream_runStepSnapshots;
+var _AssistantStream_messageSnapshots;
+var _AssistantStream_messageSnapshot;
+var _AssistantStream_finalRun;
+var _AssistantStream_currentContentIndex;
+var _AssistantStream_currentContent;
+var _AssistantStream_currentToolCallIndex;
+var _AssistantStream_currentToolCall;
+var _AssistantStream_currentEvent;
+var _AssistantStream_currentRunSnapshot;
+var _AssistantStream_currentRunStepSnapshot;
+var _AssistantStream_addEvent;
+var _AssistantStream_endRequest;
+var _AssistantStream_handleMessage;
+var _AssistantStream_handleRunStep;
+var _AssistantStream_handleEvent;
+var _AssistantStream_accumulateRunStep;
+var _AssistantStream_accumulateMessage;
+var _AssistantStream_accumulateContent;
+var _AssistantStream_handleRun;
+var AssistantStream = class extends EventStream {
+  constructor() {
+    super(...arguments);
+    _AssistantStream_instances.add(this);
+    _AssistantStream_events.set(this, []);
+    _AssistantStream_runStepSnapshots.set(this, {});
+    _AssistantStream_messageSnapshots.set(this, {});
+    _AssistantStream_messageSnapshot.set(this, void 0);
+    _AssistantStream_finalRun.set(this, void 0);
+    _AssistantStream_currentContentIndex.set(this, void 0);
+    _AssistantStream_currentContent.set(this, void 0);
+    _AssistantStream_currentToolCallIndex.set(this, void 0);
+    _AssistantStream_currentToolCall.set(this, void 0);
+    _AssistantStream_currentEvent.set(this, void 0);
+    _AssistantStream_currentRunSnapshot.set(this, void 0);
+    _AssistantStream_currentRunStepSnapshot.set(this, void 0);
+  }
+  [(_AssistantStream_events = /* @__PURE__ */ new WeakMap(), _AssistantStream_runStepSnapshots = /* @__PURE__ */ new WeakMap(), _AssistantStream_messageSnapshots = /* @__PURE__ */ new WeakMap(), _AssistantStream_messageSnapshot = /* @__PURE__ */ new WeakMap(), _AssistantStream_finalRun = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentContentIndex = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentContent = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentToolCallIndex = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentToolCall = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentEvent = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentRunSnapshot = /* @__PURE__ */ new WeakMap(), _AssistantStream_currentRunStepSnapshot = /* @__PURE__ */ new WeakMap(), _AssistantStream_instances = /* @__PURE__ */ new WeakSet(), Symbol.asyncIterator)]() {
+    const pushQueue = [];
+    const readQueue = [];
+    let done = false;
+    this.on("event", (event) => {
+      const reader = readQueue.shift();
+      if (reader) {
+        reader.resolve(event);
+      } else {
+        pushQueue.push(event);
+      }
+    });
+    this.on("end", () => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.resolve(void 0);
+      }
+      readQueue.length = 0;
+    });
+    this.on("abort", (err) => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.reject(err);
+      }
+      readQueue.length = 0;
+    });
+    this.on("error", (err) => {
+      done = true;
+      for (const reader of readQueue) {
+        reader.reject(err);
+      }
+      readQueue.length = 0;
+    });
+    return {
+      next: async () => {
+        if (!pushQueue.length) {
+          if (done) {
+            return { value: void 0, done: true };
+          }
+          return new Promise((resolve, reject) => readQueue.push({ resolve, reject })).then((chunk2) => chunk2 ? { value: chunk2, done: false } : { value: void 0, done: true });
+        }
+        const chunk = pushQueue.shift();
+        return { value: chunk, done: false };
+      },
+      return: async () => {
+        this.abort();
+        return { value: void 0, done: true };
+      }
+    };
+  }
+  static fromReadableStream(stream) {
+    const runner = new AssistantStream();
+    runner._run(() => runner._fromReadableStream(stream));
+    return runner;
+  }
+  async _fromReadableStream(readableStream, options) {
+    var _a2;
+    const signal = options == null ? void 0 : options.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    this._connected();
+    const stream = Stream.fromReadableStream(readableStream, this.controller);
+    for await (const event of stream) {
+      __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+    }
+    if ((_a2 = stream.controller.signal) == null ? void 0 : _a2.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addRun(__classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+  }
+  toReadableStream() {
+    const stream = new Stream(this[Symbol.asyncIterator].bind(this), this.controller);
+    return stream.toReadableStream();
+  }
+  static createToolAssistantStream(threadId, runId, runs, params, options) {
+    const runner = new AssistantStream();
+    runner._run(() => runner._runToolAssistantStream(threadId, runId, runs, params, {
+      ...options,
+      headers: { ...options == null ? void 0 : options.headers, "X-Stainless-Helper-Method": "stream" }
+    }));
+    return runner;
+  }
+  async _createToolAssistantStream(run, threadId, runId, params, options) {
+    var _a2;
+    const signal = options == null ? void 0 : options.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const body = { ...params, stream: true };
+    const stream = await run.submitToolOutputs(threadId, runId, body, {
+      ...options,
+      signal: this.controller.signal
+    });
+    this._connected();
+    for await (const event of stream) {
+      __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+    }
+    if ((_a2 = stream.controller.signal) == null ? void 0 : _a2.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addRun(__classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+  }
+  static createThreadAssistantStream(params, thread, options) {
+    const runner = new AssistantStream();
+    runner._run(() => runner._threadAssistantStream(params, thread, {
+      ...options,
+      headers: { ...options == null ? void 0 : options.headers, "X-Stainless-Helper-Method": "stream" }
+    }));
+    return runner;
+  }
+  static createAssistantStream(threadId, runs, params, options) {
+    const runner = new AssistantStream();
+    runner._run(() => runner._runAssistantStream(threadId, runs, params, {
+      ...options,
+      headers: { ...options == null ? void 0 : options.headers, "X-Stainless-Helper-Method": "stream" }
+    }));
+    return runner;
+  }
+  currentEvent() {
+    return __classPrivateFieldGet5(this, _AssistantStream_currentEvent, "f");
+  }
+  currentRun() {
+    return __classPrivateFieldGet5(this, _AssistantStream_currentRunSnapshot, "f");
+  }
+  currentMessageSnapshot() {
+    return __classPrivateFieldGet5(this, _AssistantStream_messageSnapshot, "f");
+  }
+  currentRunStepSnapshot() {
+    return __classPrivateFieldGet5(this, _AssistantStream_currentRunStepSnapshot, "f");
+  }
+  async finalRunSteps() {
+    await this.done();
+    return Object.values(__classPrivateFieldGet5(this, _AssistantStream_runStepSnapshots, "f"));
+  }
+  async finalMessages() {
+    await this.done();
+    return Object.values(__classPrivateFieldGet5(this, _AssistantStream_messageSnapshots, "f"));
+  }
+  async finalRun() {
+    await this.done();
+    if (!__classPrivateFieldGet5(this, _AssistantStream_finalRun, "f"))
+      throw Error("Final run was not received.");
+    return __classPrivateFieldGet5(this, _AssistantStream_finalRun, "f");
+  }
+  async _createThreadAssistantStream(thread, params, options) {
+    var _a2;
+    const signal = options == null ? void 0 : options.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const body = { ...params, stream: true };
+    const stream = await thread.createAndRun(body, { ...options, signal: this.controller.signal });
+    this._connected();
+    for await (const event of stream) {
+      __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+    }
+    if ((_a2 = stream.controller.signal) == null ? void 0 : _a2.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addRun(__classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+  }
+  async _createAssistantStream(run, threadId, params, options) {
+    var _a2;
+    const signal = options == null ? void 0 : options.signal;
+    if (signal) {
+      if (signal.aborted)
+        this.controller.abort();
+      signal.addEventListener("abort", () => this.controller.abort());
+    }
+    const body = { ...params, stream: true };
+    const stream = await run.create(threadId, body, { ...options, signal: this.controller.signal });
+    this._connected();
+    for await (const event of stream) {
+      __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_addEvent).call(this, event);
+    }
+    if ((_a2 = stream.controller.signal) == null ? void 0 : _a2.aborted) {
+      throw new APIUserAbortError();
+    }
+    return this._addRun(__classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_endRequest).call(this));
+  }
+  static accumulateDelta(acc, delta) {
+    for (const [key, deltaValue] of Object.entries(delta)) {
+      if (!acc.hasOwnProperty(key)) {
+        acc[key] = deltaValue;
+        continue;
+      }
+      let accValue = acc[key];
+      if (accValue === null || accValue === void 0) {
+        acc[key] = deltaValue;
+        continue;
+      }
+      if (key === "index" || key === "type") {
+        acc[key] = deltaValue;
+        continue;
+      }
+      if (typeof accValue === "string" && typeof deltaValue === "string") {
+        accValue += deltaValue;
+      } else if (typeof accValue === "number" && typeof deltaValue === "number") {
+        accValue += deltaValue;
+      } else if (isObj(accValue) && isObj(deltaValue)) {
+        accValue = this.accumulateDelta(accValue, deltaValue);
+      } else if (Array.isArray(accValue) && Array.isArray(deltaValue)) {
+        if (accValue.every((x) => typeof x === "string" || typeof x === "number")) {
+          accValue.push(...deltaValue);
+          continue;
+        }
+        for (const deltaEntry of deltaValue) {
+          if (!isObj(deltaEntry)) {
+            throw new Error(`Expected array delta entry to be an object but got: ${deltaEntry}`);
+          }
+          const index = deltaEntry["index"];
+          if (index == null) {
+            console.error(deltaEntry);
+            throw new Error("Expected array delta entry to have an `index` property");
+          }
+          if (typeof index !== "number") {
+            throw new Error(`Expected array delta entry \`index\` property to be a number but got ${index}`);
+          }
+          const accEntry = accValue[index];
+          if (accEntry == null) {
+            accValue.push(deltaEntry);
+          } else {
+            accValue[index] = this.accumulateDelta(accEntry, deltaEntry);
+          }
+        }
+        continue;
+      } else {
+        throw Error(`Unhandled record type: ${key}, deltaValue: ${deltaValue}, accValue: ${accValue}`);
+      }
+      acc[key] = accValue;
+    }
+    return acc;
+  }
+  _addRun(run) {
+    return run;
+  }
+  async _threadAssistantStream(params, thread, options) {
+    return await this._createThreadAssistantStream(thread, params, options);
+  }
+  async _runAssistantStream(threadId, runs, params, options) {
+    return await this._createAssistantStream(runs, threadId, params, options);
+  }
+  async _runToolAssistantStream(threadId, runId, runs, params, options) {
+    return await this._createToolAssistantStream(runs, threadId, runId, params, options);
+  }
+};
+_AssistantStream_addEvent = function _AssistantStream_addEvent2(event) {
+  if (this.ended)
+    return;
+  __classPrivateFieldSet4(this, _AssistantStream_currentEvent, event, "f");
+  __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_handleEvent).call(this, event);
+  switch (event.event) {
+    case "thread.created":
+      break;
+    case "thread.run.created":
+    case "thread.run.queued":
+    case "thread.run.in_progress":
+    case "thread.run.requires_action":
+    case "thread.run.completed":
+    case "thread.run.failed":
+    case "thread.run.cancelling":
+    case "thread.run.cancelled":
+    case "thread.run.expired":
+      __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_handleRun).call(this, event);
+      break;
+    case "thread.run.step.created":
+    case "thread.run.step.in_progress":
+    case "thread.run.step.delta":
+    case "thread.run.step.completed":
+    case "thread.run.step.failed":
+    case "thread.run.step.cancelled":
+    case "thread.run.step.expired":
+      __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_handleRunStep).call(this, event);
+      break;
+    case "thread.message.created":
+    case "thread.message.in_progress":
+    case "thread.message.delta":
+    case "thread.message.completed":
+    case "thread.message.incomplete":
+      __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_handleMessage).call(this, event);
+      break;
+    case "error":
+      throw new Error("Encountered an error event in event processing - errors should be processed earlier");
+  }
+}, _AssistantStream_endRequest = function _AssistantStream_endRequest2() {
+  if (this.ended) {
+    throw new OpenAIError(`stream has ended, this shouldn't happen`);
+  }
+  if (!__classPrivateFieldGet5(this, _AssistantStream_finalRun, "f"))
+    throw Error("Final run has not been received");
+  return __classPrivateFieldGet5(this, _AssistantStream_finalRun, "f");
+}, _AssistantStream_handleMessage = function _AssistantStream_handleMessage2(event) {
+  const [accumulatedMessage, newContent] = __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_accumulateMessage).call(this, event, __classPrivateFieldGet5(this, _AssistantStream_messageSnapshot, "f"));
+  __classPrivateFieldSet4(this, _AssistantStream_messageSnapshot, accumulatedMessage, "f");
+  __classPrivateFieldGet5(this, _AssistantStream_messageSnapshots, "f")[accumulatedMessage.id] = accumulatedMessage;
+  for (const content of newContent) {
+    const snapshotContent = accumulatedMessage.content[content.index];
+    if ((snapshotContent == null ? void 0 : snapshotContent.type) == "text") {
+      this._emit("textCreated", snapshotContent.text);
+    }
+  }
+  switch (event.event) {
+    case "thread.message.created":
+      this._emit("messageCreated", event.data);
+      break;
+    case "thread.message.in_progress":
+      break;
+    case "thread.message.delta":
+      this._emit("messageDelta", event.data.delta, accumulatedMessage);
+      if (event.data.delta.content) {
+        for (const content of event.data.delta.content) {
+          if (content.type == "text" && content.text) {
+            let textDelta = content.text;
+            let snapshot = accumulatedMessage.content[content.index];
+            if (snapshot && snapshot.type == "text") {
+              this._emit("textDelta", textDelta, snapshot.text);
+            } else {
+              throw Error("The snapshot associated with this text delta is not text or missing");
+            }
+          }
+          if (content.index != __classPrivateFieldGet5(this, _AssistantStream_currentContentIndex, "f")) {
+            if (__classPrivateFieldGet5(this, _AssistantStream_currentContent, "f")) {
+              switch (__classPrivateFieldGet5(this, _AssistantStream_currentContent, "f").type) {
+                case "text":
+                  this._emit("textDone", __classPrivateFieldGet5(this, _AssistantStream_currentContent, "f").text, __classPrivateFieldGet5(this, _AssistantStream_messageSnapshot, "f"));
+                  break;
+                case "image_file":
+                  this._emit("imageFileDone", __classPrivateFieldGet5(this, _AssistantStream_currentContent, "f").image_file, __classPrivateFieldGet5(this, _AssistantStream_messageSnapshot, "f"));
+                  break;
+              }
+            }
+            __classPrivateFieldSet4(this, _AssistantStream_currentContentIndex, content.index, "f");
+          }
+          __classPrivateFieldSet4(this, _AssistantStream_currentContent, accumulatedMessage.content[content.index], "f");
+        }
+      }
+      break;
+    case "thread.message.completed":
+    case "thread.message.incomplete":
+      if (__classPrivateFieldGet5(this, _AssistantStream_currentContentIndex, "f") !== void 0) {
+        const currentContent = event.data.content[__classPrivateFieldGet5(this, _AssistantStream_currentContentIndex, "f")];
+        if (currentContent) {
+          switch (currentContent.type) {
+            case "image_file":
+              this._emit("imageFileDone", currentContent.image_file, __classPrivateFieldGet5(this, _AssistantStream_messageSnapshot, "f"));
+              break;
+            case "text":
+              this._emit("textDone", currentContent.text, __classPrivateFieldGet5(this, _AssistantStream_messageSnapshot, "f"));
+              break;
+          }
+        }
+      }
+      if (__classPrivateFieldGet5(this, _AssistantStream_messageSnapshot, "f")) {
+        this._emit("messageDone", event.data);
+      }
+      __classPrivateFieldSet4(this, _AssistantStream_messageSnapshot, void 0, "f");
+  }
+}, _AssistantStream_handleRunStep = function _AssistantStream_handleRunStep2(event) {
+  const accumulatedRunStep = __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_accumulateRunStep).call(this, event);
+  __classPrivateFieldSet4(this, _AssistantStream_currentRunStepSnapshot, accumulatedRunStep, "f");
+  switch (event.event) {
+    case "thread.run.step.created":
+      this._emit("runStepCreated", event.data);
+      break;
+    case "thread.run.step.delta":
+      const delta = event.data.delta;
+      if (delta.step_details && delta.step_details.type == "tool_calls" && delta.step_details.tool_calls && accumulatedRunStep.step_details.type == "tool_calls") {
+        for (const toolCall of delta.step_details.tool_calls) {
+          if (toolCall.index == __classPrivateFieldGet5(this, _AssistantStream_currentToolCallIndex, "f")) {
+            this._emit("toolCallDelta", toolCall, accumulatedRunStep.step_details.tool_calls[toolCall.index]);
+          } else {
+            if (__classPrivateFieldGet5(this, _AssistantStream_currentToolCall, "f")) {
+              this._emit("toolCallDone", __classPrivateFieldGet5(this, _AssistantStream_currentToolCall, "f"));
+            }
+            __classPrivateFieldSet4(this, _AssistantStream_currentToolCallIndex, toolCall.index, "f");
+            __classPrivateFieldSet4(this, _AssistantStream_currentToolCall, accumulatedRunStep.step_details.tool_calls[toolCall.index], "f");
+            if (__classPrivateFieldGet5(this, _AssistantStream_currentToolCall, "f"))
+              this._emit("toolCallCreated", __classPrivateFieldGet5(this, _AssistantStream_currentToolCall, "f"));
+          }
+        }
+      }
+      this._emit("runStepDelta", event.data.delta, accumulatedRunStep);
+      break;
+    case "thread.run.step.completed":
+    case "thread.run.step.failed":
+    case "thread.run.step.cancelled":
+    case "thread.run.step.expired":
+      __classPrivateFieldSet4(this, _AssistantStream_currentRunStepSnapshot, void 0, "f");
+      const details = event.data.step_details;
+      if (details.type == "tool_calls") {
+        if (__classPrivateFieldGet5(this, _AssistantStream_currentToolCall, "f")) {
+          this._emit("toolCallDone", __classPrivateFieldGet5(this, _AssistantStream_currentToolCall, "f"));
+          __classPrivateFieldSet4(this, _AssistantStream_currentToolCall, void 0, "f");
+        }
+      }
+      this._emit("runStepDone", event.data, accumulatedRunStep);
+      break;
+    case "thread.run.step.in_progress":
+      break;
+  }
+}, _AssistantStream_handleEvent = function _AssistantStream_handleEvent2(event) {
+  __classPrivateFieldGet5(this, _AssistantStream_events, "f").push(event);
+  this._emit("event", event);
+}, _AssistantStream_accumulateRunStep = function _AssistantStream_accumulateRunStep2(event) {
+  switch (event.event) {
+    case "thread.run.step.created":
+      __classPrivateFieldGet5(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = event.data;
+      return event.data;
+    case "thread.run.step.delta":
+      let snapshot = __classPrivateFieldGet5(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+      if (!snapshot) {
+        throw Error("Received a RunStepDelta before creation of a snapshot");
+      }
+      let data = event.data;
+      if (data.delta) {
+        const accumulated = AssistantStream.accumulateDelta(snapshot, data.delta);
+        __classPrivateFieldGet5(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = accumulated;
+      }
+      return __classPrivateFieldGet5(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+    case "thread.run.step.completed":
+    case "thread.run.step.failed":
+    case "thread.run.step.cancelled":
+    case "thread.run.step.expired":
+    case "thread.run.step.in_progress":
+      __classPrivateFieldGet5(this, _AssistantStream_runStepSnapshots, "f")[event.data.id] = event.data;
+      break;
+  }
+  if (__classPrivateFieldGet5(this, _AssistantStream_runStepSnapshots, "f")[event.data.id])
+    return __classPrivateFieldGet5(this, _AssistantStream_runStepSnapshots, "f")[event.data.id];
+  throw new Error("No snapshot available");
+}, _AssistantStream_accumulateMessage = function _AssistantStream_accumulateMessage2(event, snapshot) {
+  let newContent = [];
+  switch (event.event) {
+    case "thread.message.created":
+      return [event.data, newContent];
+    case "thread.message.delta":
+      if (!snapshot) {
+        throw Error("Received a delta with no existing snapshot (there should be one from message creation)");
+      }
+      let data = event.data;
+      if (data.delta.content) {
+        for (const contentElement of data.delta.content) {
+          if (contentElement.index in snapshot.content) {
+            let currentContent = snapshot.content[contentElement.index];
+            snapshot.content[contentElement.index] = __classPrivateFieldGet5(this, _AssistantStream_instances, "m", _AssistantStream_accumulateContent).call(this, contentElement, currentContent);
+          } else {
+            snapshot.content[contentElement.index] = contentElement;
+            newContent.push(contentElement);
+          }
+        }
+      }
+      return [snapshot, newContent];
+    case "thread.message.in_progress":
+    case "thread.message.completed":
+    case "thread.message.incomplete":
+      if (snapshot) {
+        return [snapshot, newContent];
+      } else {
+        throw Error("Received thread message event with no existing snapshot");
+      }
+  }
+  throw Error("Tried to accumulate a non-message event");
+}, _AssistantStream_accumulateContent = function _AssistantStream_accumulateContent2(contentElement, currentContent) {
+  return AssistantStream.accumulateDelta(currentContent, contentElement);
+}, _AssistantStream_handleRun = function _AssistantStream_handleRun2(event) {
+  __classPrivateFieldSet4(this, _AssistantStream_currentRunSnapshot, event.data, "f");
+  switch (event.event) {
+    case "thread.run.created":
+      break;
+    case "thread.run.queued":
+      break;
+    case "thread.run.in_progress":
+      break;
+    case "thread.run.requires_action":
+    case "thread.run.cancelled":
+    case "thread.run.failed":
+    case "thread.run.completed":
+    case "thread.run.expired":
+      __classPrivateFieldSet4(this, _AssistantStream_finalRun, event.data, "f");
+      if (__classPrivateFieldGet5(this, _AssistantStream_currentToolCall, "f")) {
+        this._emit("toolCallDone", __classPrivateFieldGet5(this, _AssistantStream_currentToolCall, "f"));
+        __classPrivateFieldSet4(this, _AssistantStream_currentToolCall, void 0, "f");
+      }
+      break;
+    case "thread.run.cancelling":
+      break;
+  }
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/threads/messages.mjs
+var Messages = class extends APIResource {
+  /**
+   * Create a message.
+   */
+  create(threadId, body, options) {
+    return this._client.post(`/threads/${threadId}/messages`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Retrieve a message.
+   */
+  retrieve(threadId, messageId, options) {
+    return this._client.get(`/threads/${threadId}/messages/${messageId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Modifies a message.
+   */
+  update(threadId, messageId, body, options) {
+    return this._client.post(`/threads/${threadId}/messages/${messageId}`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  list(threadId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list(threadId, {}, query);
+    }
+    return this._client.getAPIList(`/threads/${threadId}/messages`, MessagesPage, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Deletes a message.
+   */
+  del(threadId, messageId, options) {
+    return this._client.delete(`/threads/${threadId}/messages/${messageId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+};
+var MessagesPage = class extends CursorPage {
+};
+(function(Messages2) {
+  Messages2.MessagesPage = MessagesPage;
+})(Messages || (Messages = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/threads/runs/steps.mjs
+var Steps = class extends APIResource {
+  retrieve(threadId, runId, stepId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.retrieve(threadId, runId, stepId, {}, query);
+    }
+    return this._client.get(`/threads/${threadId}/runs/${runId}/steps/${stepId}`, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  list(threadId, runId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list(threadId, runId, {}, query);
+    }
+    return this._client.getAPIList(`/threads/${threadId}/runs/${runId}/steps`, RunStepsPage, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+};
+var RunStepsPage = class extends CursorPage {
+};
+(function(Steps2) {
+  Steps2.RunStepsPage = RunStepsPage;
+})(Steps || (Steps = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/threads/runs/runs.mjs
+var Runs = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.steps = new Steps(this._client);
+  }
+  create(threadId, params, options) {
+    var _a2;
+    const { include, ...body } = params;
+    return this._client.post(`/threads/${threadId}/runs`, {
+      query: { include },
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers },
+      stream: (_a2 = params.stream) != null ? _a2 : false
+    });
+  }
+  /**
+   * Retrieves a run.
+   */
+  retrieve(threadId, runId, options) {
+    return this._client.get(`/threads/${threadId}/runs/${runId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Modifies a run.
+   */
+  update(threadId, runId, body, options) {
+    return this._client.post(`/threads/${threadId}/runs/${runId}`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  list(threadId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list(threadId, {}, query);
+    }
+    return this._client.getAPIList(`/threads/${threadId}/runs`, RunsPage, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Cancels a run that is `in_progress`.
+   */
+  cancel(threadId, runId, options) {
+    return this._client.post(`/threads/${threadId}/runs/${runId}/cancel`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * A helper to create a run an poll for a terminal state. More information on Run
+   * lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  async createAndPoll(threadId, body, options) {
+    const run = await this.create(threadId, body, options);
+    return await this.poll(threadId, run.id, options);
+  }
+  /**
+   * Create a Run stream
+   *
+   * @deprecated use `stream` instead
+   */
+  createAndStream(threadId, body, options) {
+    return AssistantStream.createAssistantStream(threadId, this._client.beta.threads.runs, body, options);
+  }
+  /**
+   * A helper to poll a run status until it reaches a terminal state. More
+   * information on Run lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  async poll(threadId, runId, options) {
+    const headers = { ...options == null ? void 0 : options.headers, "X-Stainless-Poll-Helper": "true" };
+    if (options == null ? void 0 : options.pollIntervalMs) {
+      headers["X-Stainless-Custom-Poll-Interval"] = options.pollIntervalMs.toString();
+    }
+    while (true) {
+      const { data: run, response } = await this.retrieve(threadId, runId, {
+        ...options,
+        headers: { ...options == null ? void 0 : options.headers, ...headers }
+      }).withResponse();
+      switch (run.status) {
+        case "queued":
+        case "in_progress":
+        case "cancelling":
+          let sleepInterval = 5e3;
+          if (options == null ? void 0 : options.pollIntervalMs) {
+            sleepInterval = options.pollIntervalMs;
+          } else {
+            const headerInterval = response.headers.get("openai-poll-after-ms");
+            if (headerInterval) {
+              const headerIntervalMs = parseInt(headerInterval);
+              if (!isNaN(headerIntervalMs)) {
+                sleepInterval = headerIntervalMs;
+              }
+            }
+          }
+          await sleep(sleepInterval);
+          break;
+        case "requires_action":
+        case "incomplete":
+        case "cancelled":
+        case "completed":
+        case "failed":
+        case "expired":
+          return run;
+      }
+    }
+  }
+  /**
+   * Create a Run stream
+   */
+  stream(threadId, body, options) {
+    return AssistantStream.createAssistantStream(threadId, this._client.beta.threads.runs, body, options);
+  }
+  submitToolOutputs(threadId, runId, body, options) {
+    var _a2;
+    return this._client.post(`/threads/${threadId}/runs/${runId}/submit_tool_outputs`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers },
+      stream: (_a2 = body.stream) != null ? _a2 : false
+    });
+  }
+  /**
+   * A helper to submit a tool output to a run and poll for a terminal run state.
+   * More information on Run lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  async submitToolOutputsAndPoll(threadId, runId, body, options) {
+    const run = await this.submitToolOutputs(threadId, runId, body, options);
+    return await this.poll(threadId, run.id, options);
+  }
+  /**
+   * Submit the tool outputs from a previous run and stream the run to a terminal
+   * state. More information on Run lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  submitToolOutputsStream(threadId, runId, body, options) {
+    return AssistantStream.createToolAssistantStream(threadId, runId, this._client.beta.threads.runs, body, options);
+  }
+};
+var RunsPage = class extends CursorPage {
+};
+(function(Runs2) {
+  Runs2.RunsPage = RunsPage;
+  Runs2.Steps = Steps;
+  Runs2.RunStepsPage = RunStepsPage;
+})(Runs || (Runs = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/threads/threads.mjs
+var Threads = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.runs = new Runs(this._client);
+    this.messages = new Messages(this._client);
+  }
+  create(body = {}, options) {
+    if (isRequestOptions(body)) {
+      return this.create({}, body);
+    }
+    return this._client.post("/threads", {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Retrieves a thread.
+   */
+  retrieve(threadId, options) {
+    return this._client.get(`/threads/${threadId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Modifies a thread.
+   */
+  update(threadId, body, options) {
+    return this._client.post(`/threads/${threadId}`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Delete a thread.
+   */
+  del(threadId, options) {
+    return this._client.delete(`/threads/${threadId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  createAndRun(body, options) {
+    var _a2;
+    return this._client.post("/threads/runs", {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers },
+      stream: (_a2 = body.stream) != null ? _a2 : false
+    });
+  }
+  /**
+   * A helper to create a thread, start a run and then poll for a terminal state.
+   * More information on Run lifecycles can be found here:
+   * https://platform.openai.com/docs/assistants/how-it-works/runs-and-run-steps
+   */
+  async createAndRunPoll(body, options) {
+    const run = await this.createAndRun(body, options);
+    return await this.runs.poll(run.thread_id, run.id, options);
+  }
+  /**
+   * Create a thread and stream the run back
+   */
+  createAndRunStream(body, options) {
+    return AssistantStream.createThreadAssistantStream(body, this._client.beta.threads, options);
+  }
+};
+(function(Threads2) {
+  Threads2.Runs = Runs;
+  Threads2.RunsPage = RunsPage;
+  Threads2.Messages = Messages;
+  Threads2.MessagesPage = MessagesPage;
+})(Threads || (Threads = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/lib/Util.mjs
+var allSettledWithThrow = async (promises) => {
+  const results = await Promise.allSettled(promises);
+  const rejected = results.filter((result) => result.status === "rejected");
+  if (rejected.length) {
+    for (const result of rejected) {
+      console.error(result.reason);
+    }
+    throw new Error(`${rejected.length} promise(s) failed - see the above errors`);
+  }
+  const values = [];
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      values.push(result.value);
+    }
+  }
+  return values;
+};
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/vector-stores/files.mjs
+var Files = class extends APIResource {
+  /**
+   * Create a vector store file by attaching a
+   * [File](https://platform.openai.com/docs/api-reference/files) to a
+   * [vector store](https://platform.openai.com/docs/api-reference/vector-stores/object).
+   */
+  create(vectorStoreId, body, options) {
+    return this._client.post(`/vector_stores/${vectorStoreId}/files`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Retrieves a vector store file.
+   */
+  retrieve(vectorStoreId, fileId, options) {
+    return this._client.get(`/vector_stores/${vectorStoreId}/files/${fileId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  list(vectorStoreId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list(vectorStoreId, {}, query);
+    }
+    return this._client.getAPIList(`/vector_stores/${vectorStoreId}/files`, VectorStoreFilesPage, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Delete a vector store file. This will remove the file from the vector store but
+   * the file itself will not be deleted. To delete the file, use the
+   * [delete file](https://platform.openai.com/docs/api-reference/files/delete)
+   * endpoint.
+   */
+  del(vectorStoreId, fileId, options) {
+    return this._client.delete(`/vector_stores/${vectorStoreId}/files/${fileId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Attach a file to the given vector store and wait for it to be processed.
+   */
+  async createAndPoll(vectorStoreId, body, options) {
+    const file = await this.create(vectorStoreId, body, options);
+    return await this.poll(vectorStoreId, file.id, options);
+  }
+  /**
+   * Wait for the vector store file to finish processing.
+   *
+   * Note: this will return even if the file failed to process, you need to check
+   * file.last_error and file.status to handle these cases
+   */
+  async poll(vectorStoreId, fileId, options) {
+    const headers = { ...options == null ? void 0 : options.headers, "X-Stainless-Poll-Helper": "true" };
+    if (options == null ? void 0 : options.pollIntervalMs) {
+      headers["X-Stainless-Custom-Poll-Interval"] = options.pollIntervalMs.toString();
+    }
+    while (true) {
+      const fileResponse = await this.retrieve(vectorStoreId, fileId, {
+        ...options,
+        headers
+      }).withResponse();
+      const file = fileResponse.data;
+      switch (file.status) {
+        case "in_progress":
+          let sleepInterval = 5e3;
+          if (options == null ? void 0 : options.pollIntervalMs) {
+            sleepInterval = options.pollIntervalMs;
+          } else {
+            const headerInterval = fileResponse.response.headers.get("openai-poll-after-ms");
+            if (headerInterval) {
+              const headerIntervalMs = parseInt(headerInterval);
+              if (!isNaN(headerIntervalMs)) {
+                sleepInterval = headerIntervalMs;
+              }
+            }
+          }
+          await sleep(sleepInterval);
+          break;
+        case "failed":
+        case "completed":
+          return file;
+      }
+    }
+  }
+  /**
+   * Upload a file to the `files` API and then attach it to the given vector store.
+   *
+   * Note the file will be asynchronously processed (you can use the alternative
+   * polling helper method to wait for processing to complete).
+   */
+  async upload(vectorStoreId, file, options) {
+    const fileInfo = await this._client.files.create({ file, purpose: "assistants" }, options);
+    return this.create(vectorStoreId, { file_id: fileInfo.id }, options);
+  }
+  /**
+   * Add a file to a vector store and poll until processing is complete.
+   */
+  async uploadAndPoll(vectorStoreId, file, options) {
+    const fileInfo = await this.upload(vectorStoreId, file, options);
+    return await this.poll(vectorStoreId, fileInfo.id, options);
+  }
+};
+var VectorStoreFilesPage = class extends CursorPage {
+};
+(function(Files3) {
+  Files3.VectorStoreFilesPage = VectorStoreFilesPage;
+})(Files || (Files = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/vector-stores/file-batches.mjs
+var FileBatches = class extends APIResource {
+  /**
+   * Create a vector store file batch.
+   */
+  create(vectorStoreId, body, options) {
+    return this._client.post(`/vector_stores/${vectorStoreId}/file_batches`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Retrieves a vector store file batch.
+   */
+  retrieve(vectorStoreId, batchId, options) {
+    return this._client.get(`/vector_stores/${vectorStoreId}/file_batches/${batchId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Cancel a vector store file batch. This attempts to cancel the processing of
+   * files in this batch as soon as possible.
+   */
+  cancel(vectorStoreId, batchId, options) {
+    return this._client.post(`/vector_stores/${vectorStoreId}/file_batches/${batchId}/cancel`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Create a vector store batch and poll until all files have been processed.
+   */
+  async createAndPoll(vectorStoreId, body, options) {
+    const batch = await this.create(vectorStoreId, body);
+    return await this.poll(vectorStoreId, batch.id, options);
+  }
+  listFiles(vectorStoreId, batchId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.listFiles(vectorStoreId, batchId, {}, query);
+    }
+    return this._client.getAPIList(`/vector_stores/${vectorStoreId}/file_batches/${batchId}/files`, VectorStoreFilesPage, { query, ...options, headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers } });
+  }
+  /**
+   * Wait for the given file batch to be processed.
+   *
+   * Note: this will return even if one of the files failed to process, you need to
+   * check batch.file_counts.failed_count to handle this case.
+   */
+  async poll(vectorStoreId, batchId, options) {
+    const headers = { ...options == null ? void 0 : options.headers, "X-Stainless-Poll-Helper": "true" };
+    if (options == null ? void 0 : options.pollIntervalMs) {
+      headers["X-Stainless-Custom-Poll-Interval"] = options.pollIntervalMs.toString();
+    }
+    while (true) {
+      const { data: batch, response } = await this.retrieve(vectorStoreId, batchId, {
+        ...options,
+        headers
+      }).withResponse();
+      switch (batch.status) {
+        case "in_progress":
+          let sleepInterval = 5e3;
+          if (options == null ? void 0 : options.pollIntervalMs) {
+            sleepInterval = options.pollIntervalMs;
+          } else {
+            const headerInterval = response.headers.get("openai-poll-after-ms");
+            if (headerInterval) {
+              const headerIntervalMs = parseInt(headerInterval);
+              if (!isNaN(headerIntervalMs)) {
+                sleepInterval = headerIntervalMs;
+              }
+            }
+          }
+          await sleep(sleepInterval);
+          break;
+        case "failed":
+        case "cancelled":
+        case "completed":
+          return batch;
+      }
+    }
+  }
+  /**
+   * Uploads the given files concurrently and then creates a vector store file batch.
+   *
+   * The concurrency limit is configurable using the `maxConcurrency` parameter.
+   */
+  async uploadAndPoll(vectorStoreId, { files, fileIds = [] }, options) {
+    var _a2;
+    if (files == null || files.length == 0) {
+      throw new Error(`No \`files\` provided to process. If you've already uploaded files you should use \`.createAndPoll()\` instead`);
+    }
+    const configuredConcurrency = (_a2 = options == null ? void 0 : options.maxConcurrency) != null ? _a2 : 5;
+    const concurrencyLimit = Math.min(configuredConcurrency, files.length);
+    const client = this._client;
+    const fileIterator = files.values();
+    const allFileIds = [...fileIds];
+    async function processFiles(iterator) {
+      for (let item of iterator) {
+        const fileObj = await client.files.create({ file: item, purpose: "assistants" }, options);
+        allFileIds.push(fileObj.id);
+      }
+    }
+    const workers = Array(concurrencyLimit).fill(fileIterator).map(processFiles);
+    await allSettledWithThrow(workers);
+    return await this.createAndPoll(vectorStoreId, {
+      file_ids: allFileIds
+    });
+  }
+};
+(function(FileBatches2) {
+})(FileBatches || (FileBatches = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/vector-stores/vector-stores.mjs
+var VectorStores = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.files = new Files(this._client);
+    this.fileBatches = new FileBatches(this._client);
+  }
+  /**
+   * Create a vector store.
+   */
+  create(body, options) {
+    return this._client.post("/vector_stores", {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Retrieves a vector store.
+   */
+  retrieve(vectorStoreId, options) {
+    return this._client.get(`/vector_stores/${vectorStoreId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Modifies a vector store.
+   */
+  update(vectorStoreId, body, options) {
+    return this._client.post(`/vector_stores/${vectorStoreId}`, {
+      body,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  list(query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list({}, query);
+    }
+    return this._client.getAPIList("/vector_stores", VectorStoresPage, {
+      query,
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Delete a vector store.
+   */
+  del(vectorStoreId, options) {
+    return this._client.delete(`/vector_stores/${vectorStoreId}`, {
+      ...options,
+      headers: { "OpenAI-Beta": "assistants=v2", ...options == null ? void 0 : options.headers }
+    });
+  }
+};
+var VectorStoresPage = class extends CursorPage {
+};
+(function(VectorStores2) {
+  VectorStores2.VectorStoresPage = VectorStoresPage;
+  VectorStores2.Files = Files;
+  VectorStores2.VectorStoreFilesPage = VectorStoreFilesPage;
+  VectorStores2.FileBatches = FileBatches;
+})(VectorStores || (VectorStores = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/beta/beta.mjs
+var Beta = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.vectorStores = new VectorStores(this._client);
+    this.chat = new Chat2(this._client);
+    this.assistants = new Assistants(this._client);
+    this.threads = new Threads(this._client);
+  }
+};
+(function(Beta2) {
+  Beta2.VectorStores = VectorStores;
+  Beta2.VectorStoresPage = VectorStoresPage;
+  Beta2.Chat = Chat2;
+  Beta2.Assistants = Assistants;
+  Beta2.AssistantsPage = AssistantsPage;
+  Beta2.Threads = Threads;
+})(Beta || (Beta = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/completions.mjs
+var Completions3 = class extends APIResource {
+  create(body, options) {
+    var _a2;
+    return this._client.post("/completions", { body, ...options, stream: (_a2 = body.stream) != null ? _a2 : false });
+  }
+};
+(function(Completions4) {
+})(Completions3 || (Completions3 = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/embeddings.mjs
+var Embeddings = class extends APIResource {
+  /**
+   * Creates an embedding vector representing the input text.
+   */
+  create(body, options) {
+    return this._client.post("/embeddings", { body, ...options });
+  }
+};
+(function(Embeddings2) {
+})(Embeddings || (Embeddings = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/files.mjs
+var Files2 = class extends APIResource {
+  /**
+   * Upload a file that can be used across various endpoints. Individual files can be
+   * up to 512 MB, and the size of all files uploaded by one organization can be up
+   * to 100 GB.
+   *
+   * The Assistants API supports files up to 2 million tokens and of specific file
+   * types. See the
+   * [Assistants Tools guide](https://platform.openai.com/docs/assistants/tools) for
+   * details.
+   *
+   * The Fine-tuning API only supports `.jsonl` files. The input also has certain
+   * required formats for fine-tuning
+   * [chat](https://platform.openai.com/docs/api-reference/fine-tuning/chat-input) or
+   * [completions](https://platform.openai.com/docs/api-reference/fine-tuning/completions-input)
+   * models.
+   *
+   * The Batch API only supports `.jsonl` files up to 100 MB in size. The input also
+   * has a specific required
+   * [format](https://platform.openai.com/docs/api-reference/batch/request-input).
+   *
+   * Please [contact us](https://help.openai.com/) if you need to increase these
+   * storage limits.
+   */
+  create(body, options) {
+    return this._client.post("/files", multipartFormRequestOptions({ body, ...options }));
+  }
+  /**
+   * Returns information about a specific file.
+   */
+  retrieve(fileId, options) {
+    return this._client.get(`/files/${fileId}`, options);
+  }
+  list(query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list({}, query);
+    }
+    return this._client.getAPIList("/files", FileObjectsPage, { query, ...options });
+  }
+  /**
+   * Delete a file.
+   */
+  del(fileId, options) {
+    return this._client.delete(`/files/${fileId}`, options);
+  }
+  /**
+   * Returns the contents of the specified file.
+   */
+  content(fileId, options) {
+    return this._client.get(`/files/${fileId}/content`, { ...options, __binaryResponse: true });
+  }
+  /**
+   * Returns the contents of the specified file.
+   *
+   * @deprecated The `.content()` method should be used instead
+   */
+  retrieveContent(fileId, options) {
+    return this._client.get(`/files/${fileId}/content`, {
+      ...options,
+      headers: { Accept: "application/json", ...options == null ? void 0 : options.headers }
+    });
+  }
+  /**
+   * Waits for the given file to be processed, default timeout is 30 mins.
+   */
+  async waitForProcessing(id, { pollInterval = 5e3, maxWait = 30 * 60 * 1e3 } = {}) {
+    const TERMINAL_STATES = /* @__PURE__ */ new Set(["processed", "error", "deleted"]);
+    const start = Date.now();
+    let file = await this.retrieve(id);
+    while (!file.status || !TERMINAL_STATES.has(file.status)) {
+      await sleep(pollInterval);
+      file = await this.retrieve(id);
+      if (Date.now() - start > maxWait) {
+        throw new APIConnectionTimeoutError({
+          message: `Giving up on waiting for file ${id} to finish processing after ${maxWait} milliseconds.`
+        });
+      }
+    }
+    return file;
+  }
+};
+var FileObjectsPage = class extends Page {
+};
+(function(Files3) {
+  Files3.FileObjectsPage = FileObjectsPage;
+})(Files2 || (Files2 = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/fine-tuning/jobs/checkpoints.mjs
+var Checkpoints = class extends APIResource {
+  list(fineTuningJobId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list(fineTuningJobId, {}, query);
+    }
+    return this._client.getAPIList(`/fine_tuning/jobs/${fineTuningJobId}/checkpoints`, FineTuningJobCheckpointsPage, { query, ...options });
+  }
+};
+var FineTuningJobCheckpointsPage = class extends CursorPage {
+};
+(function(Checkpoints2) {
+  Checkpoints2.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
+})(Checkpoints || (Checkpoints = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/fine-tuning/jobs/jobs.mjs
+var Jobs = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.checkpoints = new Checkpoints(this._client);
+  }
+  /**
+   * Creates a fine-tuning job which begins the process of creating a new model from
+   * a given dataset.
+   *
+   * Response includes details of the enqueued job including job status and the name
+   * of the fine-tuned models once complete.
+   *
+   * [Learn more about fine-tuning](https://platform.openai.com/docs/guides/fine-tuning)
+   */
+  create(body, options) {
+    return this._client.post("/fine_tuning/jobs", { body, ...options });
+  }
+  /**
+   * Get info about a fine-tuning job.
+   *
+   * [Learn more about fine-tuning](https://platform.openai.com/docs/guides/fine-tuning)
+   */
+  retrieve(fineTuningJobId, options) {
+    return this._client.get(`/fine_tuning/jobs/${fineTuningJobId}`, options);
+  }
+  list(query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.list({}, query);
+    }
+    return this._client.getAPIList("/fine_tuning/jobs", FineTuningJobsPage, { query, ...options });
+  }
+  /**
+   * Immediately cancel a fine-tune job.
+   */
+  cancel(fineTuningJobId, options) {
+    return this._client.post(`/fine_tuning/jobs/${fineTuningJobId}/cancel`, options);
+  }
+  listEvents(fineTuningJobId, query = {}, options) {
+    if (isRequestOptions(query)) {
+      return this.listEvents(fineTuningJobId, {}, query);
+    }
+    return this._client.getAPIList(`/fine_tuning/jobs/${fineTuningJobId}/events`, FineTuningJobEventsPage, {
+      query,
+      ...options
+    });
+  }
+};
+var FineTuningJobsPage = class extends CursorPage {
+};
+var FineTuningJobEventsPage = class extends CursorPage {
+};
+(function(Jobs2) {
+  Jobs2.FineTuningJobsPage = FineTuningJobsPage;
+  Jobs2.FineTuningJobEventsPage = FineTuningJobEventsPage;
+  Jobs2.Checkpoints = Checkpoints;
+  Jobs2.FineTuningJobCheckpointsPage = FineTuningJobCheckpointsPage;
+})(Jobs || (Jobs = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/fine-tuning/fine-tuning.mjs
+var FineTuning = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.jobs = new Jobs(this._client);
+  }
+};
+(function(FineTuning2) {
+  FineTuning2.Jobs = Jobs;
+  FineTuning2.FineTuningJobsPage = FineTuningJobsPage;
+  FineTuning2.FineTuningJobEventsPage = FineTuningJobEventsPage;
+})(FineTuning || (FineTuning = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/images.mjs
+var Images = class extends APIResource {
+  /**
+   * Creates a variation of a given image.
+   */
+  createVariation(body, options) {
+    return this._client.post("/images/variations", multipartFormRequestOptions({ body, ...options }));
+  }
+  /**
+   * Creates an edited or extended image given an original image and a prompt.
+   */
+  edit(body, options) {
+    return this._client.post("/images/edits", multipartFormRequestOptions({ body, ...options }));
+  }
+  /**
+   * Creates an image given a prompt.
+   */
+  generate(body, options) {
+    return this._client.post("/images/generations", { body, ...options });
+  }
+};
+(function(Images2) {
+})(Images || (Images = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/models.mjs
+var Models = class extends APIResource {
+  /**
+   * Retrieves a model instance, providing basic information about the model such as
+   * the owner and permissioning.
+   */
+  retrieve(model, options) {
+    return this._client.get(`/models/${model}`, options);
+  }
+  /**
+   * Lists the currently available models, and provides basic information about each
+   * one such as the owner and availability.
+   */
+  list(options) {
+    return this._client.getAPIList("/models", ModelsPage, options);
+  }
+  /**
+   * Delete a fine-tuned model. You must have the Owner role in your organization to
+   * delete a model.
+   */
+  del(model, options) {
+    return this._client.delete(`/models/${model}`, options);
+  }
+};
+var ModelsPage = class extends Page {
+};
+(function(Models2) {
+  Models2.ModelsPage = ModelsPage;
+})(Models || (Models = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/moderations.mjs
+var Moderations = class extends APIResource {
+  /**
+   * Classifies if text is potentially harmful.
+   */
+  create(body, options) {
+    return this._client.post("/moderations", { body, ...options });
+  }
+};
+(function(Moderations2) {
+})(Moderations || (Moderations = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/uploads/parts.mjs
+var Parts = class extends APIResource {
+  /**
+   * Adds a
+   * [Part](https://platform.openai.com/docs/api-reference/uploads/part-object) to an
+   * [Upload](https://platform.openai.com/docs/api-reference/uploads/object) object.
+   * A Part represents a chunk of bytes from the file you are trying to upload.
+   *
+   * Each Part can be at most 64 MB, and you can add Parts until you hit the Upload
+   * maximum of 8 GB.
+   *
+   * It is possible to add multiple Parts in parallel. You can decide the intended
+   * order of the Parts when you
+   * [complete the Upload](https://platform.openai.com/docs/api-reference/uploads/complete).
+   */
+  create(uploadId, body, options) {
+    return this._client.post(`/uploads/${uploadId}/parts`, multipartFormRequestOptions({ body, ...options }));
+  }
+};
+(function(Parts2) {
+})(Parts || (Parts = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/resources/uploads/uploads.mjs
+var Uploads = class extends APIResource {
+  constructor() {
+    super(...arguments);
+    this.parts = new Parts(this._client);
+  }
+  /**
+   * Creates an intermediate
+   * [Upload](https://platform.openai.com/docs/api-reference/uploads/object) object
+   * that you can add
+   * [Parts](https://platform.openai.com/docs/api-reference/uploads/part-object) to.
+   * Currently, an Upload can accept at most 8 GB in total and expires after an hour
+   * after you create it.
+   *
+   * Once you complete the Upload, we will create a
+   * [File](https://platform.openai.com/docs/api-reference/files/object) object that
+   * contains all the parts you uploaded. This File is usable in the rest of our
+   * platform as a regular File object.
+   *
+   * For certain `purpose`s, the correct `mime_type` must be specified. Please refer
+   * to documentation for the supported MIME types for your use case:
+   *
+   * - [Assistants](https://platform.openai.com/docs/assistants/tools/file-search/supported-files)
+   *
+   * For guidance on the proper filename extensions for each purpose, please follow
+   * the documentation on
+   * [creating a File](https://platform.openai.com/docs/api-reference/files/create).
+   */
+  create(body, options) {
+    return this._client.post("/uploads", { body, ...options });
+  }
+  /**
+   * Cancels the Upload. No Parts may be added after an Upload is cancelled.
+   */
+  cancel(uploadId, options) {
+    return this._client.post(`/uploads/${uploadId}/cancel`, options);
+  }
+  /**
+   * Completes the
+   * [Upload](https://platform.openai.com/docs/api-reference/uploads/object).
+   *
+   * Within the returned Upload object, there is a nested
+   * [File](https://platform.openai.com/docs/api-reference/files/object) object that
+   * is ready to use in the rest of the platform.
+   *
+   * You can specify the order of the Parts by passing in an ordered list of the Part
+   * IDs.
+   *
+   * The number of bytes uploaded upon completion must match the number of bytes
+   * initially specified when creating the Upload object. No Parts may be added after
+   * an Upload is completed.
+   */
+  complete(uploadId, body, options) {
+    return this._client.post(`/uploads/${uploadId}/complete`, { body, ...options });
+  }
+};
+(function(Uploads2) {
+  Uploads2.Parts = Parts;
+})(Uploads || (Uploads = {}));
+
+// node_modules/.store/openai@4.63.0/node_modules/openai/index.mjs
+var _a;
+var OpenAI = class extends APIClient {
+  /**
+   * API Client for interfacing with the OpenAI API.
+   *
+   * @param {string | undefined} [opts.apiKey=process.env['OPENAI_API_KEY'] ?? undefined]
+   * @param {string | null | undefined} [opts.organization=process.env['OPENAI_ORG_ID'] ?? null]
+   * @param {string | null | undefined} [opts.project=process.env['OPENAI_PROJECT_ID'] ?? null]
+   * @param {string} [opts.baseURL=process.env['OPENAI_BASE_URL'] ?? https://api.openai.com/v1] - Override the default base URL for the API.
+   * @param {number} [opts.timeout=10 minutes] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
+   * @param {number} [opts.httpAgent] - An HTTP agent used to manage HTTP(s) connections.
+   * @param {Core.Fetch} [opts.fetch] - Specify a custom `fetch` function implementation.
+   * @param {number} [opts.maxRetries=2] - The maximum number of times the client will retry a request.
+   * @param {Core.Headers} opts.defaultHeaders - Default headers to include with every request to the API.
+   * @param {Core.DefaultQuery} opts.defaultQuery - Default query parameters to include with every request to the API.
+   * @param {boolean} [opts.dangerouslyAllowBrowser=false] - By default, client-side use of this library is not allowed, as it risks exposing your secret API credentials to attackers.
+   */
+  constructor({ baseURL = readEnv("OPENAI_BASE_URL"), apiKey = readEnv("OPENAI_API_KEY"), organization = ((_a2) => (_a2 = readEnv("OPENAI_ORG_ID")) != null ? _a2 : null)(), project = ((_b) => (_b = readEnv("OPENAI_PROJECT_ID")) != null ? _b : null)(), ...opts } = {}) {
+    var _a3;
+    if (apiKey === void 0) {
+      throw new OpenAIError("The OPENAI_API_KEY environment variable is missing or empty; either provide it, or instantiate the OpenAI client with an apiKey option, like new OpenAI({ apiKey: 'My API Key' }).");
+    }
+    const options = {
+      apiKey,
+      organization,
+      project,
+      ...opts,
+      baseURL: baseURL || `https://api.openai.com/v1`
+    };
+    if (!options.dangerouslyAllowBrowser && isRunningInBrowser()) {
+      throw new OpenAIError("It looks like you're running in a browser-like environment.\n\nThis is disabled by default, as it risks exposing your secret API credentials to attackers.\nIf you understand the risks and have appropriate mitigations in place,\nyou can set the `dangerouslyAllowBrowser` option to `true`, e.g.,\n\nnew OpenAI({ apiKey, dangerouslyAllowBrowser: true });\n\nhttps://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety\n");
+    }
+    super({
+      baseURL: options.baseURL,
+      timeout: (_a3 = options.timeout) != null ? _a3 : 6e5,
+      httpAgent: options.httpAgent,
+      maxRetries: options.maxRetries,
+      fetch: options.fetch
+    });
+    this.completions = new Completions3(this);
+    this.chat = new Chat(this);
+    this.embeddings = new Embeddings(this);
+    this.files = new Files2(this);
+    this.images = new Images(this);
+    this.audio = new Audio(this);
+    this.moderations = new Moderations(this);
+    this.models = new Models(this);
+    this.fineTuning = new FineTuning(this);
+    this.beta = new Beta(this);
+    this.batches = new Batches(this);
+    this.uploads = new Uploads(this);
+    this._options = options;
+    this.apiKey = apiKey;
+    this.organization = organization;
+    this.project = project;
+  }
+  defaultQuery() {
+    return this._options.defaultQuery;
+  }
+  defaultHeaders(opts) {
+    return {
+      ...super.defaultHeaders(opts),
+      "OpenAI-Organization": this.organization,
+      "OpenAI-Project": this.project,
+      ...this._options.defaultHeaders
+    };
+  }
+  authHeaders(opts) {
+    return { Authorization: `Bearer ${this.apiKey}` };
+  }
+  stringifyQuery(query) {
+    return stringify(query, { arrayFormat: "brackets" });
+  }
+};
+_a = OpenAI;
+OpenAI.OpenAI = _a;
+OpenAI.DEFAULT_TIMEOUT = 6e5;
+OpenAI.OpenAIError = OpenAIError;
+OpenAI.APIError = APIError;
+OpenAI.APIConnectionError = APIConnectionError;
+OpenAI.APIConnectionTimeoutError = APIConnectionTimeoutError;
+OpenAI.APIUserAbortError = APIUserAbortError;
+OpenAI.NotFoundError = NotFoundError;
+OpenAI.ConflictError = ConflictError;
+OpenAI.RateLimitError = RateLimitError;
+OpenAI.BadRequestError = BadRequestError;
+OpenAI.AuthenticationError = AuthenticationError;
+OpenAI.InternalServerError = InternalServerError;
+OpenAI.PermissionDeniedError = PermissionDeniedError;
+OpenAI.UnprocessableEntityError = UnprocessableEntityError;
+OpenAI.toFile = toFile;
+OpenAI.fileFromPath = fileFromPath;
+var { OpenAIError: OpenAIError2, APIError: APIError2, APIConnectionError: APIConnectionError2, APIConnectionTimeoutError: APIConnectionTimeoutError2, APIUserAbortError: APIUserAbortError2, NotFoundError: NotFoundError2, ConflictError: ConflictError2, RateLimitError: RateLimitError2, BadRequestError: BadRequestError2, AuthenticationError: AuthenticationError2, InternalServerError: InternalServerError2, PermissionDeniedError: PermissionDeniedError2, UnprocessableEntityError: UnprocessableEntityError2 } = error_exports;
+(function(OpenAI2) {
+  OpenAI2.Page = Page;
+  OpenAI2.CursorPage = CursorPage;
+  OpenAI2.Completions = Completions3;
+  OpenAI2.Chat = Chat;
+  OpenAI2.Embeddings = Embeddings;
+  OpenAI2.Files = Files2;
+  OpenAI2.FileObjectsPage = FileObjectsPage;
+  OpenAI2.Images = Images;
+  OpenAI2.Audio = Audio;
+  OpenAI2.Moderations = Moderations;
+  OpenAI2.Models = Models;
+  OpenAI2.ModelsPage = ModelsPage;
+  OpenAI2.FineTuning = FineTuning;
+  OpenAI2.Beta = Beta;
+  OpenAI2.Batches = Batches;
+  OpenAI2.BatchesPage = BatchesPage;
+  OpenAI2.Uploads = Uploads;
+})(OpenAI || (OpenAI = {}));
+var openai_default = OpenAI;
+
+// src/Commands/chat.ts
+function chatCommand(self2) {
+  self2.settings.searchForWords && self2.addCommand({
+    id: "AI Chat",
+    name: "AI Chat",
+    icon: "bot",
+    editorCallback: (editor) => chat(self2, editor)
+  });
+}
+async function chat(self2, editor) {
+  if (!self2.settings.chat)
+    return;
+  const selection = typeof editor === "string" ? editor : editor.getSelection();
+  const prompts = [];
+  if (self2.settings.chatPromptFolder) {
+    const files = self2.app.vault.getMarkdownFiles().filter((file) => self2.hasRootFolder(file, self2.settings.chatPromptFolder));
+    for (let file of files) {
+      const content = await self2.app.vault.cachedRead(file);
+      prompts.push({ name: file.basename, value: content });
+    }
+  }
+  new PanelChat(self2.app, self2.settings, selection, prompts, async (res) => {
+    const text = res.reduce((ret, res2) => ret += `# ${res2.question}
+
+${res2.answer}
+
+`, "");
+    const path = self2.settings.chatSaveFolder + "/" + Date.now() + ".md";
+    const file = await self2.app.vault.create(path, text);
+    self2.app.workspace.getLeaf(false).openFile(file);
+  }).open();
+}
+var PanelChat = class extends import_obsidian5.Modal {
+  constructor(app, settings, content, prompts, onSubmit) {
+    super(app);
+    this.conversationHistory = [];
+    this.startAConversation = false;
+    this.content = content;
+    this.onSubmit = onSubmit;
+    this.prompts = prompts;
+    this.settings = settings;
+  }
+  onOpen() {
+    let prompt;
+    const { contentEl } = this;
+    this.setTitle("AI Chat");
+    this.p = document.createElement("p");
+    this.p.style.whiteSpace = "pre-wrap";
+    contentEl.appendChild(this.p);
+    new import_obsidian5.Setting(contentEl).addTextArea((text) => {
+      text.inputEl.style.width = "100%";
+      text.setValue(this.content).onChange((value) => {
+        this.content = value;
+        this.sendBtn.setDisabled(!value);
+        text.inputEl.style.height = text.inputEl.scrollHeight + "px";
+      });
+      text.inputEl.style.height = text.inputEl.scrollHeight + "px";
+    }).addButton((btn) => {
+      this.sendBtn = btn;
+      btn.buttonEl.style.marginTop = "auto";
+      if (import_obsidian5.Platform.isMobile)
+        btn.buttonEl.style.width = "3rem";
+      btn.setIcon("send").setDisabled(!this.content).setCta().onClick(async () => {
+        await this.startChat(prompt);
+      });
+    }).infoEl.style.display = "none";
+    new import_obsidian5.Setting(contentEl).addDropdown((cd) => {
+      cd.addOption("", "\u9009\u62E9 prompt");
+      this.prompts.forEach((prompt2) => {
+        cd.addOption(prompt2.value, prompt2.name);
+      });
+      cd.setValue("");
+      cd.onChange((value) => {
+        this.startAConversation = false;
+        prompt = value;
+      });
+    }).addButton((btn) => {
+      this.saveBtn = btn;
+      if (import_obsidian5.Platform.isMobile)
+        btn.buttonEl.style.width = "3rem";
+      btn.setIcon("save").setDisabled(!this.content).onClick(() => {
+        this.onSubmit(this.conversationHistory);
+        this.onClose();
+      });
+    });
+  }
+  onClose() {
+    this.close();
+  }
+  async startChat(prompt = "") {
+    var _a2;
+    const question = this.content;
+    const c2 = { question, answer: "" };
+    this.conversationHistory.push(c2);
+    const name = ((_a2 = this.prompts.find((p) => p.value === prompt)) == null ? void 0 : _a2.name) || "AI Chat";
+    this.p.innerHTML += `${this.conversationHistory.length > 1 ? "<hr>" : ""}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+${question || prompt}
+
+<b><i>${name}\uFF1A
+</i></b>`;
+    await callOpenAI(`${this.content}
+${this.startAConversation ? "" : prompt}
+${question}
+
+`, this.settings.chatUrl, this.settings.chatKey, this.settings.chatModel, (text) => {
+      this.startAConversation = true;
+      this.p.innerHTML += text;
+      c2.answer += text;
+      this.sendBtn.setDisabled(true);
+      this.saveBtn.setDisabled(true);
+      if (!text) {
+        this.sendBtn.setDisabled(false);
+        this.saveBtn.setDisabled(false);
+      }
+    });
+  }
+};
+async function callOpenAI(content, baseURL, apiKey, model, updateText) {
+  const openai = new openai_default({
+    baseURL,
+    apiKey,
+    dangerouslyAllowBrowser: true
+  });
+  const completion = await openai.chat.completions.create({
+    messages: [{ role: "system", content }],
+    model,
+    stream: true
+  });
+  for await (const chunk of completion) {
+    const text = chunk.choices[0].delta.content;
+    updateText(text);
+  }
+}
+
 // src/Commands/clipboardFormat.ts
 async function clipboardFormatCommand(self2) {
   self2.settings.cleanClipboardContent && self2.addCommand({
@@ -998,7 +6326,7 @@ async function clipboardFormat(self2, editor) {
 }
 
 // src/Commands/createCharacterRelationship.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 function createCharacterRelationshipCommand(self2) {
   self2.settings.characterRelationships && self2.addCommand({
     id: "\u521B\u5EFA\u4EBA\u7269\u5173\u7CFB",
@@ -1019,13 +6347,13 @@ async function switchCharacterRelationship(self2, file) {
   };
 }
 async function createCharacterRelationship(self2, editor, file) {
-  var _a;
+  var _a2;
   if (!self2.hasReadingPage(file))
     return;
   const readingProgress = Number(self2.getMetadata(file, "readingProgress"));
   const title = self2.getMetadata(file, "title");
   if (readingProgress <= 0 || isNaN(readingProgress)) {
-    new import_obsidian5.Notice(`\u300A${file.basename}\u300B\u8FD8\u672A\u9605\u8BFB`);
+    new import_obsidian6.Notice(`\u300A${file.basename}\u300B\u8FD8\u672A\u9605\u8BFB`);
     return;
   }
   const targetPath = `${self2.settings.characterRelationshipsFolder}/${title}.md`;
@@ -1033,7 +6361,7 @@ async function createCharacterRelationship(self2, editor, file) {
   if (!targetFile) {
     targetFile = await self2.app.vault.create(targetPath, "");
   }
-  const headings = ((_a = self2.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.headings) || [];
+  const headings = ((_a2 = self2.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.headings) || [];
   const position = editor.getCursor();
   const hierarchy = getHeadingHierarchy(headings, position.line);
   const headingText = hierarchy.reduce((res, ret) => res += ret.heading + "/", "").slice(0, -1);
@@ -1043,12 +6371,12 @@ async function createCharacterRelationship(self2, editor, file) {
   await self2.app.workspace.getLeaf(true).openFile(targetFile);
 }
 async function characterRelationship(self2, file, title, path, id, progress2) {
-  var _a;
+  var _a2;
   let content = await self2.app.vault.read(file);
   let els = createElement("div", content).querySelectorAll(".__character-relationship__");
   if (els.length === 0) {
     if (content) {
-      new import_obsidian5.Notice("\u4EBA\u7269\u5173\u7CFB\u7B14\u8BB0\u5DF2\u901A\u8FC7\u5176\u4ED6\u65B9\u5F0F\u521B\u5EFA");
+      new import_obsidian6.Notice("\u4EBA\u7269\u5173\u7CFB\u7B14\u8BB0\u5DF2\u901A\u8FC7\u5176\u4ED6\u65B9\u5F0F\u521B\u5EFA");
       return;
     }
     content = `---
@@ -1087,7 +6415,7 @@ flowchart LR
 \`\`\`mermaid
 flowchart LR
 \`\`\``;
-    if (((_a = els[index]) == null ? void 0 : _a.progress) === progress2) {
+    if (((_a2 = els[index]) == null ? void 0 : _a2.progress) === progress2) {
       els[index].state = "open";
       mermaid = els[index].content;
     } else if (index > -1) {
@@ -1129,8 +6457,8 @@ function getHeadingHierarchy(headings, line) {
 }
 
 // src/Modals/DoubleInputBox.ts
-var import_obsidian6 = require("obsidian");
-var DoubleInputBox = class extends import_obsidian6.Modal {
+var import_obsidian7 = require("obsidian");
+var DoubleInputBox = class extends import_obsidian7.Modal {
   constructor(app, data) {
     super(app);
     this.data = data;
@@ -1142,17 +6470,17 @@ var DoubleInputBox = class extends import_obsidian6.Modal {
     const { title, titleName, textName, titleDescription = "", textDescription = "", content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
     this.setTitle(title);
     content && this.setContent(content);
-    new import_obsidian6.Setting(contentEl).setDesc(titleDescription).setName(titleName).addText(
+    new import_obsidian7.Setting(contentEl).setDesc(titleDescription).setName(titleName).addText(
       (text) => text.onChange((value) => {
         res1 = value;
       })
     );
-    new import_obsidian6.Setting(contentEl).setDesc(textDescription).setName(textName).addTextArea(
+    new import_obsidian7.Setting(contentEl).setDesc(textDescription).setName(textName).addTextArea(
       (text) => text.onChange((value) => {
         res2 = value;
       })
     );
-    new import_obsidian6.Setting(contentEl).addButton(
+    new import_obsidian7.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
         this.close();
         onSubmit(res1, res2);
@@ -2735,7 +8063,7 @@ var UPNG = function() {
     return { Cov: u, q: m, e: A, L: g, eMq255: d.dot(d.sml(255, m), A), eMq: d.dot(A, m), rgba: (Math.round(255 * m[3]) << 24 | Math.round(255 * m[2]) << 16 | Math.round(255 * m[1]) << 8 | Math.round(255 * m[0]) << 0) >>> 0 };
   }
   var o2 = { multVec: (e3, t3) => [e3[0] * t3[0] + e3[1] * t3[1] + e3[2] * t3[2] + e3[3] * t3[3], e3[4] * t3[0] + e3[5] * t3[1] + e3[6] * t3[2] + e3[7] * t3[3], e3[8] * t3[0] + e3[9] * t3[1] + e3[10] * t3[2] + e3[11] * t3[3], e3[12] * t3[0] + e3[13] * t3[1] + e3[14] * t3[2] + e3[15] * t3[3]], dot: (e3, t3) => e3[0] * t3[0] + e3[1] * t3[1] + e3[2] * t3[2] + e3[3] * t3[3], sml: (e3, t3) => [e3 * t3[0], e3 * t3[1], e3 * t3[2], e3 * t3[3]] };
-  UPNG.encode = function encode(e3, t3, r3, i3, o3, a2, s2) {
+  UPNG.encode = function encode2(e3, t3, r3, i3, o3, a2, s2) {
     null == i3 && (i3 = 0), null == s2 && (s2 = false);
     const f2 = compress2(e3, t3, r3, i3, [false, false, false, 0, s2, false]);
     return compressPNG(f2, -1), _main(f2, t3, r3, o3, a2);
@@ -3218,11 +8546,11 @@ imageCompression.getDataUrlFromFile = getDataUrlFromFile, imageCompression.getFi
 
 // src/Commands/encryption.ts
 var import_js_md5 = __toESM(require_md5());
-var import_obsidian9 = require("obsidian");
+var import_obsidian10 = require("obsidian");
 
 // src/Modals/Confirm.ts
-var import_obsidian7 = require("obsidian");
-var Confirm = class extends import_obsidian7.Modal {
+var import_obsidian8 = require("obsidian");
+var Confirm = class extends import_obsidian8.Modal {
   constructor(app, data) {
     super(app);
     this.data = data;
@@ -3232,7 +8560,7 @@ var Confirm = class extends import_obsidian7.Modal {
     const { title, content, submitText = "\u786E\u5B9A", cancelText = "\u53D6\u6D88", onSubmit } = this.data;
     title && this.setTitle(title);
     content && this.setContent(content);
-    new import_obsidian7.Setting(contentEl).addButton(
+    new import_obsidian8.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
         this.close();
         onSubmit(true);
@@ -3251,8 +8579,8 @@ var Confirm = class extends import_obsidian7.Modal {
 };
 
 // src/Modals/InputBox.ts
-var import_obsidian8 = require("obsidian");
-var InputBox = class extends import_obsidian8.Modal {
+var import_obsidian9 = require("obsidian");
+var InputBox = class extends import_obsidian9.Modal {
   constructor(app, data) {
     super(app);
     this.data = data;
@@ -3263,12 +8591,12 @@ var InputBox = class extends import_obsidian8.Modal {
     const { title, name, description = "", content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
     this.setTitle(title);
     content && this.setContent(content);
-    new import_obsidian8.Setting(contentEl).setDesc(description).setName(name).addText(
+    new import_obsidian9.Setting(contentEl).setDesc(description).setName(name).addText(
       (text) => text.onChange((value) => {
         res = value;
       })
     );
-    new import_obsidian8.Setting(contentEl).addButton(
+    new import_obsidian9.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
         this.close();
         onSubmit(res);
@@ -3411,7 +8739,7 @@ async function decryptPopUp(self2, file) {
   }).open();
 }
 async function encryptionNote(self2, file, pass, convert = true) {
-  var _a, _b;
+  var _a2, _b;
   if (!self2.settings.encryption || !pass)
     return;
   let content = await self2.app.vault.read(file);
@@ -3420,17 +8748,17 @@ async function encryptionNote(self2, file, pass, convert = true) {
   let decryptContent;
   const isN = isNoteEncrypt(content);
   if (convert) {
-    const localP = (_a = self2.settings.plugins.encryption[file.path]) == null ? void 0 : _a.pass;
+    const localP = (_a2 = self2.settings.plugins.encryption[file.path]) == null ? void 0 : _a2.pass;
     const tP = self2.encryptionTempData[file.path];
     if (self2.settings.encryptionImageCompress && (localP || tP) && pass !== (localP || tP)) {
-      return new import_obsidian9.Notice("\u8BF7\u5148\u5173\u95ED\u56FE\u7247\u538B\u7F29\uFF0C\u4F7F\u7528\u65E7\u5BC6\u7801\u6062\u590D\u539F\u56FE\uFF0C\u518D\u4FEE\u6539\u65B0\u5BC6\u7801");
+      return new import_obsidian10.Notice("\u8BF7\u5148\u5173\u95ED\u56FE\u7247\u538B\u7F29\uFF0C\u4F7F\u7528\u65E7\u5BC6\u7801\u6062\u590D\u539F\u56FE\uFF0C\u518D\u4FEE\u6539\u65B0\u5BC6\u7801");
     }
-    isN ? new import_obsidian9.Notice("\u7B14\u8BB0\u5DF2\u52A0\u5BC6") : decryptContent = await encrypt(content, pass);
+    isN ? new import_obsidian10.Notice("\u7B14\u8BB0\u5DF2\u52A0\u5BC6") : decryptContent = await encrypt(content, pass);
   } else {
     try {
-      isN ? decryptContent = await decrypt(content.slice(32 + 1), pass) : new import_obsidian9.Notice("\u7B14\u8BB0\u5DF2\u89E3\u5BC6");
+      isN ? decryptContent = await decrypt(content.slice(32 + 1), pass) : new import_obsidian10.Notice("\u7B14\u8BB0\u5DF2\u89E3\u5BC6");
     } catch (e2) {
-      new import_obsidian9.Notice("\u5BC6\u7801\u53EF\u80FD\u6709\u8BEF");
+      new import_obsidian10.Notice("\u5BC6\u7801\u53EF\u80FD\u6709\u8BEF");
     }
   }
   let links = isN ? ((_b = self2.settings.plugins.encryption[file.path]) == null ? void 0 : _b.links) || [] : Object.keys(self2.app.metadataCache.resolvedLinks[file.path]);
@@ -3503,10 +8831,10 @@ async function imageToBase64(self2, links, pass, convert = true) {
           const chunkString = new TextDecoder().decode(chunk);
           if (isResourceEncrypt(chunkString)) {
             isN = false;
-            new import_obsidian9.Notice(`${file.basename} \u5DF2\u52A0\u5BC6`);
+            new import_obsidian10.Notice(`${file.basename} \u5DF2\u52A0\u5BC6`);
             break;
           }
-          const base64Chunk = (0, import_obsidian9.arrayBufferToBase64)(chunk);
+          const base64Chunk = (0, import_obsidian10.arrayBufferToBase64)(chunk);
           const encryptedChunk = await encrypt(base64Chunk, pass);
           const chunkLength = encryptedChunk.length.toString().padStart(8, "0");
           const encryptedArrayBuffer = new TextEncoder().encode(chunkLength + encryptedChunk);
@@ -3521,11 +8849,11 @@ async function imageToBase64(self2, links, pass, convert = true) {
           const encryptedChunk = new TextDecoder().decode(arrayBuffer.slice(offset, offset + chunkLength));
           if (!isResourceEncrypt(encryptedChunk)) {
             isN = false;
-            new import_obsidian9.Notice(`${file.basename} \u5DF2\u89E3\u5BC6`);
+            new import_obsidian10.Notice(`${file.basename} \u5DF2\u89E3\u5BC6`);
             break;
           }
           const decryptedChunk = await decrypt(encryptedChunk, pass);
-          const decryptedArrayBuffer = (0, import_obsidian9.base64ToArrayBuffer)(decryptedChunk);
+          const decryptedArrayBuffer = (0, import_obsidian10.base64ToArrayBuffer)(decryptedChunk);
           data = data ? mergeArrayBuffers(data, decryptedArrayBuffer) : decryptedArrayBuffer;
           offset += chunkLength;
         }
@@ -3542,7 +8870,7 @@ async function imageToBase64(self2, links, pass, convert = true) {
       }
     }
   } catch (e2) {
-    new import_obsidian9.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u8D44\u6E90\u6587\u4EF6\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
+    new import_obsidian10.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u8D44\u6E90\u6587\u4EF6\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
   }
   progress.hide();
   return links;
@@ -3674,11 +9002,11 @@ function fileToArrayBuffer(file) {
 }
 
 // src/Commands/flip.ts
-var import_obsidian11 = require("obsidian");
+var import_obsidian12 = require("obsidian");
 
 // src/Modals/PanelExhibition.ts
-var import_obsidian10 = require("obsidian");
-var PanelExhibition = class extends import_obsidian10.Modal {
+var import_obsidian11 = require("obsidian");
+var PanelExhibition = class extends import_obsidian11.Modal {
   constructor(app, title, content, onSubmit = null) {
     super(app);
     this.title = title;
@@ -3690,7 +9018,7 @@ var PanelExhibition = class extends import_obsidian10.Modal {
     titleEl.setText(this.title);
     contentEl.setText(this.content);
     if (this.onSubmit) {
-      new import_obsidian10.Setting(contentEl).addButton(
+      new import_obsidian11.Setting(contentEl).addButton(
         (btn) => btn.setButtonText("\u67E5\u770B").setCta().onClick(() => {
           this.close();
           this.onSubmit();
@@ -3747,10 +9075,10 @@ function readingPageMask(self2, el, file) {
       timer2 = window.setTimeout(() => {
         if (self2.settings.fullScreenMode) {
           s2();
-          new import_obsidian11.Notice("\u5DF2\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F");
+          new import_obsidian12.Notice("\u5DF2\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F");
         } else {
           h();
-          new import_obsidian11.Notice("\u5DF2\u5F00\u542F\u5168\u5C4F\u6A21\u5F0F");
+          new import_obsidian12.Notice("\u5DF2\u5F00\u542F\u5168\u5C4F\u6A21\u5F0F");
         }
         self2.settings.fullScreenMode = !self2.settings.fullScreenMode;
         self2.saveSettings();
@@ -3839,8 +9167,8 @@ function gallery(self2) {
 }
 
 // src/Modals/PanelHighlight.ts
-var import_obsidian12 = require("obsidian");
-var PanelHighlight = class extends import_obsidian12.Modal {
+var import_obsidian13 = require("obsidian");
+var PanelHighlight = class extends import_obsidian13.Modal {
   constructor(app, content, onSubmit) {
     super(app);
     this.content = content;
@@ -3852,17 +9180,17 @@ var PanelHighlight = class extends import_obsidian12.Modal {
     const { contentEl } = this;
     this.setTitle("\u5212\u7EBF");
     this.setContent(this.content);
-    new import_obsidian12.Setting(contentEl).setName("\u60F3\u6CD5").addText(
+    new import_obsidian13.Setting(contentEl).setName("\u60F3\u6CD5").addText(
       (text) => text.onChange((value) => {
         res = value;
       })
     );
-    new import_obsidian12.Setting(contentEl).setName("\u6807\u6CE8\uFF08\u53EF\u9009\uFF09").addText(
+    new import_obsidian13.Setting(contentEl).setName("\u6807\u6CE8\uFF08\u53EF\u9009\uFF09").addText(
       (text) => text.onChange((value) => {
         tagging = value;
       })
     );
-    new import_obsidian12.Setting(contentEl).addButton(
+    new import_obsidian13.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("\u5212\u7EBF").setCta().onClick(() => {
         this.close();
         this.onSubmit(res, tagging);
@@ -3898,9 +9226,9 @@ function highlight(self2, editor, file) {
 }
 
 // src/Commands/init.ts
-var import_obsidian13 = require("obsidian");
+var import_obsidian14 = require("obsidian");
 function init(self2) {
-  if (!import_obsidian13.Platform.isMobile) {
+  if (!import_obsidian14.Platform.isMobile) {
     Object.assign(self2.settings, {
       flip: false,
       fullScreenMode: false,
@@ -3918,7 +9246,7 @@ function init(self2) {
 }
 
 // src/Commands/passwordCreator.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 function passwordCreatorCommand(self2) {
   self2.settings.passwordCreator && self2.addCommand({
     id: "\u5BC6\u7801\u521B\u5EFA\u5668",
@@ -3933,7 +9261,7 @@ async function passwordCreator(self2) {
   const pass = pick(self2.settings.passwordCreatorMixedContent.split(""), self2.settings.passwordCreatorLength).join("");
   await savePassword(self2, pass);
   window.navigator.clipboard.writeText(pass);
-  new import_obsidian14.Notice("\u5BC6\u7801\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
+  new import_obsidian15.Notice("\u5BC6\u7801\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
 }
 async function savePassword(self2, pass) {
   if (!self2.settings.savePass)
@@ -3946,7 +9274,7 @@ async function savePassword(self2, pass) {
     self2.app.workspace.getLeaf(true).openFile(file);
   }
   if (isNoteEncrypt(content))
-    return new import_obsidian14.Notice("\u8BF7\u5148\u89E3\u5BC6\u540E\u518D\u4FDD\u5B58\u5BC6\u7801\uFF01");
+    return new import_obsidian15.Notice("\u8BF7\u5148\u89E3\u5BC6\u540E\u518D\u4FDD\u5B58\u5BC6\u7801\uFF01");
   const tableLastLineRegex = /(\|.*\|\s*)$/g;
   if (tableLastLineRegex.test(content)) {
     new DoubleInputBox(self2.app, {
@@ -3962,15 +9290,15 @@ async function savePassword(self2, pass) {
 }
 
 // src/Commands/polysemy.ts
-var import_obsidian15 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 function polysemy(self2, file) {
-  var _a;
+  var _a2;
   if (!self2.settings.polysemy)
     return;
   const to = self2.getMetadata(file, "to");
   if (!to)
     return;
-  let filename = (_a = to.match(/\[\[(.*)\]\]/)) == null ? void 0 : _a[1];
+  let filename = (_a2 = to.match(/\[\[(.*)\]\]/)) == null ? void 0 : _a2[1];
   if (!filename)
     return;
   let targetFile = self2.getFileByShort(filename);
@@ -3981,13 +9309,13 @@ function polysemy(self2, file) {
     return;
   const view = self2.app.workspace.getLeaf(true);
   view.openFile(targetFile);
-  new import_obsidian15.Notice(`\u300A${file.basename}\u300B\u662F\u4E00\u7BC7\u591A\u4E49\u7B14\u8BB0\uFF0C\u5DF2\u8F6C\u8DF3\u81F3\u300A${filename}\u300B `);
+  new import_obsidian16.Notice(`\u300A${file.basename}\u300B\u662F\u4E00\u7BC7\u591A\u4E49\u7B14\u8BB0\uFF0C\u5DF2\u8F6C\u8DF3\u81F3\u300A${filename}\u300B `);
 }
 
 // src/Commands/poster.ts
-var import_obsidian16 = require("obsidian");
+var import_obsidian17 = require("obsidian");
 function poster(self2, element) {
-  if (!self2.settings.poster || !import_obsidian16.Platform.isMobile)
+  if (!self2.settings.poster || !import_obsidian17.Platform.isMobile)
     return;
   const processVideos = (element2) => {
     const videoElements = element2.querySelectorAll('video, .internal-embed[src$=".mp4"]');
@@ -4019,10 +9347,10 @@ function poster(self2, element) {
 
 // src/Commands/readingDataTracking.ts
 function readingDataTracking(self2, el, file) {
-  var _a;
+  var _a2;
   if (!self2.settings.readDataTracking || !self2.hasReadingPage(file))
     return;
-  let { readingProgress = 0, readingDate, completionDate } = ((_a = self2.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) || {};
+  let { readingProgress = 0, readingDate, completionDate } = ((_a2 = self2.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) || {};
   self2.app.fileManager.processFrontMatter(file, (frontmatter) => {
     if (readingDate && !completionDate) {
       frontmatter.readingProgress = computerReadingProgress(el);
@@ -4069,11 +9397,11 @@ async function repositionVideo(self2, file) {
 }
 
 // src/Commands/resourceTo.ts
-var import_obsidian18 = require("obsidian");
+var import_obsidian19 = require("obsidian");
 
 // src/Modals/FuzzySuggest.ts
-var import_obsidian17 = require("obsidian");
-var FuzzySuggest = class extends import_obsidian17.FuzzySuggestModal {
+var import_obsidian18 = require("obsidian");
+var FuzzySuggest = class extends import_obsidian18.FuzzySuggestModal {
   constructor(app, books, onChoose) {
     super(app);
     this.books = books;
@@ -4118,7 +9446,7 @@ async function resourceTo(self2, file, targetFolder) {
     self2.app.vault.adapter.rename(path, targetPath);
   });
   self2.app.vault.modify(file, content);
-  paths.length && new import_obsidian18.Notice(`\u5DF2\u79FB\u52A8 ${paths.length} \u81F3 ${targetFolder}`);
+  paths.length && new import_obsidian19.Notice(`\u5DF2\u79FB\u52A8 ${paths.length} \u81F3 ${targetFolder}`);
 }
 
 // src/Commands/reviewOfReadingNote.ts
@@ -4148,23 +9476,23 @@ function reviewOfReadingNote(self2) {
 }
 
 // src/Commands/searchForPlant.ts
-var import_obsidian20 = require("obsidian");
+var import_obsidian21 = require("obsidian");
 
 // src/Modals/PanelSearchForPlants.ts
-var import_obsidian19 = require("obsidian");
-var PanelSearchForPlants = class extends import_obsidian19.Modal {
+var import_obsidian20 = require("obsidian");
+var PanelSearchForPlants = class extends import_obsidian20.Modal {
   constructor(app, onSubmit) {
     super(app);
     this.onSubmit = onSubmit;
   }
   onOpen() {
     const { contentEl, titleEl } = this;
-    new import_obsidian19.Setting(contentEl).addText(
+    new import_obsidian20.Setting(contentEl).addText(
       (text) => text.onChange((value) => {
         this.result = value;
       })
     );
-    new import_obsidian19.Setting(contentEl).addButton(
+    new import_obsidian20.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("\u67E5\u690D\u7269").setCta().onClick(() => {
         this.close();
         this.onSubmit(this.result);
@@ -4190,18 +9518,18 @@ async function searchForPlant(self2) {
   if (!self2.settings.searchForPlants)
     return;
   new PanelSearchForPlants(self2.app, async (name) => {
-    var _a, _b, _c, _d;
+    var _a2, _b, _c, _d;
     const html = await requestUrlToHTML("https://www.iplant.cn/info/" + name);
     const id = html.querySelector(".barcodeimg img").getAttr("src").split("=").pop();
-    const latinName = (_a = html.querySelector("#sptitlel")) == null ? void 0 : _a.textContent;
+    const latinName = (_a2 = html.querySelector("#sptitlel")) == null ? void 0 : _a2.textContent;
     let alias = (_c = (_b = html.querySelector(".infomore>div")) == null ? void 0 : _b.firstChild) == null ? void 0 : _c.textContent;
     let other = (_d = html.querySelector(".infomore>.spantxt")) == null ? void 0 : _d.textContent;
     if (latinName.trim() === "" && other) {
-      new import_obsidian20.Notice(`${name}\uFF1F\u60A8\u662F\u5426\u5728\u627E ${other}`);
+      new import_obsidian21.Notice(`${name}\uFF1F\u60A8\u662F\u5426\u5728\u627E ${other}`);
       return;
     }
     if (id === "") {
-      new import_obsidian20.Notice(`${name}\uFF1F\u60A8\u53EF\u80FD\u8F93\u5165\u9519\u8BEF\u6216\u690D\u7269\u667A\u4E0D\u5B58\u5728\u76F8\u5173\u690D\u7269`);
+      new import_obsidian21.Notice(`${name}\uFF1F\u60A8\u53EF\u80FD\u8F93\u5165\u9519\u8BEF\u6216\u690D\u7269\u667A\u4E0D\u5B58\u5728\u76F8\u5173\u690D\u7269`);
       return;
     }
     if (alias.indexOf("\u4FD7\u540D") > -1) {
@@ -4209,9 +9537,9 @@ async function searchForPlant(self2) {
     } else {
       alias = " ";
     }
-    const classsys = extractChineseParts(JSON.parse(await (0, import_obsidian20.request)(`https://www.iplant.cn/ashx/getspinfos.ashx?spid=${id}&type=classsys`)).classsys.find((text) => Object.keys(plantClassificationSystem).some((name2) => text.indexOf(name2) > -1)));
-    const plantIntelligence = await (0, import_obsidian20.request)(`https://www.iplant.cn/ashx/getfrps.ashx?key=${latinName.split(" ").join("+")}`);
-    const lifestyleForm = plantIntelligence ? (0, import_obsidian20.htmlToMarkdown)(JSON.parse(plantIntelligence).frpsdesc).replace(/^[^\n]*\n[^\n]*\n[^\n]*\n/, "") : "\u300A\u690D\u7269\u667A\u300B\u672A\u6536\u5F55\u3002";
+    const classsys = extractChineseParts(JSON.parse(await (0, import_obsidian21.request)(`https://www.iplant.cn/ashx/getspinfos.ashx?spid=${id}&type=classsys`)).classsys.find((text) => Object.keys(plantClassificationSystem).some((name2) => text.indexOf(name2) > -1)));
+    const plantIntelligence = await (0, import_obsidian21.request)(`https://www.iplant.cn/ashx/getfrps.ashx?key=${latinName.split(" ").join("+")}`);
+    const lifestyleForm = plantIntelligence ? (0, import_obsidian21.htmlToMarkdown)(JSON.parse(plantIntelligence).frpsdesc).replace(/^[^\n]*\n[^\n]*\n[^\n]*\n/, "") : "\u300A\u690D\u7269\u667A\u300B\u672A\u6536\u5F55\u3002";
     const content = `---
 \u4E2D\u6587\u540D: ${name}
 \u62C9\u4E01\u5B66\u540D: ${latinName}
@@ -4223,7 +9551,7 @@ ${lifestyleForm}`;
     const filepath = "\u5361\u7247\u76D2/\u5F52\u6863/" + name + ".md";
     let file = self2.app.vault.getFileByPath(filepath) || self2.app.vault.getFileByPath("\u5361\u7247\u76D2/" + name + ".md");
     if (file) {
-      new import_obsidian20.Notice("\u67E5\u8BE2\u7684\u690D\u7269\u7B14\u8BB0\u5DF2\u5B58\u5728");
+      new import_obsidian21.Notice("\u67E5\u8BE2\u7684\u690D\u7269\u7B14\u8BB0\u5DF2\u5B58\u5728");
     } else {
       file = await self2.app.vault.create(filepath, content);
     }
@@ -4260,32 +9588,35 @@ function extractChineseParts(inputString) {
 }
 
 // src/Commands/searchForWord.ts
-var import_obsidian22 = require("obsidian");
+var import_obsidian23 = require("obsidian");
 
 // src/Modals/PanelSearchForWord.ts
-var import_obsidian21 = require("obsidian");
-var PanelSearchForWord = class extends import_obsidian21.Modal {
-  constructor(app, title, content, onSubmit, onSubmit2) {
+var import_obsidian22 = require("obsidian");
+var PanelSearchForWord = class extends import_obsidian22.Modal {
+  constructor(app, title, content, onSubmit) {
     super(app);
     this.title = title;
     this.content = content;
     this.onSubmit = onSubmit;
-    this.onSubmit2 = onSubmit2;
   }
   onOpen() {
     const { contentEl, titleEl } = this;
     titleEl.setText(this.title);
     contentEl.setText(this.content);
-    new import_obsidian21.Setting(contentEl).addButton(
+    new import_obsidian22.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("\u5199\u751F\u8BCD").setCta().onClick(() => {
         this.close();
-        this.onSubmit();
+        this.onSubmit("words");
       })
-    );
-    new import_obsidian21.Setting(contentEl).addButton(
+    ).addButton(
       (btn) => btn.setButtonText("\u5199\u5361\u7247").setCta().onClick(() => {
         this.close();
-        this.onSubmit2();
+        this.onSubmit("card");
+      })
+    ).addButton(
+      (btn) => btn.setIcon("bot").setCta().onClick(() => {
+        this.close();
+        this.onSubmit("ai");
       })
     );
   }
@@ -4306,61 +9637,61 @@ function searchForWordCommand(self2) {
   });
 }
 async function searchForWord(self2, editor) {
-  var _a;
+  var _a2;
   if (!self2.settings.searchForWords)
     return;
   let word = editor.getSelection();
-  const notice = new import_obsidian22.Notice("\u6B63\u5728\u67E5\u8BE2\u6C49\u5178\u548C\u767E\u5EA6\u767E\u79D1\uFF0C\u8BF7\u7A0D\u7B49");
-  const html = await requestUrlToHTML("https://www.zdic.net/hans/" + word);
+  const notice = new import_obsidian23.Notice("\u6B63\u5728\u67E5\u8BE2\u6C49\u5178\u548C\u767E\u5EA6\u767E\u79D1\uFF0C\u8BF7\u7A0D\u7B49");
+  const hanDianUrl = "https://www.zdic.net/hans/" + word;
+  const html = await requestUrlToHTML(hanDianUrl);
   const jnr = html.querySelector(".jnr");
-  const pinyin = ((_a = html.querySelector(".ciif .dicpy")) == null ? void 0 : _a.textContent) || Array.from(html.querySelectorAll(".z_py .z_d.song")).map((el) => el.textContent).join("|") || "";
-  const html2 = await requestUrlToHTML("https://baike.baidu.com/item/" + word);
+  const pinyin = ((_a2 = html.querySelector(".ciif .dicpy")) == null ? void 0 : _a2.textContent) || Array.from(html.querySelectorAll(".z_py .z_d.song")).map((el) => el.textContent).join("|") || "";
+  const baiduUrl = "https://baike.baidu.com/item/" + word;
+  const html2 = await requestUrlToHTML(baiduUrl);
   const JSummary = html2.querySelector(".J-summary");
   const div = document.createElement("div");
-  div.appendChild(createElement("h1", "\u6C49\u5178"));
+  const h1 = createElement("h1", "\u6C49\u5178");
+  h1.innerHTML = `<a href="${hanDianUrl}" target="_blank">\u6C49\u5178</a>`;
+  div.appendChild(h1);
   div.appendChild(jnr || createElement("p", "\u7A7A\u7A7A\u5982\u4E5F"));
-  div.appendChild(createElement("h1", "\u767E\u5EA6\u767E\u79D1"));
+  const h11 = createElement("h1", "\u6C49\u5178");
+  h11.innerHTML = `<a href="${baiduUrl}" target="_blank">\u767E\u5EA6\u767E\u79D1</a>`;
+  div.appendChild(h11);
   div.appendChild(JSummary || createElement("p", "\u7A7A\u7A7A\u5982\u4E5F"));
   notice.hide();
-  new PanelSearchForWord(
-    self2.app,
-    `${word} ${pinyin}`,
-    div || "\u7A7A\u7A7A\u5982\u4E5F",
-    async () => {
-      const meanings = removeDuplicates(Array.from(jnr.querySelectorAll(".cino, .encs")).map((el) => el.parentNode.textContent)).map((text) => filterChineseAndPunctuation(text)).map((text) => trimNonChineseChars(text)).map((text) => text.replace(";", "\uFF1B")).join("\uFF1B") || (0, import_obsidian22.htmlToMarkdown)(jnr.textContent);
-      const content = `${word}\`/${pinyin}/\`\uFF1A${meanings}\u3002`;
-      const filepath = "\u8BCD\u8BED/" + word + ".md";
-      let file = self2.app.vault.getFileByPath(filepath);
-      if (file) {
-        new import_obsidian22.Notice("\u8BCD\u8BED\u5DF2\u5B58\u5728");
-      } else {
-        file = await self2.app.vault.create(filepath, content);
-      }
-      editor.replaceSelection(`[[${word}]]`);
-      self2.app.workspace.getLeaf(true).openFile(file);
-    },
-    async () => {
+  new PanelSearchForWord(self2.app, `${word} ${pinyin}`, div || "\u7A7A\u7A7A\u5982\u4E5F", async (type) => {
+    let file, content, filepath;
+    if (type === "words") {
+      const meanings = removeDuplicates(Array.from(jnr.querySelectorAll(".cino, .encs")).map((el) => el.parentNode.textContent)).map((text) => filterChineseAndPunctuation(text)).map((text) => trimNonChineseChars(text)).map((text) => text.replace(";", "\uFF1B")).join("\uFF1B") || (0, import_obsidian23.htmlToMarkdown)(jnr.textContent);
+      content = `${word}\`/${pinyin}/\`\uFF1A${meanings}\u3002`;
+      filepath = "\u8BCD\u8BED/" + word + ".md";
+    } else if (type === "cards") {
       const html3 = JSummary == null ? void 0 : JSummary.textContent;
-      let content = html3 ? (0, import_obsidian22.htmlToMarkdown)(html3) : "";
-      content = content.replace(/\[\d+\]/g, "");
-      const filepath = "\u5361\u7247\u76D2/" + word + ".md";
-      let file = self2.app.vault.getFileByPath(filepath) || self2.app.vault.getFileByPath("\u5361\u7247\u76D2/\u5F52\u6863/" + word + ".md");
-      if (file) {
-        new import_obsidian22.Notice("\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
-      } else {
-        file = await self2.app.vault.create(filepath, content);
-      }
-      editor.replaceSelection(`[[${word}]]`);
-      self2.app.workspace.getLeaf(true).openFile(file);
+      let content2 = html3 ? (0, import_obsidian23.htmlToMarkdown)(html3) : "";
+      content2 = content2.replace(/\[\d+\]/g, "");
+      filepath = "\u5361\u7247\u76D2/" + word + ".md";
+    } else if (type === "ai" && self2.settings.chat) {
+      chat(self2, word);
     }
-  ).open();
+    file = self2.app.vault.getFileByPath(filepath);
+    if (type === "cards") {
+      file = self2.app.vault.getFileByPath("\u5361\u7247\u76D2/\u5F52\u6863/" + word + ".md");
+    }
+    if (file) {
+      new import_obsidian23.Notice(type === "words" ? "\u8BCD\u8BED\u5DF2\u5B58\u5728" : "\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
+    } else {
+      file = await self2.app.vault.create(filepath, content);
+    }
+    editor.replaceSelection(`[[${word}]]`);
+    self2.app.workspace.getLeaf(false).openFile(file);
+  }).open();
 }
-function filterChineseAndPunctuation(str) {
+function filterChineseAndPunctuation(str2) {
   const regex = /[\u4e00-\u9fa5。，、；;]/g;
-  return str.match(regex).join("");
+  return str2.match(regex).join("");
 }
-function trimNonChineseChars(str) {
-  return str.replace(/^[^\u4e00-\u9fa5]+|[^\u4e00-\u9fa5]+$/g, "");
+function trimNonChineseChars(str2) {
+  return str2.replace(/^[^\u4e00-\u9fa5]+|[^\u4e00-\u9fa5]+$/g, "");
 }
 function removeDuplicates(arr) {
   return arr.filter((item, index) => arr.indexOf(item) === index);
@@ -4407,7 +9738,7 @@ sort top DESC, file.mtime DESC
 
 // src/Commands/syncNote.ts
 var import_js_md52 = __toESM(require_md5());
-var import_obsidian23 = require("obsidian");
+var import_obsidian24 = require("obsidian");
 function asyncNoteCommand(self2) {
   self2.settings.readingNotes && self2.addCommand({
     id: "\u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0",
@@ -4469,8 +9800,8 @@ async function syncNote(self2, file) {
     }
     return res;
   }).filter((o2, i2, arr) => {
-    var _a;
-    return o2.isTitle ? !((_a = arr[i2 + 1]) == null ? void 0 : _a.isTitle) : true;
+    var _a2;
+    return o2.isTitle ? !((_a2 = arr[i2 + 1]) == null ? void 0 : _a2.isTitle) : true;
   });
   if (t2 && t2.length) {
     t2[t2.length - 1].isTitle && t2.pop();
@@ -4486,17 +9817,17 @@ async function syncNote(self2, file) {
     if (sourceContent !== content) {
       self2.app.vault.modify(readingNoteFile, content);
       self2.updateMetadata(file, outlinks, highlights, thinks, dialogue2);
-      new import_obsidian23.Notice(file.name + " - \u5DF2\u540C\u6B65");
+      new import_obsidian24.Notice(file.name + " - \u5DF2\u540C\u6B65");
     }
   } else {
     self2.app.vault.create(readingNotePath, content);
     self2.updateMetadata(file, outlinks, highlights, thinks, dialogue2);
-    new import_obsidian23.Notice(file.name + " - \u5DF2\u540C\u6B65");
+    new import_obsidian24.Notice(file.name + " - \u5DF2\u540C\u6B65");
   }
 }
 
 // src/settings.ts
-var import_obsidian24 = require("obsidian");
+var import_obsidian25 = require("obsidian");
 var DEFAULT_SETTINGS = {
   plugins: {
     encryption: {}
@@ -4547,9 +9878,15 @@ var DEFAULT_SETTINGS = {
   videoLinkFormatFolder: "",
   switchLibrary: false,
   savePass: false,
-  savePassPath: "\u6211\u7684/\u5176\u4ED6/\u8D26\u53F7\u7BA1\u7406"
+  savePassPath: "\u6211\u7684/\u5176\u4ED6/\u8D26\u53F7\u7BA1\u7406",
+  chat: false,
+  chatUrl: "https://api.deepseek.com/v1",
+  chatKey: "",
+  chatModel: "deepseek-chat",
+  chatPromptFolder: "CONFIG/PROMPTS",
+  chatSaveFolder: "\u6211\u7684/CHAT"
 };
-var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
+var ToolboxSettingTab = class extends import_obsidian25.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -4558,8 +9895,8 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
     let { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h1", { text: this.plugin.manifest.name });
-    if (import_obsidian24.Platform.isMobile) {
-      new import_obsidian24.Setting(containerEl).setName("\u{1F550} \u9605\u8BFB\u6570\u636E\u8DDF\u8E2A").setDesc("\u9605\u8BFB\u8FDB\u5EA6\u3001\u65F6\u957F\uFF0C\u672A\u8BFB\u4EE5\u53CA\u8BFB\u5B8C").addToggle(
+    if (import_obsidian25.Platform.isMobile) {
+      new import_obsidian25.Setting(containerEl).setName("\u{1F550} \u9605\u8BFB\u6570\u636E\u8DDF\u8E2A").setDesc("\u9605\u8BFB\u8FDB\u5EA6\u3001\u65F6\u957F\uFF0C\u672A\u8BFB\u4EE5\u53CA\u8BFB\u5B8C").addToggle(
         (cd) => cd.setValue(this.plugin.settings.readDataTracking).onChange(async (value) => {
           this.plugin.settings.readDataTracking = value;
           await this.plugin.saveSettings();
@@ -4567,26 +9904,26 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
       if (this.plugin.settings.readDataTracking) {
-        new import_obsidian24.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+        new import_obsidian25.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
           (cd) => cd.setValue("" + this.plugin.settings.readDataTrackingFolder).onChange(async (value) => {
             this.plugin.settings.readDataTrackingFolder = value;
             await this.plugin.saveSettings();
           })
         );
-        new import_obsidian24.Setting(containerEl).setName("\u8D85\u65F6").setDesc(`\u8D85\u8FC7\u4E00\u6BB5\u65F6\u95F4\u672A\u7FFB\u9875\u5C06\u6682\u505C\u8DDF\u8E2A\u9605\u8BFB\u65F6\u957F\uFF0C\u4EE5\u83B7\u5F97\u66F4\u51C6\u786E\u7684\u6570\u636E\u3002`).addText(
+        new import_obsidian25.Setting(containerEl).setName("\u8D85\u65F6").setDesc(`\u8D85\u8FC7\u4E00\u6BB5\u65F6\u95F4\u672A\u7FFB\u9875\u5C06\u6682\u505C\u8DDF\u8E2A\u9605\u8BFB\u65F6\u957F\uFF0C\u4EE5\u83B7\u5F97\u66F4\u51C6\u786E\u7684\u6570\u636E\u3002`).addText(
           (cd) => cd.setValue("" + this.plugin.settings.readDataTrackingTimeout).onChange(async (value) => {
             this.plugin.settings.readDataTrackingTimeout = Number(value);
             await this.plugin.saveSettings();
           })
         );
-        new import_obsidian24.Setting(containerEl).setName("\u8DDF\u8E2A\u6570\u636E\u5EF6\u8FDF\u66F4\u65B0").setDesc("\u5728\u67D0\u4E9B\u8001\u65E7\u6C34\u58A8\u5C4F\u8BBE\u5907\u6216\u8005\u5355\u6587\u4EF6\u4F53\u79EF\u8FC7\u5927\uFF0C\u6BCF\u6B21\u66F4\u65B0\u8DDF\u8E2A\u6570\u636E\u90FD\u4F1A\u5BFC\u81F4\u7FFB\u9875\u660E\u663E\u6EDE\u540E\uFF0C\u8BBE\u7F6E\u5EF6\u8FDF\u4EE5\u5927\u5E45\u63D0\u5347\u7FFB\u9875\u6D41\u7545\u6027").addText(
+        new import_obsidian25.Setting(containerEl).setName("\u8DDF\u8E2A\u6570\u636E\u5EF6\u8FDF\u66F4\u65B0").setDesc("\u5728\u67D0\u4E9B\u8001\u65E7\u6C34\u58A8\u5C4F\u8BBE\u5907\u6216\u8005\u5355\u6587\u4EF6\u4F53\u79EF\u8FC7\u5927\uFF0C\u6BCF\u6B21\u66F4\u65B0\u8DDF\u8E2A\u6570\u636E\u90FD\u4F1A\u5BFC\u81F4\u7FFB\u9875\u660E\u663E\u6EDE\u540E\uFF0C\u8BBE\u7F6E\u5EF6\u8FDF\u4EE5\u5927\u5E45\u63D0\u5347\u7FFB\u9875\u6D41\u7545\u6027").addText(
           (text) => text.setValue("" + this.plugin.settings.readDataTrackingDelayTime).onChange(async (value) => {
             this.plugin.settings.readDataTrackingDelayTime = Number(value);
             await this.plugin.saveSettings();
           })
         );
       }
-      new import_obsidian24.Setting(containerEl).setName("\u{1F447}\u{1F3FC} \u7FFB\u9875").setDesc("\u70B9\u51FB\u4E0B\u7FFB\uFF0C\u5DE6\u6ED1\u4E0B\u7FFB\uFF0C\u53F3\u6ED1\u4E0A\u7FFB\uFF0C\u957F\u63090.5s\u8FDB\u5165\u7F16\u8F91\u6A21\u5F0F\uFF0C\u6536\u8D77\u8F6F\u952E\u76D8\u8FDB\u5165\u9605\u8BFB\u6A21\u5F0F").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u{1F447}\u{1F3FC} \u7FFB\u9875").setDesc("\u70B9\u51FB\u4E0B\u7FFB\uFF0C\u5DE6\u6ED1\u4E0B\u7FFB\uFF0C\u53F3\u6ED1\u4E0A\u7FFB\uFF0C\u957F\u63090.5s\u8FDB\u5165\u7F16\u8F91\u6A21\u5F0F\uFF0C\u6536\u8D77\u8F6F\u952E\u76D8\u8FDB\u5165\u9605\u8BFB\u6A21\u5F0F").addToggle(
         (cd) => cd.setValue(this.plugin.settings.flip).onChange(async (value) => {
           this.plugin.settings.flip = value;
           await this.plugin.saveSettings();
@@ -4594,42 +9931,42 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
       if (this.plugin.settings.flip) {
-        new import_obsidian24.Setting(containerEl).setName("\u4FEE\u6B63\u503C").addText(
+        new import_obsidian25.Setting(containerEl).setName("\u4FEE\u6B63\u503C").addText(
           (cd) => cd.setValue("" + this.plugin.settings.fileCorrect).onChange(async (value) => {
             this.plugin.settings.fileCorrect = Number(value);
             await this.plugin.saveSettings();
           })
         );
       }
-      new import_obsidian24.Setting(containerEl).setName("\u{1F917} \u5168\u5C4F\u6A21\u5F0F").setDesc("\u957F\u6309 2.5s \u6253\u5F00\u6216\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u{1F917} \u5168\u5C4F\u6A21\u5F0F").setDesc("\u957F\u6309 2.5s \u6253\u5F00\u6216\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F").addToggle(
         (cd) => cd.setValue(this.plugin.settings.fullScreenMode).onChange(async (value) => {
           this.plugin.settings.fullScreenMode = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian24.Setting(containerEl).setName("\u{1F50E} \u67E5\u8BCD").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u{1F50E} \u67E5\u8BCD").addToggle(
         (cd) => cd.setValue(this.plugin.settings.searchForWords).onChange(async (value) => {
           this.plugin.settings.searchForWords = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian24.Setting(containerEl).setName("\u270F\uFE0F \u5212\u7EBF").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u270F\uFE0F \u5212\u7EBF").addToggle(
         (cd) => cd.setValue(this.plugin.settings.highlight).onChange(async (value) => {
           this.plugin.settings.highlight = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian24.Setting(containerEl).setName("\u{1F514} \u8BA8\u8BBA").setDesc("\u5728\u5F53\u524D\u884C\u4E0B\u65B9\u6DFB\u52A0\u5BF9\u672C\u7AE0\u8282\u6216\u672C\u4E66\u7684\u89C1\u89E3").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u{1F514} \u8BA8\u8BBA").setDesc("\u5728\u5F53\u524D\u884C\u4E0B\u65B9\u6DFB\u52A0\u5BF9\u672C\u7AE0\u8282\u6216\u672C\u4E66\u7684\u89C1\u89E3").addToggle(
         (cd) => cd.setValue(this.plugin.settings.dialogue).onChange(async (value) => {
           this.plugin.settings.dialogue = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian24.Setting(containerEl).setName("\u{1F575}\uFE0F\u200D\u2640\uFE0F \u4EBA\u7269\u5173\u7CFB").setDesc("\u6839\u636E\u9605\u8BFB\u8FDB\u5EA6\u521B\u5EFA\u591A\u5F20\u4EBA\u7269\u5173\u7CFB\u7684 mermaid \u56FE").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u{1F575}\uFE0F\u200D\u2640\uFE0F \u4EBA\u7269\u5173\u7CFB").setDesc("\u6839\u636E\u9605\u8BFB\u8FDB\u5EA6\u521B\u5EFA\u591A\u5F20\u4EBA\u7269\u5173\u7CFB\u7684 mermaid \u56FE").addToggle(
         (cd) => cd.setValue(this.plugin.settings.characterRelationships).onChange(async (value) => {
           this.plugin.settings.characterRelationships = value;
           await this.plugin.saveSettings();
@@ -4637,14 +9974,14 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
       if (this.plugin.settings.characterRelationships) {
-        new import_obsidian24.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+        new import_obsidian25.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
           (cd) => cd.setValue("" + this.plugin.settings.characterRelationshipsFolder).onChange(async (value) => {
             this.plugin.settings.characterRelationshipsFolder = value;
             await this.plugin.saveSettings();
           })
         );
       }
-      new import_obsidian24.Setting(containerEl).setName("\u{1F4D9} \u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u{1F4D9} \u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0").addToggle(
         (cd) => cd.setValue(this.plugin.settings.readingNotes).onChange(async (value) => {
           this.plugin.settings.readingNotes = value;
           await this.plugin.saveSettings();
@@ -4652,32 +9989,32 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
       if (this.plugin.settings.readingNotes) {
-        new import_obsidian24.Setting(containerEl).setName("\u540C\u6B65\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+        new import_obsidian25.Setting(containerEl).setName("\u540C\u6B65\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
           (cd) => cd.setValue("" + this.plugin.settings.readingNotesToFolder).onChange(async (value) => {
             this.plugin.settings.readingNotesToFolder = value;
             await this.plugin.saveSettings();
           })
         );
-        new import_obsidian24.Setting(containerEl).setName("\u540C\u6B65\u51FA\u94FE").addToggle(
+        new import_obsidian25.Setting(containerEl).setName("\u540C\u6B65\u51FA\u94FE").addToggle(
           (cd) => cd.setValue(this.plugin.settings.outLink).onChange(async (value) => {
             this.plugin.settings.outLink = value;
             await this.plugin.saveSettings();
           })
         );
-        new import_obsidian24.Setting(containerEl).setName("\u540C\u6B65\u5143\u5B57\u6BB5").setDesc("\u6DFB\u52A0\u5212\u7EBF\uFF0C\u60F3\u6CD5\u548C\u51FA\u94FE\u6570\u91CF\u5143\u5B57\u6BB5").addToggle(
+        new import_obsidian25.Setting(containerEl).setName("\u540C\u6B65\u5143\u5B57\u6BB5").setDesc("\u6DFB\u52A0\u5212\u7EBF\uFF0C\u60F3\u6CD5\u548C\u51FA\u94FE\u6570\u91CF\u5143\u5B57\u6BB5").addToggle(
           (cd) => cd.setValue(this.plugin.settings.frontmatter).onChange(async (value) => {
             this.plugin.settings.frontmatter = value;
             await this.plugin.saveSettings();
           })
         );
-        new import_obsidian24.Setting(containerEl).setName("\u6DFB\u52A0\u5757id").addToggle(
+        new import_obsidian25.Setting(containerEl).setName("\u6DFB\u52A0\u5757id").addToggle(
           (cd) => cd.setValue(this.plugin.settings.blockId).onChange(async (value) => {
             this.plugin.settings.blockId = value;
             await this.plugin.saveSettings();
           })
         );
       }
-      new import_obsidian24.Setting(containerEl).setName("\u{1F388} \u9605\u8BFB\u9875\u9762").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u{1F388} \u9605\u8BFB\u9875\u9762").addToggle(
         (cd) => cd.setValue(this.plugin.settings.readingPageStyles).onChange(async (value) => {
           this.plugin.settings.readingPageStyles = value;
           await this.plugin.saveSettings();
@@ -4685,7 +10022,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
       if (this.plugin.settings.readingPageStyles) {
-        new import_obsidian24.Setting(containerEl).setName("\u5B57\u4F53\u5927\u5C0F").addText(
+        new import_obsidian25.Setting(containerEl).setName("\u5B57\u4F53\u5927\u5C0F").addText(
           (cd) => cd.setValue("" + this.plugin.settings.fontSize).onChange(async (value) => {
             this.plugin.settings.fontSize = Number(value);
             await this.plugin.saveSettings();
@@ -4693,14 +10030,53 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         );
       }
     }
-    new import_obsidian24.Setting(containerEl).setName("\u{1F4D6} \u8BFB\u4E66\u7B14\u8BB0\u56DE\u987E").addToggle(
+    new import_obsidian25.Setting(containerEl).setName("\u{1F4D6} \u8BFB\u4E66\u7B14\u8BB0\u56DE\u987E").addToggle(
       (cd) => cd.setValue(this.plugin.settings.reviewOfReadingNotes).onChange(async (value) => {
         this.plugin.settings.reviewOfReadingNotes = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian24.Setting(containerEl).setName("\u{1F512} \u7B14\u8BB0\u52A0\u5BC6").setDesc("\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002").addToggle(
+    new import_obsidian25.Setting(containerEl).setName("\u{1F916} AI Chat").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.chat).onChange(async (value) => {
+        this.plugin.settings.chat = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+    if (this.plugin.settings.chat) {
+      new import_obsidian25.Setting(containerEl).setName("Url").addText(
+        (cd) => cd.setValue("" + this.plugin.settings.chatUrl).onChange(async (value) => {
+          this.plugin.settings.chatUrl = value;
+          await this.plugin.saveSettings();
+        })
+      );
+      new import_obsidian25.Setting(containerEl).setName("Key").addText(
+        (cd) => cd.setValue("" + this.plugin.settings.chatKey).onChange(async (value) => {
+          this.plugin.settings.chatKey = value;
+          await this.plugin.saveSettings();
+        })
+      );
+      new import_obsidian25.Setting(containerEl).setName("Model").addText(
+        (cd) => cd.setValue("" + this.plugin.settings.chatModel).onChange(async (value) => {
+          this.plugin.settings.chatModel = value;
+          await this.plugin.saveSettings();
+        })
+      );
+      new import_obsidian25.Setting(containerEl).setName("Promats Folder").addText(
+        (cd) => cd.setValue("" + this.plugin.settings.chatPromptFolder).onChange(async (value) => {
+          this.plugin.settings.chatPromptFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+      new import_obsidian25.Setting(containerEl).setName("\u5C06\u5BF9\u8BDD\u4FDD\u5B58\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+        (cd) => cd.setValue("" + this.plugin.settings.chatSaveFolder).onChange(async (value) => {
+          this.plugin.settings.chatSaveFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+    }
+    new import_obsidian25.Setting(containerEl).setName("\u{1F512} \u7B14\u8BB0\u52A0\u5BC6").setDesc("\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002").addToggle(
       (cd) => cd.setValue(this.plugin.settings.encryption).onChange(async (value) => {
         this.plugin.settings.encryption = value;
         await this.plugin.saveSettings();
@@ -4708,14 +10084,14 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
       })
     );
     if (this.plugin.settings.encryption) {
-      new import_obsidian24.Setting(containerEl).setName("\u8BB0\u4F4F\u5BC6\u7801").addDropdown(
+      new import_obsidian25.Setting(containerEl).setName("\u8BB0\u4F4F\u5BC6\u7801").addDropdown(
         (cd) => cd.addOption("notSave", "\u4E0D\u4FDD\u5B58").addOption("disposable", "\u8F6F\u4EF6\u8FD0\u884C\u65F6").addOption("always", "\u6C38\u4E45").setValue(this.plugin.settings.encryptionRememberPassMode).onChange(async (value) => {
           this.plugin.settings.encryptionRememberPassMode = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian24.Setting(containerEl).setName("\u652F\u6301\u56FE\u7247").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u652F\u6301\u56FE\u7247").addToggle(
         (cd) => cd.setValue(this.plugin.settings.encryptionSupportImage).onChange(async (value) => {
           this.plugin.settings.encryptionSupportImage = value;
           await this.plugin.saveSettings();
@@ -4723,7 +10099,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
       if (this.plugin.settings.encryptionSupportImage) {
-        new import_obsidian24.Setting(containerEl).setName("\u538B\u7F29\u56FE\u7247").setDesc("\u6709\u635F\u538B\u7F29\uFF0C\u5927\u5E45\u63D0\u5347\u52A0\u89E3\u5BC6\u901F\u5EA6\u3002\u5F00\u542F\u6B64\u9009\u9879\uFF0C\u539F\u56FE\u5C06\u5907\u4EFD\uFF0C\u7B14\u8BB0\u5185\u7684\u56FE\u7247\u6362\u4E3A\u538B\u7F29\u56FE\uFF0C\u9996\u6B21\u52A0\u5BC6\u4F1A\u8017\u65F6\u66F4\u957F\u3002\u5173\u95ED\u6B64\u9009\u9879\uFF0C\u518D\u8FDB\u884C\u4E00\u6B21\u52A0\u5BC6\u6216\u89E3\u5BC6\u540E\u8FD8\u539F\u539F\u56FE\u3002").addToggle(
+        new import_obsidian25.Setting(containerEl).setName("\u538B\u7F29\u56FE\u7247").setDesc("\u6709\u635F\u538B\u7F29\uFF0C\u5927\u5E45\u63D0\u5347\u52A0\u89E3\u5BC6\u901F\u5EA6\u3002\u5F00\u542F\u6B64\u9009\u9879\uFF0C\u539F\u56FE\u5C06\u5907\u4EFD\uFF0C\u7B14\u8BB0\u5185\u7684\u56FE\u7247\u6362\u4E3A\u538B\u7F29\u56FE\uFF0C\u9996\u6B21\u52A0\u5BC6\u4F1A\u8017\u65F6\u66F4\u957F\u3002\u5173\u95ED\u6B64\u9009\u9879\uFF0C\u518D\u8FDB\u884C\u4E00\u6B21\u52A0\u5BC6\u6216\u89E3\u5BC6\u540E\u8FD8\u539F\u539F\u56FE\u3002").addToggle(
           (cd) => cd.setValue(this.plugin.settings.encryptionImageCompress).onChange(async (value) => {
             this.plugin.settings.encryptionImageCompress = value;
             await this.plugin.saveSettings();
@@ -4731,19 +10107,19 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
           })
         );
         if (this.plugin.settings.encryptionImageCompress) {
-          new import_obsidian24.Setting(containerEl).setName("\u538B\u7F29\u540E\u7684\u56FE\u7247\u5927\u5C0F\u5C3D\u91CF\u4E0D\u8D85\u8FC7\uFF08mb\uFF09").addText(
+          new import_obsidian25.Setting(containerEl).setName("\u538B\u7F29\u540E\u7684\u56FE\u7247\u5927\u5C0F\u5C3D\u91CF\u4E0D\u8D85\u8FC7\uFF08mb\uFF09").addText(
             (cd) => cd.setValue("" + this.plugin.settings.encryptionImageCompressMaxSize).onChange(async (value) => {
               this.plugin.settings.encryptionImageCompressMaxSize = Number(value);
               await this.plugin.saveSettings();
             })
           );
-          new import_obsidian24.Setting(containerEl).setName("\u957F\u56FE\u6BD4\u7387").setDesc("\u5BF9\u957F\u56FE\u8FDB\u884C\u6D45\u538B\u7F29\uFF0C\u4EE5\u907F\u514D\u8FC7\u4E8E\u6A21\u7CCA").addText(
+          new import_obsidian25.Setting(containerEl).setName("\u957F\u56FE\u6BD4\u7387").setDesc("\u5BF9\u957F\u56FE\u8FDB\u884C\u6D45\u538B\u7F29\uFF0C\u4EE5\u907F\u514D\u8FC7\u4E8E\u6A21\u7CCA").addText(
             (cd) => cd.setValue("" + this.plugin.settings.encryptionImageCompressLongScreenshotRatio).onChange(async (value) => {
               this.plugin.settings.encryptionImageCompressLongScreenshotRatio = Number(value);
               await this.plugin.saveSettings();
             })
           );
-          new import_obsidian24.Setting(containerEl).setName("\u4FDD\u7559exif").setDesc("\u56FE\u50CF\u7684\u5143\u6570\u636E\u3002\u5982\u7126\u8DDD\uFF0C\u5730\u7406\u4F4D\u7F6E\u4FE1\u606F\u7B49").addToggle(
+          new import_obsidian25.Setting(containerEl).setName("\u4FDD\u7559exif").setDesc("\u56FE\u50CF\u7684\u5143\u6570\u636E\u3002\u5982\u7126\u8DDD\uFF0C\u5730\u7406\u4F4D\u7F6E\u4FE1\u606F\u7B49").addToggle(
             (cd) => cd.setValue(this.plugin.settings.encryptionImageCompressPreserveExif).onChange(async (value) => {
               this.plugin.settings.encryptionImageCompressPreserveExif = value;
               await this.plugin.saveSettings();
@@ -4752,21 +10128,21 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
           );
         }
       }
-      new import_obsidian24.Setting(containerEl).setName("\u652F\u6301\u89C6\u9891").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u652F\u6301\u89C6\u9891").addToggle(
         (cd) => cd.setValue(this.plugin.settings.encryptionSupportVideo).onChange(async (value) => {
           this.plugin.settings.encryptionSupportVideo = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian24.Setting(containerEl).setName("\u5206\u5757\u91CF\uFF08mb\uFF09").setDesc("\u684C\u9762\u7AEF\uFF08100-300\uFF09\uFF0C\u79FB\u52A8\u7AEF\uFF081-5\uFF09\uFF0C\u5982\u679C\u5904\u7406\u5668\u6027\u80FD\u4F18\u8D8A\uFF0C\u503C\u53EF\u4EE5\u66F4\u5927\uFF0C\u7528\u65F6\u66F4\u77ED").addText(
+      new import_obsidian25.Setting(containerEl).setName("\u5206\u5757\u91CF\uFF08mb\uFF09").setDesc("\u684C\u9762\u7AEF\uFF08100-300\uFF09\uFF0C\u79FB\u52A8\u7AEF\uFF081-5\uFF09\uFF0C\u5982\u679C\u5904\u7406\u5668\u6027\u80FD\u4F18\u8D8A\uFF0C\u503C\u53EF\u4EE5\u66F4\u5927\uFF0C\u7528\u65F6\u66F4\u77ED").addText(
         (cd) => cd.setValue("" + this.plugin.settings.encryptionChunkSize / 1024 / 1024).onChange(async (value) => {
           this.plugin.settings.encryptionChunkSize = Number(value) * 1024 * 1024;
           await this.plugin.saveSettings();
         })
       );
     }
-    new import_obsidian24.Setting(containerEl).setName("\u{1F511} \u5BC6\u7801\u521B\u5EFA\u5668").addToggle(
+    new import_obsidian25.Setting(containerEl).setName("\u{1F511} \u5BC6\u7801\u521B\u5EFA\u5668").addToggle(
       (cd) => cd.setValue(this.plugin.settings.passwordCreator).onChange(async (value) => {
         this.plugin.settings.passwordCreator = value;
         await this.plugin.saveSettings();
@@ -4774,49 +10150,49 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
       })
     );
     if (this.plugin.settings.passwordCreator) {
-      new import_obsidian24.Setting(containerEl).setName("\u4ECE\u6307\u5B9A\u5B57\u7B26\u96C6\u4E2D\u968F\u673A\u751F\u6210\u5BC6\u7801").addText(
+      new import_obsidian25.Setting(containerEl).setName("\u4ECE\u6307\u5B9A\u5B57\u7B26\u96C6\u4E2D\u968F\u673A\u751F\u6210\u5BC6\u7801").addText(
         (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorMixedContent).onChange(async (value) => {
           this.plugin.settings.passwordCreatorMixedContent = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian24.Setting(containerEl).setName("\u751F\u6210\u5BC6\u7801\u7684\u957F\u5EA6").addText(
+      new import_obsidian25.Setting(containerEl).setName("\u751F\u6210\u5BC6\u7801\u7684\u957F\u5EA6").addText(
         (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorLength).onChange(async (value) => {
           this.plugin.settings.passwordCreatorLength = Number(value);
           await this.plugin.saveSettings();
         })
       );
     }
-    new import_obsidian24.Setting(containerEl).setName("\u{1F517} \u591A\u4E49\u7B14\u8BB0\u8F6C\u8DF3").setDesc('to: "[[filename or path]]"').addToggle(
+    new import_obsidian25.Setting(containerEl).setName("\u{1F517} \u591A\u4E49\u7B14\u8BB0\u8F6C\u8DF3").setDesc('to: "[[filename or path]]"').addToggle(
       (cd) => cd.setValue(this.plugin.settings.polysemy).onChange(async (value) => {
         this.plugin.settings.polysemy = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian24.Setting(containerEl).setName("\u{1F3F7}\uFE0F \u811A\u6CE8\u91CD\u7F16\u53F7").addToggle(
+    new import_obsidian25.Setting(containerEl).setName("\u{1F3F7}\uFE0F \u811A\u6CE8\u91CD\u7F16\u53F7").addToggle(
       (cd) => cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async (value) => {
         this.plugin.settings.footnoteRenumbering = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian24.Setting(containerEl).setName("\u{1F4CC} \u5757\u5F15\u7528").setDesc("\u83B7\u53D6\u5149\u6807\u6240\u5728\u884C\uFF08\u5757\uFF09\u7684\u53CC\u94FE\uFF0C\u65B9\u4FBF\u590D\u5236\u5230\u5730\u65B9\u4F7F\u7528").addToggle(
+    new import_obsidian25.Setting(containerEl).setName("\u{1F4CC} \u5757\u5F15\u7528").setDesc("\u83B7\u53D6\u5149\u6807\u6240\u5728\u884C\uFF08\u5757\uFF09\u7684\u53CC\u94FE\uFF0C\u65B9\u4FBF\u590D\u5236\u5230\u5730\u65B9\u4F7F\u7528").addToggle(
       (cd) => cd.setValue(this.plugin.settings.blockReference).onChange(async (value) => {
         this.plugin.settings.blockReference = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian24.Setting(containerEl).setName("\u{1F4F8} \u753B\u5ECA").addToggle(
+    new import_obsidian25.Setting(containerEl).setName("\u{1F4F8} \u753B\u5ECA").addToggle(
       (cd) => cd.setValue(this.plugin.settings.gallery).onChange(async (value) => {
         this.plugin.settings.gallery = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    if (import_obsidian24.Platform.isMobile) {
-      new import_obsidian24.Setting(containerEl).setName("\u{1F3DE}\uFE0F \u6D77\u62A5").setDesc("\u5C06\u89C6\u9891\u7B2C\u4E00\u5E27\u4F5C\u4E3A\u6D77\u62A5").addToggle(
+    if (import_obsidian25.Platform.isMobile) {
+      new import_obsidian25.Setting(containerEl).setName("\u{1F3DE}\uFE0F \u6D77\u62A5").setDesc("\u5C06\u89C6\u9891\u7B2C\u4E00\u5E27\u4F5C\u4E3A\u6D77\u62A5").addToggle(
         (cd) => cd.setValue(this.plugin.settings.poster).onChange(async (value) => {
           this.plugin.settings.poster = value;
           await this.plugin.saveSettings();
@@ -4824,7 +10200,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
     }
-    new import_obsidian24.Setting(containerEl).setName("\u{1F3C5} \u6742\u9879").setDesc("\u5B9A\u5236\u5316\u529F\u80FD").addDropdown(
+    new import_obsidian25.Setting(containerEl).setName("\u{1F3C5} \u6742\u9879").setDesc("\u5B9A\u5236\u5316\u529F\u80FD").addDropdown(
       (cd) => cd.addOption("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316", "\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addOption("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939", "\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").addOption("\u67E5\u690D\u7269", "\u67E5\u690D\u7269").addOption("\u4E66\u5E93", "\u4E66\u5E93").addOption("\u4FDD\u5B58\u5BC6\u7801", "\u4FDD\u5B58\u5BC6\u7801").setValue(this.plugin.settings.miscellaneous).onChange(async (value) => {
         this.plugin.settings.miscellaneous = value;
         await this.plugin.saveSettings();
@@ -4832,7 +10208,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
       })
     );
     if (this.plugin.settings.miscellaneous === "\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316") {
-      new import_obsidian24.Setting(containerEl).setName("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").setDesc("\u5220\u9664\u6362\u884C\uFF0C\u7A7A\u683C\u548C\u5176\u4ED6\u7A7A\u767D\u5B57\u7B26\uFF0C\u82F1\u6587\u5355\u8BCD\u4EE5\u53CA\u82F1\u6587\u548C\u4E2D\u6587\u4E4B\u95F4\u4FDD\u7559\u4E00\u4E2A\u7A7A\u683C").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").setDesc("\u5220\u9664\u6362\u884C\uFF0C\u7A7A\u683C\u548C\u5176\u4ED6\u7A7A\u767D\u5B57\u7B26\uFF0C\u82F1\u6587\u5355\u8BCD\u4EE5\u53CA\u82F1\u6587\u548C\u4E2D\u6587\u4E4B\u95F4\u4FDD\u7559\u4E00\u4E2A\u7A7A\u683C").addToggle(
         (cd) => cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async (value) => {
           this.plugin.settings.cleanClipboardContent = value;
           await this.plugin.saveSettings();
@@ -4841,7 +10217,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
       );
     }
     if (this.plugin.settings.miscellaneous === "\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939") {
-      new import_obsidian24.Setting(containerEl).setName("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").setDesc('resourceTo: "[[folder]]"').addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").setDesc('resourceTo: "[[folder]]"').addToggle(
         (cd) => cd.setValue(this.plugin.settings.resourceTo).onChange(async (value) => {
           this.plugin.settings.resourceTo = value;
           await this.plugin.saveSettings();
@@ -4850,7 +10226,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
       );
     }
     if (this.plugin.settings.miscellaneous === "\u67E5\u690D\u7269") {
-      new import_obsidian24.Setting(containerEl).setName("\u67E5\u690D\u7269").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u67E5\u690D\u7269").addToggle(
         (cd) => cd.setValue(this.plugin.settings.searchForPlants).onChange(async (value) => {
           this.plugin.settings.searchForPlants = value;
           await this.plugin.saveSettings();
@@ -4858,7 +10234,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
       if (this.plugin.settings.searchForPlants) {
-        new import_obsidian24.Setting(containerEl).setName("\u653E\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+        new import_obsidian25.Setting(containerEl).setName("\u653E\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
           (cd) => cd.setValue("" + this.plugin.settings.searchForPlantsFolder).onChange(async (value) => {
             this.plugin.settings.searchForPlantsFolder = value;
             await this.plugin.saveSettings();
@@ -4867,7 +10243,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
       }
     }
     if (this.plugin.settings.miscellaneous === "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248") {
-      new import_obsidian24.Setting(containerEl).setName("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addToggle(
         (cd) => cd.setValue(this.plugin.settings.videoLinkFormat).onChange(async (value) => {
           this.plugin.settings.videoLinkFormat = value;
           await this.plugin.saveSettings();
@@ -4875,7 +10251,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
         })
       );
       if (this.plugin.settings.videoLinkFormat) {
-        new import_obsidian24.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u7BC7\u7B14\u8BB0").addText(
+        new import_obsidian25.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u7BC7\u7B14\u8BB0").addText(
           (cd) => cd.setValue("" + this.plugin.settings.videoLinkFormatFolder).onChange(async (value) => {
             this.plugin.settings.videoLinkFormatFolder = value;
             await this.plugin.saveSettings();
@@ -4884,7 +10260,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
       }
     }
     if (this.plugin.settings.miscellaneous === "\u4E66\u5E93") {
-      new import_obsidian24.Setting(containerEl).setName("\u4E66\u5E93").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u4E66\u5E93").addToggle(
         (cd) => cd.setValue(this.plugin.settings.switchLibrary).onChange(async (value) => {
           this.plugin.settings.switchLibrary = value;
           await this.plugin.saveSettings();
@@ -4893,15 +10269,15 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
       );
     }
     if (this.plugin.settings.miscellaneous === "\u4FDD\u5B58\u5BC6\u7801") {
-      new import_obsidian24.Setting(containerEl).setName("\u4FDD\u5B58\u5BC6\u7801").addToggle(
+      new import_obsidian25.Setting(containerEl).setName("\u4FDD\u5B58\u5BC6\u7801").addToggle(
         (cd) => cd.setValue(this.plugin.settings.savePass).onChange(async (value) => {
           this.plugin.settings.savePass = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      if (this.plugin.settings.searchForPlants) {
-        new import_obsidian24.Setting(containerEl).setName("\u4FDD\u5B58\u81F3\u54EA\u7BC7\u7B14\u8BB0").addText(
+      if (this.plugin.settings.savePass) {
+        new import_obsidian25.Setting(containerEl).setName("\u4FDD\u5B58\u81F3\u54EA\u7BC7\u7B14\u8BB0").addText(
           (cd) => cd.setValue("" + this.plugin.settings.savePassPath).onChange(async (value) => {
             this.plugin.settings.savePassPath = value;
             await this.plugin.saveSettings();
@@ -4913,7 +10289,7 @@ var ToolboxSettingTab = class extends import_obsidian24.PluginSettingTab {
 };
 
 // src/main.ts
-var Toolbox = class extends import_obsidian25.Plugin {
+var Toolbox = class extends import_obsidian26.Plugin {
   async onload() {
     this.encryptionTempData = {};
     await this.loadSettings();
@@ -4938,6 +10314,7 @@ var Toolbox = class extends import_obsidian25.Plugin {
     resourcesToCommand(this);
     searchForPlantCommand(this);
     switchLibrary(this);
+    chatCommand(this);
     this.registerEvent(
       this.app.workspace.on("file-open", async (file) => {
         this.startTime = Date.now();
@@ -4954,9 +10331,9 @@ var Toolbox = class extends import_obsidian25.Plugin {
     );
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
-        var _a;
+        var _a2;
         const sourceView = $(SOURCE_VIEW_CLASS);
-        const file = (_a = this.getView()) == null ? void 0 : _a.file;
+        const file = (_a2 = this.getView()) == null ? void 0 : _a2.file;
         if (!file)
           return;
         adjustReadingPageStyle(this, sourceView, file);
@@ -4990,18 +10367,18 @@ var Toolbox = class extends import_obsidian25.Plugin {
     this.updateFrontmatter(file, "dialogue", dialogue2);
   }
   getView() {
-    return this.app.workspace.getActiveViewOfType(import_obsidian25.MarkdownView);
+    return this.app.workspace.getActiveViewOfType(import_obsidian26.MarkdownView);
   }
   getEditor() {
-    var _a;
-    return (_a = this.getView()) == null ? void 0 : _a.editor;
+    var _a2;
+    return (_a2 = this.getView()) == null ? void 0 : _a2.editor;
   }
   getFileByShort(filename) {
     return this.app.vault.getMarkdownFiles().find(({ basename, path, extension }) => basename === filename || path.replace("." + extension, "") === filename);
   }
   getMetadata(file, key) {
-    var _a, _b;
-    return file && ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b[key]);
+    var _a2, _b;
+    return file && ((_b = (_a2 = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) == null ? void 0 : _b[key]);
   }
   hasReadingPage(file, mode = true) {
     return file && file.extension === "md" && this.hasTag(file, "book") && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === "source" : true);
@@ -5010,8 +10387,8 @@ var Toolbox = class extends import_obsidian25.Plugin {
     return new RegExp(`^${folderName}`).test(file.path);
   }
   hasTag(file, name) {
-    var _a, _b;
-    let tags = ((_b = (_a = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a.frontmatter) == null ? void 0 : _b.tags) || [];
+    var _a2, _b;
+    let tags = ((_b = (_a2 = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) == null ? void 0 : _b.tags) || [];
     Array.isArray(tags) || (tags = [tags]);
     return tags.includes(name);
   }

@@ -28,7 +28,8 @@
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
-    "js-md5": "^0.8.3"
+    "js-md5": "^0.8.3",
+    "openai": "^4.63.0"
   },
   "config": {
     "commitizen": {

@@ -4,6 +4,7 @@ import test from 'test/Test';
 import adjustReadingPageStyle from './Commands/adjustReadingPageStyle';
 import Block from './Commands/Block';
 import blockReferenceCommand from './Commands/blockReference';
+import chatCommand from './Commands/chat';
 import clipboardFormatCommand from './Commands/clipboardFormat';
 import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
 import dialogueCommand from './Commands/dialogue';
@@ -75,6 +76,8 @@ export default class Toolbox extends Plugin {
     searchForPlantCommand(this);
     // 切换书库
     switchLibrary(this);
+    // ai 聊天
+    chatCommand(this);
 
     this.registerEvent(
       this.app.workspace.on('file-open', async file => {
