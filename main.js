@@ -798,6 +798,20 @@ var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var imageSuffix = ["png", "jpg", "jpeg", "gif", "bmp", "svg"];
+function formatFileSize(sizeInBytes) {
+  if (sizeInBytes < 1024) {
+    return `${sizeInBytes} Byte`;
+  } else if (sizeInBytes < 1024 * 1024) {
+    const sizeInKb = (sizeInBytes / 1024).toFixed(2);
+    return `${sizeInKb} KB`;
+  } else if (sizeInBytes < 1024 * 1024 * 1024) {
+    const sizeInMb = (sizeInBytes / (1024 * 1024)).toFixed(2);
+    return `${sizeInMb} MB`;
+  } else {
+    const sizeInGb = (sizeInBytes / (1024 * 1024 * 1024)).toFixed(2);
+    return `${sizeInGb} GB`;
+  }
+}
 function countOccurrences(arr) {
   const occurrences = arr.reduce((acc, curr) => {
     acc[curr] = (acc[curr] || 0) + 1;
@@ -981,7 +995,7 @@ function blockReference(self2, editor, file) {
 }
 
 // src/Commands/chat.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 
 // node_modules/.store/openai@4.63.0/node_modules/openai/error.mjs
 var error_exports = {};
@@ -6174,6 +6188,25 @@ var { OpenAIError: OpenAIError2, APIError: APIError2, APIConnectionError: APICon
 })(OpenAI || (OpenAI = {}));
 var openai_default = OpenAI;
 
+// src/Modals/FuzzySuggest.ts
+var import_obsidian5 = require("obsidian");
+var FuzzySuggest = class extends import_obsidian5.FuzzySuggestModal {
+  constructor(app, books, onChoose) {
+    super(app);
+    this.books = books;
+    this.onChoose = onChoose;
+  }
+  getItems() {
+    return this.books;
+  }
+  getItemText(book) {
+    return book.value;
+  }
+  onChooseItem(book, evt) {
+    this.onChoose(book, evt);
+  }
+};
+
 // src/Commands/chat.ts
 function chatCommand(self2) {
   self2.settings.searchForWords && self2.addCommand({
@@ -6206,27 +6239,46 @@ ${res2.answer}
     self2.app.workspace.getLeaf(false).openFile(file);
   }).open();
 }
-var PanelChat = class extends import_obsidian5.Modal {
+var PanelChat = class extends import_obsidian6.Modal {
   constructor(app, settings, content, prompts, onSubmit) {
     super(app);
     this.conversationHistory = [];
     this.startAConversation = false;
-    this.content = content;
+    this.prompt = "";
+    this.content = "";
+    this.fileName = "";
+    this.name = "AI Chat";
+    this.question = content;
     this.onSubmit = onSubmit;
     this.prompts = prompts;
     this.settings = settings;
+    this.app = app;
+    this.books = app.vault.getMarkdownFiles().map((file) => ({
+      text: file,
+      value: file.path + " - " + formatFileSize(file.stat.size)
+    })).sort((a2, b) => b.text.stat.ctime - a2.text.stat.ctime);
+    const currentFile = app.workspace.getActiveFile();
+    if (currentFile) {
+      this.books.unshift({
+        text: currentFile,
+        value: currentFile.path + " - " + formatFileSize(currentFile.stat.size)
+      });
+    }
+    this.books.unshift({
+      text: null,
+      value: "\u{1F517}"
+    });
   }
   onOpen() {
-    let prompt;
     const { contentEl } = this;
     this.setTitle("AI Chat");
     this.p = document.createElement("p");
     this.p.style.whiteSpace = "pre-wrap";
     contentEl.appendChild(this.p);
-    new import_obsidian5.Setting(contentEl).addTextArea((text) => {
+    new import_obsidian6.Setting(contentEl).addTextArea((text) => {
       text.inputEl.style.width = "100%";
-      text.setValue(this.content).onChange((value) => {
-        this.content = value;
+      text.setValue(this.question).onChange((value) => {
+        this.question = value;
         this.sendBtn.setDisabled(!value);
         text.inputEl.style.height = text.inputEl.scrollHeight + "px";
       });
@@ -6234,52 +6286,73 @@ var PanelChat = class extends import_obsidian5.Modal {
     }).addButton((btn) => {
       this.sendBtn = btn;
       btn.buttonEl.style.marginTop = "auto";
-      if (import_obsidian5.Platform.isMobile)
+      if (import_obsidian6.Platform.isMobile)
         btn.buttonEl.style.width = "3rem";
-      btn.setIcon("send").setDisabled(!this.content).setCta().onClick(async () => {
-        await this.startChat(prompt);
+      btn.setIcon("send").setDisabled(!this.question).setCta().onClick(async () => {
+        await this.startChat();
       });
     }).infoEl.style.display = "none";
-    new import_obsidian5.Setting(contentEl).addDropdown((cd) => {
+    new import_obsidian6.Setting(contentEl).addDropdown((cd) => {
       cd.addOption("", "\u9009\u62E9 prompt");
-      this.prompts.forEach((prompt2) => {
-        cd.addOption(prompt2.value, prompt2.name);
+      this.prompts.forEach((prompt) => {
+        cd.addOption(JSON.stringify(prompt), prompt.name);
       });
       cd.setValue("");
       cd.onChange((value) => {
-        this.startAConversation = false;
-        prompt = value;
+        value = JSON.parse(value);
+        this.prompt = value.value;
+        this.name = value.name || "AI Chat";
+        this.sendBtn.setDisabled(false);
       });
     }).addButton((btn) => {
       this.saveBtn = btn;
-      if (import_obsidian5.Platform.isMobile)
+      if (import_obsidian6.Platform.isMobile)
         btn.buttonEl.style.width = "3rem";
-      btn.setIcon("save").setDisabled(!this.content).onClick(() => {
+      btn.setIcon("paperclip").onClick(() => {
+        new FuzzySuggest(this.app, this.books, async ({ text, value }) => {
+          if (text) {
+            btn.setIcon("");
+            btn.setButtonText(text.basename + " - " + formatFileSize(text.stat.size));
+            this.content = await this.app.vault.cachedRead(text);
+            this.fileName = value;
+            btn.buttonEl.style.width = "unset";
+          } else {
+            btn.setIcon("paperclip");
+            this.content = "";
+            this.fileName = "";
+            btn.buttonEl.style.width = "3rem";
+          }
+        }).open();
+      });
+    }).addButton((btn) => {
+      this.saveBtn = btn;
+      if (import_obsidian6.Platform.isMobile)
+        btn.buttonEl.style.width = "3rem";
+      btn.setIcon("save").setDisabled(!this.question).onClick(() => {
+        this.close();
         this.onSubmit(this.conversationHistory);
-        this.onClose();
       });
     });
   }
   onClose() {
-    this.close();
+    let { contentEl } = this;
+    contentEl.empty();
   }
-  async startChat(prompt = "") {
-    var _a2;
-    const question = this.content;
+  async startChat() {
+    const question = this.question;
     const c2 = { question, answer: "" };
     this.conversationHistory.push(c2);
-    const name = ((_a2 = this.prompts.find((p) => p.value === prompt)) == null ? void 0 : _a2.name) || "AI Chat";
-    this.p.innerHTML += `${this.conversationHistory.length > 1 ? "<hr>" : ""}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
-${question || prompt}
+    this.p.innerHTML += `<hr>${this.fileName ? `\u{1F4C4} ${this.fileName}
 
-<b><i>${name}\uFF1A
-</i></b>`;
+` : ""}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+${this.question}
+
+<b><i>${this.name}\uFF1A</i></b>
+`;
     await callOpenAI(`${this.content}
-${this.startAConversation ? "" : prompt}
-${question}
-
-`, this.settings.chatUrl, this.settings.chatKey, this.settings.chatModel, (text) => {
-      this.startAConversation = true;
+${this.prompt}
+${question}`, this.settings.chatUrl, this.settings.chatKey, this.settings.chatModel, (text) => {
+      this.content = this.prompt = this.fileName = null;
       this.p.innerHTML += text;
       c2.answer += text;
       this.sendBtn.setDisabled(true);
@@ -6326,7 +6399,7 @@ async function clipboardFormat(self2, editor) {
 }
 
 // src/Commands/createCharacterRelationship.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 function createCharacterRelationshipCommand(self2) {
   self2.settings.characterRelationships && self2.addCommand({
     id: "\u521B\u5EFA\u4EBA\u7269\u5173\u7CFB",
@@ -6353,7 +6426,7 @@ async function createCharacterRelationship(self2, editor, file) {
   const readingProgress = Number(self2.getMetadata(file, "readingProgress"));
   const title = self2.getMetadata(file, "title");
   if (readingProgress <= 0 || isNaN(readingProgress)) {
-    new import_obsidian6.Notice(`\u300A${file.basename}\u300B\u8FD8\u672A\u9605\u8BFB`);
+    new import_obsidian7.Notice(`\u300A${file.basename}\u300B\u8FD8\u672A\u9605\u8BFB`);
     return;
   }
   const targetPath = `${self2.settings.characterRelationshipsFolder}/${title}.md`;
@@ -6376,7 +6449,7 @@ async function characterRelationship(self2, file, title, path, id, progress2) {
   let els = createElement("div", content).querySelectorAll(".__character-relationship__");
   if (els.length === 0) {
     if (content) {
-      new import_obsidian6.Notice("\u4EBA\u7269\u5173\u7CFB\u7B14\u8BB0\u5DF2\u901A\u8FC7\u5176\u4ED6\u65B9\u5F0F\u521B\u5EFA");
+      new import_obsidian7.Notice("\u4EBA\u7269\u5173\u7CFB\u7B14\u8BB0\u5DF2\u901A\u8FC7\u5176\u4ED6\u65B9\u5F0F\u521B\u5EFA");
       return;
     }
     content = `---
@@ -6457,8 +6530,8 @@ function getHeadingHierarchy(headings, line) {
 }
 
 // src/Modals/DoubleInputBox.ts
-var import_obsidian7 = require("obsidian");
-var DoubleInputBox = class extends import_obsidian7.Modal {
+var import_obsidian8 = require("obsidian");
+var DoubleInputBox = class extends import_obsidian8.Modal {
   constructor(app, data) {
     super(app);
     this.data = data;
@@ -6470,17 +6543,17 @@ var DoubleInputBox = class extends import_obsidian7.Modal {
     const { title, titleName, textName, titleDescription = "", textDescription = "", content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
     this.setTitle(title);
     content && this.setContent(content);
-    new import_obsidian7.Setting(contentEl).setDesc(titleDescription).setName(titleName).addText(
+    new import_obsidian8.Setting(contentEl).setDesc(titleDescription).setName(titleName).addText(
       (text) => text.onChange((value) => {
         res1 = value;
       })
     );
-    new import_obsidian7.Setting(contentEl).setDesc(textDescription).setName(textName).addTextArea(
+    new import_obsidian8.Setting(contentEl).setDesc(textDescription).setName(textName).addTextArea(
       (text) => text.onChange((value) => {
         res2 = value;
       })
     );
-    new import_obsidian7.Setting(contentEl).addButton(
+    new import_obsidian8.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
         this.close();
         onSubmit(res1, res2);
@@ -8546,11 +8619,11 @@ imageCompression.getDataUrlFromFile = getDataUrlFromFile, imageCompression.getFi
 
 // src/Commands/encryption.ts
 var import_js_md5 = __toESM(require_md5());
-var import_obsidian10 = require("obsidian");
+var import_obsidian11 = require("obsidian");
 
 // src/Modals/Confirm.ts
-var import_obsidian8 = require("obsidian");
-var Confirm = class extends import_obsidian8.Modal {
+var import_obsidian9 = require("obsidian");
+var Confirm = class extends import_obsidian9.Modal {
   constructor(app, data) {
     super(app);
     this.data = data;
@@ -8560,7 +8633,7 @@ var Confirm = class extends import_obsidian8.Modal {
     const { title, content, submitText = "\u786E\u5B9A", cancelText = "\u53D6\u6D88", onSubmit } = this.data;
     title && this.setTitle(title);
     content && this.setContent(content);
-    new import_obsidian8.Setting(contentEl).addButton(
+    new import_obsidian9.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
         this.close();
         onSubmit(true);
@@ -8579,8 +8652,8 @@ var Confirm = class extends import_obsidian8.Modal {
 };
 
 // src/Modals/InputBox.ts
-var import_obsidian9 = require("obsidian");
-var InputBox = class extends import_obsidian9.Modal {
+var import_obsidian10 = require("obsidian");
+var InputBox = class extends import_obsidian10.Modal {
   constructor(app, data) {
     super(app);
     this.data = data;
@@ -8591,12 +8664,12 @@ var InputBox = class extends import_obsidian9.Modal {
     const { title, name, description = "", content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
     this.setTitle(title);
     content && this.setContent(content);
-    new import_obsidian9.Setting(contentEl).setDesc(description).setName(name).addText(
+    new import_obsidian10.Setting(contentEl).setDesc(description).setName(name).addText(
       (text) => text.onChange((value) => {
         res = value;
       })
     );
-    new import_obsidian9.Setting(contentEl).addButton(
+    new import_obsidian10.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
         this.close();
         onSubmit(res);
@@ -8751,14 +8824,14 @@ async function encryptionNote(self2, file, pass, convert = true) {
     const localP = (_a2 = self2.settings.plugins.encryption[file.path]) == null ? void 0 : _a2.pass;
     const tP = self2.encryptionTempData[file.path];
     if (self2.settings.encryptionImageCompress && (localP || tP) && pass !== (localP || tP)) {
-      return new import_obsidian10.Notice("\u8BF7\u5148\u5173\u95ED\u56FE\u7247\u538B\u7F29\uFF0C\u4F7F\u7528\u65E7\u5BC6\u7801\u6062\u590D\u539F\u56FE\uFF0C\u518D\u4FEE\u6539\u65B0\u5BC6\u7801");
+      return new import_obsidian11.Notice("\u8BF7\u5148\u5173\u95ED\u56FE\u7247\u538B\u7F29\uFF0C\u4F7F\u7528\u65E7\u5BC6\u7801\u6062\u590D\u539F\u56FE\uFF0C\u518D\u4FEE\u6539\u65B0\u5BC6\u7801");
     }
-    isN ? new import_obsidian10.Notice("\u7B14\u8BB0\u5DF2\u52A0\u5BC6") : decryptContent = await encrypt(content, pass);
+    isN ? new import_obsidian11.Notice("\u7B14\u8BB0\u5DF2\u52A0\u5BC6") : decryptContent = await encrypt(content, pass);
   } else {
     try {
-      isN ? decryptContent = await decrypt(content.slice(32 + 1), pass) : new import_obsidian10.Notice("\u7B14\u8BB0\u5DF2\u89E3\u5BC6");
+      isN ? decryptContent = await decrypt(content.slice(32 + 1), pass) : new import_obsidian11.Notice("\u7B14\u8BB0\u5DF2\u89E3\u5BC6");
     } catch (e2) {
-      new import_obsidian10.Notice("\u5BC6\u7801\u53EF\u80FD\u6709\u8BEF");
+      new import_obsidian11.Notice("\u5BC6\u7801\u53EF\u80FD\u6709\u8BEF");
     }
   }
   let links = isN ? ((_b = self2.settings.plugins.encryption[file.path]) == null ? void 0 : _b.links) || [] : Object.keys(self2.app.metadataCache.resolvedLinks[file.path]);
@@ -8831,10 +8904,10 @@ async function imageToBase64(self2, links, pass, convert = true) {
           const chunkString = new TextDecoder().decode(chunk);
           if (isResourceEncrypt(chunkString)) {
             isN = false;
-            new import_obsidian10.Notice(`${file.basename} \u5DF2\u52A0\u5BC6`);
+            new import_obsidian11.Notice(`${file.basename} \u5DF2\u52A0\u5BC6`);
             break;
           }
-          const base64Chunk = (0, import_obsidian10.arrayBufferToBase64)(chunk);
+          const base64Chunk = (0, import_obsidian11.arrayBufferToBase64)(chunk);
           const encryptedChunk = await encrypt(base64Chunk, pass);
           const chunkLength = encryptedChunk.length.toString().padStart(8, "0");
           const encryptedArrayBuffer = new TextEncoder().encode(chunkLength + encryptedChunk);
@@ -8849,11 +8922,11 @@ async function imageToBase64(self2, links, pass, convert = true) {
           const encryptedChunk = new TextDecoder().decode(arrayBuffer.slice(offset, offset + chunkLength));
           if (!isResourceEncrypt(encryptedChunk)) {
             isN = false;
-            new import_obsidian10.Notice(`${file.basename} \u5DF2\u89E3\u5BC6`);
+            new import_obsidian11.Notice(`${file.basename} \u5DF2\u89E3\u5BC6`);
             break;
           }
           const decryptedChunk = await decrypt(encryptedChunk, pass);
-          const decryptedArrayBuffer = (0, import_obsidian10.base64ToArrayBuffer)(decryptedChunk);
+          const decryptedArrayBuffer = (0, import_obsidian11.base64ToArrayBuffer)(decryptedChunk);
           data = data ? mergeArrayBuffers(data, decryptedArrayBuffer) : decryptedArrayBuffer;
           offset += chunkLength;
         }
@@ -8870,7 +8943,7 @@ async function imageToBase64(self2, links, pass, convert = true) {
       }
     }
   } catch (e2) {
-    new import_obsidian10.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u8D44\u6E90\u6587\u4EF6\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
+    new import_obsidian11.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u8D44\u6E90\u6587\u4EF6\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
   }
   progress.hide();
   return links;
@@ -9002,11 +9075,11 @@ function fileToArrayBuffer(file) {
 }
 
 // src/Commands/flip.ts
-var import_obsidian12 = require("obsidian");
+var import_obsidian13 = require("obsidian");
 
 // src/Modals/PanelExhibition.ts
-var import_obsidian11 = require("obsidian");
-var PanelExhibition = class extends import_obsidian11.Modal {
+var import_obsidian12 = require("obsidian");
+var PanelExhibition = class extends import_obsidian12.Modal {
   constructor(app, title, content, onSubmit = null) {
     super(app);
     this.title = title;
@@ -9018,7 +9091,7 @@ var PanelExhibition = class extends import_obsidian11.Modal {
     titleEl.setText(this.title);
     contentEl.setText(this.content);
     if (this.onSubmit) {
-      new import_obsidian11.Setting(contentEl).addButton(
+      new import_obsidian12.Setting(contentEl).addButton(
         (btn) => btn.setButtonText("\u67E5\u770B").setCta().onClick(() => {
           this.close();
           this.onSubmit();
@@ -9075,10 +9148,10 @@ function readingPageMask(self2, el, file) {
       timer2 = window.setTimeout(() => {
         if (self2.settings.fullScreenMode) {
           s2();
-          new import_obsidian12.Notice("\u5DF2\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F");
+          new import_obsidian13.Notice("\u5DF2\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F");
         } else {
           h();
-          new import_obsidian12.Notice("\u5DF2\u5F00\u542F\u5168\u5C4F\u6A21\u5F0F");
+          new import_obsidian13.Notice("\u5DF2\u5F00\u542F\u5168\u5C4F\u6A21\u5F0F");
         }
         self2.settings.fullScreenMode = !self2.settings.fullScreenMode;
         self2.saveSettings();
@@ -9167,8 +9240,8 @@ function gallery(self2) {
 }
 
 // src/Modals/PanelHighlight.ts
-var import_obsidian13 = require("obsidian");
-var PanelHighlight = class extends import_obsidian13.Modal {
+var import_obsidian14 = require("obsidian");
+var PanelHighlight = class extends import_obsidian14.Modal {
   constructor(app, content, onSubmit) {
     super(app);
     this.content = content;
@@ -9180,17 +9253,17 @@ var PanelHighlight = class extends import_obsidian13.Modal {
     const { contentEl } = this;
     this.setTitle("\u5212\u7EBF");
     this.setContent(this.content);
-    new import_obsidian13.Setting(contentEl).setName("\u60F3\u6CD5").addText(
+    new import_obsidian14.Setting(contentEl).setName("\u60F3\u6CD5").addText(
       (text) => text.onChange((value) => {
         res = value;
       })
     );
-    new import_obsidian13.Setting(contentEl).setName("\u6807\u6CE8\uFF08\u53EF\u9009\uFF09").addText(
+    new import_obsidian14.Setting(contentEl).setName("\u6807\u6CE8\uFF08\u53EF\u9009\uFF09").addText(
       (text) => text.onChange((value) => {
         tagging = value;
       })
     );
-    new import_obsidian13.Setting(contentEl).addButton(
+    new import_obsidian14.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("\u5212\u7EBF").setCta().onClick(() => {
         this.close();
         this.onSubmit(res, tagging);
@@ -9226,9 +9299,9 @@ function highlight(self2, editor, file) {
 }
 
 // src/Commands/init.ts
-var import_obsidian14 = require("obsidian");
+var import_obsidian15 = require("obsidian");
 function init(self2) {
-  if (!import_obsidian14.Platform.isMobile) {
+  if (!import_obsidian15.Platform.isMobile) {
     Object.assign(self2.settings, {
       flip: false,
       fullScreenMode: false,
@@ -9246,7 +9319,7 @@ function init(self2) {
 }
 
 // src/Commands/passwordCreator.ts
-var import_obsidian15 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 function passwordCreatorCommand(self2) {
   self2.settings.passwordCreator && self2.addCommand({
     id: "\u5BC6\u7801\u521B\u5EFA\u5668",
@@ -9261,7 +9334,7 @@ async function passwordCreator(self2) {
   const pass = pick(self2.settings.passwordCreatorMixedContent.split(""), self2.settings.passwordCreatorLength).join("");
   await savePassword(self2, pass);
   window.navigator.clipboard.writeText(pass);
-  new import_obsidian15.Notice("\u5BC6\u7801\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
+  new import_obsidian16.Notice("\u5BC6\u7801\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
 }
 async function savePassword(self2, pass) {
   if (!self2.settings.savePass)
@@ -9274,7 +9347,7 @@ async function savePassword(self2, pass) {
     self2.app.workspace.getLeaf(true).openFile(file);
   }
   if (isNoteEncrypt(content))
-    return new import_obsidian15.Notice("\u8BF7\u5148\u89E3\u5BC6\u540E\u518D\u4FDD\u5B58\u5BC6\u7801\uFF01");
+    return new import_obsidian16.Notice("\u8BF7\u5148\u89E3\u5BC6\u540E\u518D\u4FDD\u5B58\u5BC6\u7801\uFF01");
   const tableLastLineRegex = /(\|.*\|\s*)$/g;
   if (tableLastLineRegex.test(content)) {
     new DoubleInputBox(self2.app, {
@@ -9290,7 +9363,7 @@ async function savePassword(self2, pass) {
 }
 
 // src/Commands/polysemy.ts
-var import_obsidian16 = require("obsidian");
+var import_obsidian17 = require("obsidian");
 function polysemy(self2, file) {
   var _a2;
   if (!self2.settings.polysemy)
@@ -9309,13 +9382,13 @@ function polysemy(self2, file) {
     return;
   const view = self2.app.workspace.getLeaf(true);
   view.openFile(targetFile);
-  new import_obsidian16.Notice(`\u300A${file.basename}\u300B\u662F\u4E00\u7BC7\u591A\u4E49\u7B14\u8BB0\uFF0C\u5DF2\u8F6C\u8DF3\u81F3\u300A${filename}\u300B `);
+  new import_obsidian17.Notice(`\u300A${file.basename}\u300B\u662F\u4E00\u7BC7\u591A\u4E49\u7B14\u8BB0\uFF0C\u5DF2\u8F6C\u8DF3\u81F3\u300A${filename}\u300B `);
 }
 
 // src/Commands/poster.ts
-var import_obsidian17 = require("obsidian");
+var import_obsidian18 = require("obsidian");
 function poster(self2, element) {
-  if (!self2.settings.poster || !import_obsidian17.Platform.isMobile)
+  if (!self2.settings.poster || !import_obsidian18.Platform.isMobile)
     return;
   const processVideos = (element2) => {
     const videoElements = element2.querySelectorAll('video, .internal-embed[src$=".mp4"]');
@@ -9398,27 +9471,6 @@ async function repositionVideo(self2, file) {
 
 // src/Commands/resourceTo.ts
 var import_obsidian19 = require("obsidian");
-
-// src/Modals/FuzzySuggest.ts
-var import_obsidian18 = require("obsidian");
-var FuzzySuggest = class extends import_obsidian18.FuzzySuggestModal {
-  constructor(app, books, onChoose) {
-    super(app);
-    this.books = books;
-    this.onChoose = onChoose;
-  }
-  getItems() {
-    return this.books;
-  }
-  getItemText(book) {
-    return book.value;
-  }
-  onChooseItem(book, evt) {
-    this.onChoose(book, evt);
-  }
-};
-
-// src/Commands/resourceTo.ts
 function resourcesToCommand(self2) {
   self2.settings.resourceTo && self2.addCommand({
     id: "\u79FB\u52A8\u5F53\u524D\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939",
@@ -9883,8 +9935,8 @@ var DEFAULT_SETTINGS = {
   chatUrl: "https://api.deepseek.com/v1",
   chatKey: "",
   chatModel: "deepseek-chat",
-  chatPromptFolder: "CONFIG/PROMPTS",
-  chatSaveFolder: "\u6211\u7684/CHAT"
+  chatPromptFolder: "",
+  chatSaveFolder: ""
 };
 var ToolboxSettingTab = class extends import_obsidian25.PluginSettingTab {
   constructor(app, plugin) {

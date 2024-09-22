@@ -1,8 +1,9 @@
-import { Notice, FuzzySuggestModal, App } from 'obsidian';
+import { App, FuzzySuggestModal } from 'obsidian';
 
 interface Book {
-  text: string;
-  value: string;
+  text: any;
+  value: any;
+  size?: string;
 }
 
 export default class FuzzySuggest extends FuzzySuggestModal<Book> {

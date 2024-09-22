@@ -8,6 +8,22 @@ export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'];
 
+// 格式化文件大小，接受字节数并返回人类可读的文件大小字符串
+export function formatFileSize(sizeInBytes: number): string {
+  if (sizeInBytes < 1024) {
+    return `${sizeInBytes} Byte`;
+  } else if (sizeInBytes < 1024 * 1024) {
+    const sizeInKb = (sizeInBytes / 1024).toFixed(2);
+    return `${sizeInKb} KB`;
+  } else if (sizeInBytes < 1024 * 1024 * 1024) {
+    const sizeInMb = (sizeInBytes / (1024 * 1024)).toFixed(2);
+    return `${sizeInMb} MB`;
+  } else {
+    const sizeInGb = (sizeInBytes / (1024 * 1024 * 1024)).toFixed(2);
+    return `${sizeInGb} GB`;
+  }
+}
+
 /**
  * 计算数组中每个字符串出现的次数。
  *

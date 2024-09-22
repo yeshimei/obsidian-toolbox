@@ -155,8 +155,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   chatUrl: 'https://api.deepseek.com/v1',
   chatKey: '',
   chatModel: 'deepseek-chat',
-  chatPromptFolder: 'CONFIG/PROMPTS',
-  chatSaveFolder: '我的/CHAT'
+  chatPromptFolder: '',
+  chatSaveFolder: ''
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {

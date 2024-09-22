@@ -1,6 +1,8 @@
 import { App, ButtonComponent, Editor, Modal, Platform, Setting } from 'obsidian';
 import OpenAI from 'openai';
+import { formatFileSize } from 'src/helpers';
 import Toolbox from 'src/main';
+import FuzzySuggest from 'src/Modals/FuzzySuggest';
 
 export default function chatCommand(self: Toolbox) {
   self.settings.searchForWords &&
@@ -37,8 +39,9 @@ export async function chat(self: Toolbox, editor: Editor | string) {
 type conversationHistoryType = { question: string; answer: string }[];
 
 class PanelChat extends Modal {
+  app: App;
   settings: any;
-  content: string;
+  question: string;
   onSubmit: (res: conversationHistoryType) => void;
   p: HTMLElement;
   prompts: any;
@@ -46,16 +49,41 @@ class PanelChat extends Modal {
   saveBtn: ButtonComponent;
   conversationHistory: conversationHistoryType = [];
   startAConversation: boolean = false;
+  books: any;
+  prompt = '';
+  content = '';
+  fileName = '';
+  name = 'AI Chat';
   constructor(app: App, settings: any, content: string, prompts: any, onSubmit: (conversationHistory: conversationHistoryType) => void) {
     super(app);
-    this.content = content;
+    this.question = content;
     this.onSubmit = onSubmit;
     this.prompts = prompts;
     this.settings = settings;
+    this.app = app;
+    this.books = app.vault
+      .getMarkdownFiles()
+      .map(file => ({
+        text: file,
+        value: file.path + ' - ' + formatFileSize(file.stat.size)
+      }))
+      .sort((a, b) => b.text.stat.ctime - a.text.stat.ctime);
+
+    const currentFile = app.workspace.getActiveFile();
+    if (currentFile) {
+      this.books.unshift({
+        text: currentFile,
+        value: currentFile.path + ' - ' + formatFileSize(currentFile.stat.size)
+      });
+    }
+
+    this.books.unshift({
+      text: null,
+      value: '🔗'
+    });
   }
 
   onOpen() {
-    let prompt: string;
     const { contentEl } = this;
     this.setTitle('AI Chat');
     this.p = document.createElement('p');
@@ -65,8 +93,8 @@ class PanelChat extends Modal {
     new Setting(contentEl)
       .addTextArea(text => {
         text.inputEl.style.width = '100%';
-        text.setValue(this.content).onChange(value => {
-          this.content = value;
+        text.setValue(this.question).onChange(value => {
+          this.question = value;
           this.sendBtn.setDisabled(!value);
           text.inputEl.style.height = text.inputEl.scrollHeight + 'px';
         });
@@ -78,10 +106,10 @@ class PanelChat extends Modal {
         if (Platform.isMobile) btn.buttonEl.style.width = '3rem';
         btn
           .setIcon('send')
-          .setDisabled(!this.content)
+          .setDisabled(!this.question)
           .setCta()
           .onClick(async () => {
-            await this.startChat(prompt);
+            await this.startChat();
           });
       }).infoEl.style.display = 'none';
 
@@ -89,12 +117,34 @@ class PanelChat extends Modal {
       .addDropdown(cd => {
         cd.addOption('', '选择 prompt');
         this.prompts.forEach((prompt: any) => {
-          cd.addOption(prompt.value, prompt.name);
+          cd.addOption(JSON.stringify(prompt), prompt.name);
         });
         cd.setValue('');
-        cd.onChange(value => {
-          this.startAConversation = false;
-          prompt = value;
+        cd.onChange((value: any) => {
+          value = JSON.parse(value);
+          this.prompt = value.value;
+          this.name = value.name || 'AI Chat';
+          this.sendBtn.setDisabled(false);
+        });
+      })
+      .addButton(btn => {
+        this.saveBtn = btn;
+        if (Platform.isMobile) btn.buttonEl.style.width = '3rem';
+        btn.setIcon('paperclip').onClick(() => {
+          new FuzzySuggest(this.app, this.books, async ({ text, value }) => {
+            if (text) {
+              btn.setIcon('');
+              btn.setButtonText(text.basename + ' - ' + formatFileSize(text.stat.size));
+              this.content = await this.app.vault.cachedRead(text);
+              this.fileName = value;
+              btn.buttonEl.style.width = 'unset';
+            } else {
+              btn.setIcon('paperclip');
+              this.content = '';
+              this.fileName = '';
+              btn.buttonEl.style.width = '3rem';
+            }
+          }).open();
         });
       })
       .addButton(btn => {
@@ -102,26 +152,26 @@ class PanelChat extends Modal {
         if (Platform.isMobile) btn.buttonEl.style.width = '3rem';
         btn
           .setIcon('save')
-          .setDisabled(!this.content)
+          .setDisabled(!this.question)
           .onClick(() => {
+            this.close();
             this.onSubmit(this.conversationHistory);
-            this.onClose();
           });
       });
   }
 
   onClose() {
-    this.close();
+    let { contentEl } = this;
+    contentEl.empty();
   }
 
-  async startChat(prompt = '') {
-    const question = this.content;
+  async startChat() {
+    const question = this.question;
     const c = { question, answer: '' };
     this.conversationHistory.push(c);
-    const name = this.prompts.find((p: any) => p.value === prompt)?.name || 'AI Chat';
-    this.p.innerHTML += `${this.conversationHistory.length > 1 ? '<hr>' : ''}<b><i>叫我包仔：</i></b>\n${question || prompt}\n\n<b><i>${name}：\n</i></b>`;
-    await callOpenAI(`${this.content}\n${this.startAConversation ? '' : prompt}\n${question}\n\n`, this.settings.chatUrl, this.settings.chatKey, this.settings.chatModel, text => {
-      this.startAConversation = true;
+    this.p.innerHTML += `<hr>${this.fileName ? `📄 ${this.fileName}\n\n` : ''}<b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.name}：</i></b>\n`;
+    await callOpenAI(`${this.content}\n${this.prompt}\n${question}`, this.settings.chatUrl, this.settings.chatKey, this.settings.chatModel, text => {
+      this.content = this.prompt = this.fileName = null;
       this.p.innerHTML += text;
       c.answer += text;
       this.sendBtn.setDisabled(true);
