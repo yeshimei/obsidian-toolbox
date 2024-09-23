@@ -25,7 +25,7 @@ import searchForPlantCommand from './Commands/searchForPlant';
 import searchForWordCommand from './Commands/searchForWord';
 import switchLibrary from './Commands/switchLibrary';
 import asyncNoteCommand from './Commands/syncNote';
-import { $, debounce, SOURCE_VIEW_CLASS } from './helpers';
+import { $, debounce, hasRootFolder, SOURCE_VIEW_CLASS } from './helpers';
 import { DEFAULT_SETTINGS, ToolboxSettings, ToolboxSettingTab } from './settings';
 
 export default class Toolbox extends Plugin {
@@ -161,11 +161,7 @@ export default class Toolbox extends Plugin {
   }
 
   hasReadingPage(file: TFile, mode = true) {
-    return file && file.extension === 'md' && this.hasTag(file, 'book') && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === 'source' : true);
-  }
-
-  hasRootFolder(file: TFile, folderName: string) {
-    return new RegExp(`^${folderName}`).test(file.path);
+    return file && file.extension === 'md' && this.hasTag(file, 'book') && hasRootFolder(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === 'source' : true);
   }
 
   hasTag(file: TFile, name: string) {

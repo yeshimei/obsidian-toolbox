@@ -8,7 +8,60 @@ export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'];
 
-// 格式化文件大小，接受字节数并返回人类可读的文件大小字符串
+export function hasRootFolder(file: TFile, folderName: string) {
+  return new RegExp(`^${folderName}`).test(file.path);
+}
+
+/**
+ * 获取指定文件夹中作为 option list。
+ *
+ * @param app - 应用实例。
+ * @param folder - 文件夹名称，用于过滤所需的文件。
+ * @returns 返回一个包含 option list 名称和对应值的数组，格式为 [{ name: string; value: string }]
+ */
+export function getOptionList(app: App, folder: string): { name: string; value: string }[] {
+  return app.vault
+    .getMarkdownFiles()
+    .filter(file => hasRootFolder(file, folder))
+    .map(file => ({ name: file.basename, value: file.basename }));
+}
+
+/**
+ * 获取书籍列表，包括当前文件和所有 Markdown 文件
+ * @param app - 应用程序实例
+ * @returns 返回包含书籍名称和路径的数组
+ */
+export function getBooksList(app: App): Array<{ text: any; value: string }> {
+  const books = app.vault
+    .getMarkdownFiles()
+    .map(file => ({
+      text: file,
+      value: file.path + ' - ' + formatFileSize(file.stat.size)
+    }))
+    .sort((a, b) => b.text.stat.ctime - a.text.stat.ctime);
+
+  const currentFile = app.workspace.getActiveFile();
+  if (currentFile) {
+    books.unshift({
+      text: currentFile,
+      value: currentFile.path + ' - ' + formatFileSize(currentFile.stat.size)
+    });
+  }
+
+  books.unshift({
+    text: null,
+    value: '🔗'
+  });
+
+  return books;
+}
+
+/**
+ * 格式化文件大小
+ *
+ * @param {number} sizeInBytes - 文件大小（以字节为单位）
+ * @returns {string} - 格式化后的文件大小字符串，单位可以是 Byte、KB、MB 或 GB
+ */
 export function formatFileSize(sizeInBytes: number): string {
   if (sizeInBytes < 1024) {
     return `${sizeInBytes} Byte`;

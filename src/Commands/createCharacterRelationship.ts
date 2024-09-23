@@ -1,5 +1,5 @@
 import { Editor, Notice, TFile } from 'obsidian';
-import { $, computerReadingProgress, createElement, getBlock, SOURCE_VIEW_CLASS } from 'src/helpers';
+import { $, computerReadingProgress, createElement, getBlock, hasRootFolder, SOURCE_VIEW_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 
 export default function createCharacterRelationshipCommand(self: Toolbox) {
@@ -13,7 +13,7 @@ export default function createCharacterRelationshipCommand(self: Toolbox) {
 }
 
 export async function switchCharacterRelationship(self: Toolbox, file: TFile) {
-  if (!self.hasRootFolder(file, self.settings.characterRelationshipsFolder)) return;
+  if (!hasRootFolder(file, self.settings.characterRelationshipsFolder)) return;
   document.onclick = evt => {
     const target = evt.target as HTMLElement;
     if (target.hasClass('__character-relationship')) {

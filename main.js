@@ -798,6 +798,30 @@ var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var imageSuffix = ["png", "jpg", "jpeg", "gif", "bmp", "svg"];
+function hasRootFolder(file, folderName) {
+  return new RegExp(`^${folderName}`).test(file.path);
+}
+function getOptionList(app, folder) {
+  return app.vault.getMarkdownFiles().filter((file) => hasRootFolder(file, folder)).map((file) => ({ name: file.basename, value: file.basename }));
+}
+function getBooksList(app) {
+  const books = app.vault.getMarkdownFiles().map((file) => ({
+    text: file,
+    value: file.path + " - " + formatFileSize(file.stat.size)
+  })).sort((a2, b) => b.text.stat.ctime - a2.text.stat.ctime);
+  const currentFile = app.workspace.getActiveFile();
+  if (currentFile) {
+    books.unshift({
+      text: currentFile,
+      value: currentFile.path + " - " + formatFileSize(currentFile.stat.size)
+    });
+  }
+  books.unshift({
+    text: null,
+    value: "\u{1F517}"
+  });
+  return books;
+}
 function formatFileSize(sizeInBytes) {
   if (sizeInBytes < 1024) {
     return `${sizeInBytes} Byte`;
@@ -2882,8 +2906,8 @@ var Chat = class extends APIResource {
     this.completions = new Completions(this._client);
   }
 };
-(function(Chat3) {
-  Chat3.Completions = Completions;
+(function(Chat4) {
+  Chat4.Completions = Completions;
 })(Chat || (Chat = {}));
 
 // node_modules/.store/openai@4.63.0/node_modules/openai/resources/audio/speech.mjs
@@ -4521,8 +4545,8 @@ var Chat2 = class extends APIResource {
     this.completions = new Completions2(this._client);
   }
 };
-(function(Chat3) {
-  Chat3.Completions = Completions2;
+(function(Chat4) {
+  Chat4.Completions = Completions2;
 })(Chat2 || (Chat2 = {}));
 
 // node_modules/.store/openai@4.63.0/node_modules/openai/lib/AssistantStream.mjs
@@ -6220,62 +6244,28 @@ async function chat(self2, editor) {
   if (!self2.settings.chat)
     return;
   const selection = typeof editor === "string" ? editor : editor.getSelection();
-  const prompts = [];
-  if (self2.settings.chatPromptFolder) {
-    const files = self2.app.vault.getMarkdownFiles().filter((file) => self2.hasRootFolder(file, self2.settings.chatPromptFolder));
-    for (let file of files) {
-      const content = await self2.app.vault.cachedRead(file);
-      prompts.push({ name: file.basename, value: content });
-    }
-  }
-  new PanelChat(self2.app, self2.settings, selection, prompts, async (res) => {
-    const text = res.reduce((ret, res2) => ret += `# ${res2.question}
-
-${res2.answer}
-
-`, "");
-    const path = self2.settings.chatSaveFolder + "/" + Date.now() + ".md";
-    const file = await self2.app.vault.create(path, text);
-    self2.app.workspace.getLeaf(false).openFile(file);
-  }).open();
+  new PanelChat(self2, selection).open();
 }
 var PanelChat = class extends import_obsidian6.Modal {
-  constructor(app, settings, content, prompts, onSubmit) {
-    super(app);
-    this.conversationHistory = [];
-    this.startAConversation = false;
-    this.prompt = "";
-    this.content = "";
-    this.fileName = "";
-    this.name = "AI Chat";
+  constructor(self2, content) {
+    super(self2.app);
+    this.title = "";
+    this.promptName = "AI Chat";
+    this.question = "";
+    this.self = self2;
+    this.chat = new Chat3(self2);
     this.question = content;
-    this.onSubmit = onSubmit;
-    this.prompts = prompts;
-    this.settings = settings;
-    this.app = app;
-    this.books = app.vault.getMarkdownFiles().map((file) => ({
-      text: file,
-      value: file.path + " - " + formatFileSize(file.stat.size)
-    })).sort((a2, b) => b.text.stat.ctime - a2.text.stat.ctime);
-    const currentFile = app.workspace.getActiveFile();
-    if (currentFile) {
-      this.books.unshift({
-        text: currentFile,
-        value: currentFile.path + " - " + formatFileSize(currentFile.stat.size)
-      });
-    }
-    this.books.unshift({
-      text: null,
-      value: "\u{1F517}"
-    });
+    this.prompts = getOptionList(self2.app, self2.settings.chatPromptFolder);
+    this.books = getBooksList(self2.app);
   }
   onOpen() {
     const { contentEl } = this;
-    this.setTitle("AI Chat");
+    this.setTitle(this.title || "AI Chat");
     this.p = document.createElement("p");
     this.p.style.whiteSpace = "pre-wrap";
     contentEl.appendChild(this.p);
     new import_obsidian6.Setting(contentEl).addTextArea((text) => {
+      this.textArea = text;
       text.inputEl.style.width = "100%";
       text.setValue(this.question).onChange((value) => {
         this.question = value;
@@ -6289,19 +6279,20 @@ var PanelChat = class extends import_obsidian6.Modal {
       if (import_obsidian6.Platform.isMobile)
         btn.buttonEl.style.width = "3rem";
       btn.setIcon("send").setDisabled(!this.question).setCta().onClick(async () => {
+        this.textArea.setValue("");
+        this.textArea.inputEl.style.height = "35px";
         await this.startChat();
       });
     }).infoEl.style.display = "none";
     new import_obsidian6.Setting(contentEl).addDropdown((cd) => {
       cd.addOption("", "\u9009\u62E9 prompt");
       this.prompts.forEach((prompt) => {
-        cd.addOption(JSON.stringify(prompt), prompt.name);
+        cd.addOption(prompt.value, prompt.name);
       });
       cd.setValue("");
-      cd.onChange((value) => {
-        value = JSON.parse(value);
-        this.prompt = value.value;
-        this.name = value.name || "AI Chat";
+      cd.onChange(async (value) => {
+        this.promptName = value || "AI Chat";
+        await this.chat.specifyPrompt(value);
         this.sendBtn.setDisabled(false);
       });
     }).addButton((btn) => {
@@ -6313,13 +6304,11 @@ var PanelChat = class extends import_obsidian6.Modal {
           if (text) {
             btn.setIcon("");
             btn.setButtonText(text.basename + " - " + formatFileSize(text.stat.size));
-            this.content = await this.app.vault.cachedRead(text);
-            this.fileName = value;
+            this.file = text;
             btn.buttonEl.style.width = "unset";
           } else {
             btn.setIcon("paperclip");
-            this.content = "";
-            this.fileName = "";
+            this.file = null;
             btn.buttonEl.style.width = "3rem";
           }
         }).open();
@@ -6329,8 +6318,8 @@ var PanelChat = class extends import_obsidian6.Modal {
       if (import_obsidian6.Platform.isMobile)
         btn.buttonEl.style.width = "3rem";
       btn.setIcon("save").setDisabled(!this.question).onClick(() => {
+        this.saveChat();
         this.close();
-        this.onSubmit(this.conversationHistory);
       });
     });
   }
@@ -6339,47 +6328,118 @@ var PanelChat = class extends import_obsidian6.Modal {
     contentEl.empty();
   }
   async startChat() {
-    const question = this.question;
-    const c2 = { question, answer: "" };
-    this.conversationHistory.push(c2);
-    this.p.innerHTML += `<hr>${this.fileName ? `\u{1F4C4} ${this.fileName}
+    let index = 0;
+    const content = this.file && await this.self.app.vault.cachedRead(this.file);
+    const list = this.file ? `\u{1F4C4} ${this.file.path}
 
-` : ""}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+` : "";
+    this.p.innerHTML += `<hr>${list}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
 ${this.question}
 
-<b><i>${this.name}\uFF1A</i></b>
+<b><i>${this.promptName}\uFF1A</i></b>
 `;
-    await callOpenAI(`${this.content}
-${this.prompt}
-${question}`, this.settings.chatUrl, this.settings.chatKey, this.settings.chatModel, (text) => {
-      this.content = this.prompt = this.fileName = null;
+    const messgae = content ? `${content}
+${this.question}` : this.question;
+    await this.chat.open(messgae, (text) => {
+      index++;
+      let iconIndex = Math.floor(index / 10) % 4;
+      this.sendBtn.setIcon(iconIndex === 0 ? "cloud" : iconIndex === 1 ? "cloud-fog" : iconIndex === 2 ? "cloud-lightning" : "cloud-drizzle");
+      this.question = this.file = null;
       this.p.innerHTML += text;
-      c2.answer += text;
       this.sendBtn.setDisabled(true);
       this.saveBtn.setDisabled(true);
-      if (!text) {
+      if (!text && index > 2) {
+        if (!this.title) {
+          this.chat.getTitle((text2) => {
+            this.title += text2;
+            this.setTitle(this.title);
+          });
+        }
         this.sendBtn.setDisabled(false);
         this.saveBtn.setDisabled(false);
+        this.sendBtn.setIcon("send");
       }
     });
   }
-};
-async function callOpenAI(content, baseURL, apiKey, model, updateText) {
-  const openai = new openai_default({
-    baseURL,
-    apiKey,
-    dangerouslyAllowBrowser: true
-  });
-  const completion = await openai.chat.completions.create({
-    messages: [{ role: "system", content }],
-    model,
-    stream: true
-  });
-  for await (const chunk of completion) {
-    const text = chunk.choices[0].delta.content;
-    updateText(text);
+  async saveChat() {
+    const text = this.chat.messages.reduce((ret, res) => {
+      if (res.type === "question")
+        ret += res.content + "\n\n";
+      if (res.type === "answer")
+        ret += "> " + res.content.replace(/\n/gm, "\n> ") + "\n\n";
+      return ret;
+    }, "");
+    const path = this.self.settings.chatSaveFolder + "/" + this.title + "-" + Date.now() + ".md";
+    const file = await this.self.app.vault.create(path, text);
+    this.self.app.workspace.getLeaf(false).openFile(file);
   }
-}
+};
+var Chat3 = class {
+  constructor(self2) {
+    this.data = {};
+    this.messages = [];
+    this.self = self2;
+  }
+  async specifyPrompt(name) {
+    var _a2;
+    let frequency_penalty = 0;
+    let presence_penalty = 0;
+    let temperature = 1;
+    let max_tokens = null;
+    let top_p = 1;
+    if (name) {
+      const path = this.self.settings.chatPromptFolder + "/" + name + ".md";
+      const file = this.self.app.vault.getFileByPath(path);
+      this.promptContent = await this.self.app.vault.cachedRead(file);
+      const frontmatter = ((_a2 = this.self.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) || {};
+      frequency_penalty = frontmatter.frequency_penalty;
+      presence_penalty = frontmatter.presence_penalty;
+      temperature = frontmatter.temperature;
+      max_tokens = frontmatter.max_tokens;
+      top_p = frontmatter.top_p;
+    }
+    Object.assign(this.data, { frequency_penalty, presence_penalty, max_tokens, temperature, top_p });
+  }
+  async getTitle(updateText) {
+    this.open({ role: "user", content: "\u6839\u636E\u4E0A\u9762\u7684\u5185\u5BB9\u7ED9\u6211\u4E00\u4E2A\u7B80\u77ED\u7684\u6807\u9898\u5427\uFF0C\u4E0D\u8D85\u8FC7\u5341\u4E2A\u5B57", noSave: true }, async (text) => {
+      updateText(text);
+    });
+  }
+  async open(messgae, updateText) {
+    const { chatKey, chatUrl, chatModel } = this.self.settings;
+    if (typeof messgae === "string") {
+      messgae = { content: messgae, role: "user", type: "question" };
+    }
+    this.promptContent && this.messages.push({ role: "system", content: this.promptContent, type: "prompt" });
+    this.promptContent = null;
+    this.messages.push(messgae);
+    const answer = { role: "system", content: "", type: "answer" };
+    this.messages.push(answer);
+    const openai = new openai_default({
+      baseURL: chatUrl,
+      apiKey: chatKey,
+      dangerouslyAllowBrowser: true
+    });
+    try {
+      const completion = await openai.chat.completions.create({
+        messages: this.messages,
+        model: chatModel,
+        stream: true,
+        ...this.data
+      });
+      for await (const chunk of completion) {
+        const text = chunk.choices[0].delta.content;
+        updateText(text);
+        answer.content += text;
+      }
+      if (messgae.noSave) {
+        this.messages = this.messages.slice(0, -2);
+      }
+    } catch (error) {
+      new import_obsidian6.Notice(error.message);
+    }
+  }
+};
 
 // src/Commands/clipboardFormat.ts
 async function clipboardFormatCommand(self2) {
@@ -6409,7 +6469,7 @@ function createCharacterRelationshipCommand(self2) {
   });
 }
 async function switchCharacterRelationship(self2, file) {
-  if (!self2.hasRootFolder(file, self2.settings.characterRelationshipsFolder))
+  if (!hasRootFolder(file, self2.settings.characterRelationshipsFolder))
     return;
   document.onclick = (evt) => {
     const target = evt.target;
@@ -10433,10 +10493,7 @@ var Toolbox = class extends import_obsidian26.Plugin {
     return file && ((_b = (_a2 = this.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) == null ? void 0 : _b[key]);
   }
   hasReadingPage(file, mode = true) {
-    return file && file.extension === "md" && this.hasTag(file, "book") && this.hasRootFolder(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === "source" : true);
-  }
-  hasRootFolder(file, folderName) {
-    return new RegExp(`^${folderName}`).test(file.path);
+    return file && file.extension === "md" && this.hasTag(file, "book") && hasRootFolder(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === "source" : true);
   }
   hasTag(file, name) {
     var _a2, _b;
