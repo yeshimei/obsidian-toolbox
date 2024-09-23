@@ -31,9 +31,15 @@ export function getOptionList(app: App, folder: string): { name: string; value: 
  * @param app - 应用程序实例
  * @returns 返回包含书籍名称和路径的数组
  */
-export function getBooksList(app: App): Array<{ text: any; value: string }> {
+export function getBooksList(app: App, folderName?: string): Array<{ text: any; value: string }> {
   const books = app.vault
     .getMarkdownFiles()
+    .filter(file => {
+      if (folderName) {
+        return file.path.startsWith(folderName + '/');
+      }
+      return true;
+    })
     .map(file => ({
       text: file,
       value: file.path + ' - ' + formatFileSize(file.stat.size)

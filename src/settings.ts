@@ -138,7 +138,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   chatSaveFolder: '',
 
   completion: true,
-  completionDelay: 300,
+  completionDelay: 1000,
   completionMaxLength: 128,
 
   blockReference: true,
@@ -423,14 +423,14 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
 
       if (this.plugin.settings.completion) {
-        new Setting(containerEl).setName('延迟').addText(cd =>
+        new Setting(containerEl).setName('延迟（ms）,不低于 1000ms').addText(cd =>
           cd.setValue('' + this.plugin.settings.completionDelay).onChange(async value => {
             this.plugin.settings.completionDelay = Number(value);
             await this.plugin.saveSettings();
           })
         );
 
-        new Setting(containerEl).setName('最长字数').addText(cd =>
+        new Setting(containerEl).setName('最大字节').addText(cd =>
           cd.setValue('' + this.plugin.settings.completionMaxLength).onChange(async value => {
             this.plugin.settings.completionMaxLength = Number(value);
             await this.plugin.saveSettings();

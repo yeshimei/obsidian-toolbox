@@ -804,8 +804,13 @@ function hasRootFolder(file, folderName) {
 function getOptionList(app, folder) {
   return app.vault.getMarkdownFiles().filter((file) => hasRootFolder(file, folder)).map((file) => ({ name: file.basename, value: file.basename }));
 }
-function getBooksList(app) {
-  const books = app.vault.getMarkdownFiles().map((file) => ({
+function getBooksList(app, folderName) {
+  const books = app.vault.getMarkdownFiles().filter((file) => {
+    if (folderName) {
+      return file.path.startsWith(folderName + "/");
+    }
+    return true;
+  }).map((file) => ({
     text: file,
     value: file.path + " - " + formatFileSize(file.stat.size)
   })).sort((a2, b) => b.text.stat.ctime - a2.text.stat.ctime);
@@ -6233,22 +6238,28 @@ var FuzzySuggest = class extends import_obsidian5.FuzzySuggestModal {
 
 // src/Commands/chat.ts
 function chatCommand(self2) {
-  self2.settings.searchForWords && self2.addCommand({
+  self2.settings.chat && self2.addCommand({
     id: "AI Chat",
     name: "AI Chat",
     icon: "bot",
-    editorCallback: (editor) => chat(self2, editor)
+    callback: () => chat(self2, null)
   });
 }
-async function chat(self2, editor) {
+async function chat(self2, text) {
+  var _a2;
   if (!self2.settings.chat)
     return;
-  const selection = typeof editor === "string" ? editor : editor.getSelection();
-  new PanelChat(self2, selection).open();
+  if (!text) {
+    const editor = (_a2 = self2.app.workspace.getActiveViewOfType(import_obsidian6.MarkdownView)) == null ? void 0 : _a2.editor;
+    if (editor)
+      text = editor.getSelection();
+  }
+  new PanelChat(self2, text).open();
 }
 var PanelChat = class extends import_obsidian6.Modal {
   constructor(self2, content) {
     super(self2.app);
+    this.files = /* @__PURE__ */ new Set();
     this.title = "";
     this.promptName = "AI Chat";
     this.question = "";
@@ -6259,20 +6270,39 @@ var PanelChat = class extends import_obsidian6.Modal {
     this.books = getBooksList(self2.app);
   }
   onOpen() {
+    let defaultTextAreaHeight = "";
     const { contentEl } = this;
     this.setTitle(this.title || "AI Chat");
-    this.p = document.createElement("p");
-    this.p.style.whiteSpace = "pre-wrap";
-    contentEl.appendChild(this.p);
+    const chatArea = this.chatArea = document.createElement("div");
+    chatArea.style.whiteSpace = "pre-wrap";
+    chatArea.style.userSelect = "text";
+    chatArea.style.marginBottom = "3rem";
+    contentEl.appendChild(chatArea);
+    const fileArea = this.fileArea = document.createElement("div");
+    fileArea.style.whiteSpace = "pre-wrap";
+    fileArea.style.userSelect = "text";
+    contentEl.appendChild(fileArea);
+    contentEl.onclick = (evt) => {
+      const target = evt.target;
+      if (target.classList.contains("__remove")) {
+        const { path } = target.dataset;
+        const fileToRemove = Array.from(this.files).find((file) => file.path === path);
+        if (fileToRemove) {
+          this.files.delete(fileToRemove);
+          target.parentNode.remove();
+        }
+      }
+    };
     new import_obsidian6.Setting(contentEl).addTextArea((text) => {
       this.textArea = text;
       text.inputEl.style.width = "100%";
+      defaultTextAreaHeight = text.inputEl.style.height;
+      text.inputEl.style.height = text.inputEl.scrollHeight + "px";
       text.setValue(this.question).onChange((value) => {
         this.question = value;
         this.sendBtn.setDisabled(!value);
         text.inputEl.style.height = text.inputEl.scrollHeight + "px";
       });
-      text.inputEl.style.height = text.inputEl.scrollHeight + "px";
     }).addButton((btn) => {
       this.sendBtn = btn;
       btn.buttonEl.style.marginTop = "auto";
@@ -6280,7 +6310,7 @@ var PanelChat = class extends import_obsidian6.Modal {
         btn.buttonEl.style.width = "3rem";
       btn.setIcon("send").setDisabled(!this.question).setCta().onClick(async () => {
         this.textArea.setValue("");
-        this.textArea.inputEl.style.height = "35px";
+        this.textArea.inputEl.style.height = defaultTextAreaHeight;
         await this.startChat();
       });
     }).infoEl.style.display = "none";
@@ -6302,14 +6332,11 @@ var PanelChat = class extends import_obsidian6.Modal {
       btn.setIcon("paperclip").onClick(() => {
         new FuzzySuggest(this.app, this.books, async ({ text, value }) => {
           if (text) {
-            btn.setIcon("");
-            btn.setButtonText(text.basename + " - " + formatFileSize(text.stat.size));
-            this.file = text;
-            btn.buttonEl.style.width = "unset";
-          } else {
-            btn.setIcon("paperclip");
-            this.file = null;
-            btn.buttonEl.style.width = "3rem";
+            const fileSize = formatFileSize(text.stat.size);
+            const size = this.files.size;
+            this.files.add(text);
+            const newSize = this.files.size;
+            newSize > size && (this.fileArea.innerHTML += `<span>\u{1F4C4} ${text.path} - ${fileSize} <span class="__remove" data-path="${text.path}">\u{1F525}</span><br></span>`);
           }
         }).open();
       });
@@ -6317,9 +6344,8 @@ var PanelChat = class extends import_obsidian6.Modal {
       this.saveBtn = btn;
       if (import_obsidian6.Platform.isMobile)
         btn.buttonEl.style.width = "3rem";
-      btn.setIcon("save").setDisabled(!this.question).onClick(() => {
-        this.saveChat();
-        this.close();
+      btn.setIcon("gallery-horizontal-end").onClick(() => {
+        new FuzzySuggest(this.app, getBooksList(this.self.app, this.self.settings.chatSaveFolder), async ({ text }) => this.loadHistoryChat(text.path)).open();
       });
     });
   }
@@ -6329,30 +6355,42 @@ var PanelChat = class extends import_obsidian6.Modal {
   }
   async startChat() {
     let index = 0;
-    const content = this.file && await this.self.app.vault.cachedRead(this.file);
-    const list = this.file ? `\u{1F4C4} ${this.file.path}
-
-` : "";
-    this.p.innerHTML += `<hr>${list}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+    let list = "";
+    const meesages = [{ role: "user", content: this.question, type: "question" }];
+    for (let file of this.files) {
+      const content = `${file.path}
+${await this.self.app.vault.cachedRead(file)}`;
+      meesages.push({ role: "user", content, type: "file" });
+      list += `\u{1F4C4} ${file.path}
+`;
+    }
+    this.chatArea.innerHTML += `<hr>${list}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
 ${this.question}
 
 <b><i>${this.promptName}\uFF1A</i></b>
 `;
-    const messgae = content ? `${content}
-${this.question}` : this.question;
-    await this.chat.open(messgae, (text) => {
+    await this.chat.open(meesages, (text) => {
       index++;
+      let titleIndex = 1;
       let iconIndex = Math.floor(index / 10) % 4;
       this.sendBtn.setIcon(iconIndex === 0 ? "cloud" : iconIndex === 1 ? "cloud-fog" : iconIndex === 2 ? "cloud-lightning" : "cloud-drizzle");
-      this.question = this.file = null;
-      this.p.innerHTML += text;
+      this.files.clear();
+      this.fileArea.innerHTML = "";
+      this.chatArea.innerHTML += text;
       this.sendBtn.setDisabled(true);
       this.saveBtn.setDisabled(true);
       if (!text && index > 2) {
+        if (this.title) {
+          this.saveChat();
+        }
         if (!this.title) {
           this.chat.getTitle((text2) => {
+            titleIndex++;
             this.title += text2;
             this.setTitle(this.title);
+            if (!text2 && titleIndex > 2) {
+              this.saveChat();
+            }
           });
         }
         this.sendBtn.setDisabled(false);
@@ -6362,22 +6400,49 @@ ${this.question}` : this.question;
     });
   }
   async saveChat() {
-    const text = this.chat.messages.reduce((ret, res) => {
+    let file;
+    const text = this.chat.messages.reduce((ret, res, i2, arr) => {
       if (res.type === "question")
-        ret += res.content + "\n\n";
-      if (res.type === "answer")
+        ret += res.content.trim().replace(/^</, "") + "\n\n";
+      else if (res.type === "answer")
         ret += "> " + res.content.replace(/\n/gm, "\n> ") + "\n\n";
+      else if (res.type === "file")
+        ret += `[[${res.content.split("\n")[0]}]]${arr[i2 + 1].type === "file" ? "\n" : "\n\n"}`;
       return ret;
     }, "");
-    const path = this.self.settings.chatSaveFolder + "/" + this.title + "-" + Date.now() + ".md";
-    const file = await this.self.app.vault.create(path, text);
-    this.self.app.workspace.getLeaf(false).openFile(file);
+    const sanitizedTitle = this.title.replace(/[\\\/<>\:\|\?]/g, "");
+    if (this.filepath) {
+      await this.app.vault.adapter.write(this.filepath, text);
+    } else {
+      this.filepath = this.self.settings.chatSaveFolder + "/" + sanitizedTitle + " - " + Date.now() + ".md";
+      file = await this.self.app.vault.create(this.filepath, text);
+    }
+  }
+  async loadHistoryChat(path) {
+    const messages = await this.chat.loadHistoryChat(path);
+    this.filepath = path;
+    this.title = this.chat.title;
+    this.setTitle(this.title);
+    this.chatArea.innerHTML = messages.reduce((ret, res, i2, arr) => {
+      if (res.type === "question")
+        ret += `<hr><b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+${res.content}
+
+`;
+      else if (res.type === "answer")
+        ret += `<b><i>AI Cha\uFF1A</i></b>
+${res.content}`;
+      else if (res.type === "file")
+        ret += `\u{1F4C4} ${res.content.split("\n")[0]}${arr[i2 + 1].type === "file" ? "\n" : "\n\n"}`;
+      return ret;
+    }, "");
   }
 };
 var Chat3 = class {
   constructor(self2) {
     this.data = {};
     this.messages = [];
+    this.title = "";
     this.self = self2;
   }
   async specifyPrompt(name) {
@@ -6392,18 +6457,44 @@ var Chat3 = class {
       const file = this.self.app.vault.getFileByPath(path);
       this.promptContent = await this.self.app.vault.cachedRead(file);
       const frontmatter = ((_a2 = this.self.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) || {};
-      frequency_penalty = frontmatter.frequency_penalty;
-      presence_penalty = frontmatter.presence_penalty;
-      temperature = frontmatter.temperature;
-      max_tokens = frontmatter.max_tokens;
-      top_p = frontmatter.top_p;
+      frequency_penalty = Number(frontmatter.frequency_penalty);
+      presence_penalty = Number(frontmatter.presence_penalty);
+      temperature = Number(frontmatter.temperature);
+      max_tokens = Number(frontmatter.max_tokens);
+      top_p = Number(frontmatter.top_p);
     }
     Object.assign(this.data, { frequency_penalty, presence_penalty, max_tokens, temperature, top_p });
   }
   async getTitle(updateText) {
-    this.open({ role: "user", content: "\u6839\u636E\u4E0A\u9762\u7684\u5185\u5BB9\u7ED9\u6211\u4E00\u4E2A\u7B80\u77ED\u7684\u6807\u9898\u5427\uFF0C\u4E0D\u8D85\u8FC7\u5341\u4E2A\u5B57", noSave: true }, async (text) => {
+    this.open({ role: "user", content: "\u6839\u636E\u4E0A\u9762\u7684\u5185\u5BB9\u7ED9\u6211\u4E00\u4E2A\u7B80\u77ED\u7684\u6807\u9898\u5427\uFF0C\u4E0D\u8D85\u8FC7\u5341\u4E2A\u5B57", type: "title" }, async (text) => {
       updateText(text);
+      this.title += text;
     });
+  }
+  async loadHistoryChat(path) {
+    const file = this.self.app.vault.getFileByPath(path);
+    if (file) {
+      const content = await this.self.app.vault.cachedRead(file);
+      const messages = [];
+      const items = content.split("\n\n").filter(Boolean);
+      for (let item of items) {
+        const path2 = item.match(/\[\[(.+?)\]\]/g);
+        if (path2) {
+          for (let p of path2) {
+            p = p.slice(2, -2);
+            messages.push({ role: "user", content: `${p}
+${await this.self.app.vault.adapter.read(p)}`, type: "file" });
+          }
+        } else if (item.startsWith("> ")) {
+          messages.push({ role: "system", content: item.replace(/^> /gm, ""), type: "answer" });
+        } else {
+          messages.push({ role: "user", content: item, type: "question" });
+        }
+      }
+      this.messages = messages;
+      this.title = file.basename.split(" - ")[0];
+      return messages;
+    }
   }
   async FIMCompletion(prefix, suffix, maxLength, updateText) {
     if (!prefix)
@@ -6429,14 +6520,19 @@ var Chat3 = class {
     }
   }
   async open(messgae, updateText) {
+    if (!messgae)
+      return;
     const { chatKey, chatUrl, chatModel } = this.self.settings;
     if (typeof messgae === "string") {
-      messgae = { content: messgae, role: "user", type: "question" };
+      messgae = [{ content: messgae, role: "user", type: "question" }];
+    } else if (!Array.isArray(messgae)) {
+      messgae = [messgae];
     }
+    const type = messgae[0].type;
     this.promptContent && this.messages.push({ role: "system", content: this.promptContent, type: "prompt" });
     this.promptContent = null;
-    this.messages.push(messgae);
-    const answer = { role: "system", content: "", type: "answer" };
+    this.messages = this.messages.concat(messgae);
+    const answer = { role: "system", content: "", type: type === "question" ? "answer" : type };
     this.messages.push(answer);
     const openai = new openai_default({
       baseURL: chatUrl,
@@ -6454,9 +6550,6 @@ var Chat3 = class {
         const text = chunk.choices[0].delta.content;
         updateText(text);
         answer.content += text;
-      }
-      if (messgae.noSave) {
-        this.messages = this.messages.slice(0, -2);
       }
     } catch (error) {
       new import_obsidian6.Notice(error.message);
@@ -6485,6 +6578,18 @@ async function clipboardFormat(self2, editor) {
 var import_obsidian7 = require("obsidian");
 var lastPrefix;
 var timer;
+function completionCommand(self2) {
+  self2.addCommand({
+    id: "completion",
+    name: self2.settings.completion ? "\u5173\u95ED\u81EA\u52A8\u8865\u5168" : "\u5F00\u542F\u81EA\u52A8\u8865\u5168",
+    icon: "pencil-line",
+    callback: () => {
+      self2.settings.completion = !self2.settings.completion;
+      self2.saveSettings();
+      completionCommand(self2);
+    }
+  });
+}
 function completion(self2) {
   var _a2;
   if (!self2.settings.completion)
@@ -6541,7 +6646,7 @@ function completion(self2) {
           completion(self2);
         }
       });
-    }, Math.max(self2.settings.completionDelay, 300));
+    }, Math.max(self2.settings.completionDelay, 1e3));
   }
 }
 function clearPlaceholder(editor) {
@@ -10074,7 +10179,7 @@ var DEFAULT_SETTINGS = {
   chatPromptFolder: "",
   chatSaveFolder: "",
   completion: true,
-  completionDelay: 300,
+  completionDelay: 1e3,
   completionMaxLength: 128,
   blockReference: true,
   encryption: true,
@@ -10296,13 +10401,13 @@ var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
         })
       );
       if (this.plugin.settings.completion) {
-        new import_obsidian26.Setting(containerEl).setName("\u5EF6\u8FDF").addText(
+        new import_obsidian26.Setting(containerEl).setName("\u5EF6\u8FDF\uFF08ms\uFF09,\u4E0D\u4F4E\u4E8E 1000ms").addText(
           (cd) => cd.setValue("" + this.plugin.settings.completionDelay).onChange(async (value) => {
             this.plugin.settings.completionDelay = Number(value);
             await this.plugin.saveSettings();
           })
         );
-        new import_obsidian26.Setting(containerEl).setName("\u6700\u957F\u5B57\u6570").addText(
+        new import_obsidian26.Setting(containerEl).setName("\u6700\u5927\u5B57\u8282").addText(
           (cd) => cd.setValue("" + this.plugin.settings.completionMaxLength).onChange(async (value) => {
             this.plugin.settings.completionMaxLength = Number(value);
             await this.plugin.saveSettings();
@@ -10551,6 +10656,7 @@ var Toolbox = class extends import_obsidian27.Plugin {
     searchForPlantCommand(this);
     switchLibrary(this);
     chatCommand(this);
+    completionCommand(this);
     this.registerEvent(
       this.app.workspace.on("file-open", async (file) => {
         this.startTime = Date.now();

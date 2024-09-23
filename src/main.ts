@@ -6,7 +6,7 @@ import Block from './Commands/Block';
 import blockReferenceCommand from './Commands/blockReference';
 import chatCommand from './Commands/chat';
 import clipboardFormatCommand from './Commands/clipboardFormat';
-import { completion } from './Commands/completion';
+import completionCommand, { completion } from './Commands/completion';
 import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
 import dialogueCommand from './Commands/dialogue';
 import { clearNotePass, decryptPopUpCommand, encOrDecPopUp, encryptPopUpCommand, toggleEncryptNote } from './Commands/encryption';
@@ -79,6 +79,8 @@ export default class Toolbox extends Plugin {
     switchLibrary(this);
     // ai 聊天
     chatCommand(this);
+    // 自动补全
+    completionCommand(this);
 
     this.registerEvent(
       this.app.workspace.on('file-open', async file => {

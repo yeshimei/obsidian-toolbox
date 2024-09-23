@@ -3,8 +3,20 @@ import Toolbox from 'src/main';
 import { Chat } from './chat';
 
 let lastPrefix: string;
-
 let timer: number;
+
+export default function completionCommand(self: Toolbox) {
+  self.addCommand({
+    id: 'completion',
+    name: self.settings.completion ? '关闭自动补全' : '开启自动补全',
+    icon: 'pencil-line',
+    callback: () => {
+      self.settings.completion = !self.settings.completion;
+      self.saveSettings();
+      completionCommand(self);
+    }
+  });
+}
 
 export function completion(self: Toolbox): void {
   if (!self.settings.completion) return;
@@ -63,7 +75,7 @@ export function completion(self: Toolbox): void {
           completion(self);
         }
       });
-    }, Math.max(self.settings.completionDelay, 300));
+    }, Math.max(self.settings.completionDelay, 1000));
   }
 }
 

@@ -1,30 +1,35 @@
-import { ButtonComponent, Editor, Modal, Notice, Platform, Setting, TextAreaComponent, TFile } from 'obsidian';
+import { ButtonComponent, MarkdownView, Modal, Notice, Platform, Setting, TextAreaComponent, TFile } from 'obsidian';
 import OpenAI from 'openai';
 import { formatFileSize, getBooksList, getOptionList } from 'src/helpers';
 import Toolbox from 'src/main';
 import FuzzySuggest from 'src/Modals/FuzzySuggest';
 
 export default function chatCommand(self: Toolbox) {
-  self.settings.searchForWords &&
+  self.settings.chat &&
     self.addCommand({
       id: 'AI Chat',
       name: 'AI Chat',
       icon: 'bot',
-      editorCallback: editor => chat(self, editor)
+      callback: () => chat(self, null)
     });
 }
 
-export async function chat(self: Toolbox, editor: Editor | string) {
+export async function chat(self: Toolbox, text: string) {
   if (!self.settings.chat) return;
-  const selection = typeof editor === 'string' ? editor : editor.getSelection();
-  new PanelChat(self, selection).open();
+  if (!text) {
+    const editor = self.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+    if (editor) text = editor.getSelection();
+  }
+  new PanelChat(self, text).open();
 }
 
 class PanelChat extends Modal {
   chat: Chat;
   self: Toolbox;
-  file: TFile;
-  p: HTMLElement;
+  files: Set<TFile> = new Set();
+  filepath: string;
+  chatArea: HTMLDivElement;
+  fileArea: HTMLDivElement;
   prompts: any[];
   books: any[];
   title = '';
@@ -43,22 +48,45 @@ class PanelChat extends Modal {
   }
 
   onOpen() {
+    let defaultTextAreaHeight = '';
     const { contentEl } = this;
     this.setTitle(this.title || 'AI Chat');
-    this.p = document.createElement('p');
-    this.p.style.whiteSpace = 'pre-wrap';
-    contentEl.appendChild(this.p);
+
+    const chatArea = (this.chatArea = document.createElement('div'));
+    chatArea.style.whiteSpace = 'pre-wrap';
+    chatArea.style.userSelect = 'text';
+    chatArea.style.marginBottom = '3rem';
+    contentEl.appendChild(chatArea);
+
+    const fileArea = (this.fileArea = document.createElement('div'));
+    fileArea.style.whiteSpace = 'pre-wrap';
+    fileArea.style.userSelect = 'text';
+    contentEl.appendChild(fileArea);
+
+    contentEl.onclick = evt => {
+      const target = evt.target as HTMLElement;
+      if (target.classList.contains('__remove')) {
+        const { path } = target.dataset;
+        const fileToRemove = Array.from(this.files).find((file: TFile) => file.path === path);
+        if (fileToRemove) {
+          this.files.delete(fileToRemove);
+          (target.parentNode as HTMLElement).remove();
+        }
+      }
+    };
 
     new Setting(contentEl)
       .addTextArea(text => {
         this.textArea = text;
         text.inputEl.style.width = '100%';
+        defaultTextAreaHeight = text.inputEl.style.height;
+        text.inputEl.style.height = text.inputEl.scrollHeight + 'px';
+
         text.setValue(this.question).onChange(value => {
           this.question = value;
           this.sendBtn.setDisabled(!value);
           text.inputEl.style.height = text.inputEl.scrollHeight + 'px';
         });
-        text.inputEl.style.height = text.inputEl.scrollHeight + 'px';
       })
       .addButton(btn => {
         this.sendBtn = btn;
@@ -70,7 +98,7 @@ class PanelChat extends Modal {
           .setCta()
           .onClick(async () => {
             this.textArea.setValue('');
-            this.textArea.inputEl.style.height = '35px';
+            this.textArea.inputEl.style.height = defaultTextAreaHeight;
             await this.startChat();
           });
       }).infoEl.style.display = 'none';
@@ -94,14 +122,12 @@ class PanelChat extends Modal {
         btn.setIcon('paperclip').onClick(() => {
           new FuzzySuggest(this.app, this.books, async ({ text, value }) => {
             if (text) {
-              btn.setIcon('');
-              btn.setButtonText(text.basename + ' - ' + formatFileSize(text.stat.size));
-              this.file = text;
-              btn.buttonEl.style.width = 'unset';
-            } else {
-              btn.setIcon('paperclip');
-              this.file = null;
-              btn.buttonEl.style.width = '3rem';
+              const fileSize = formatFileSize(text.stat.size);
+              const size = this.files.size;
+              this.files.add(text);
+              const newSize = this.files.size;
+
+              newSize > size && (this.fileArea.innerHTML += `<span>📄 ${text.path} - ${fileSize} <span class="__remove" data-path="${text.path}">🔥</span><br></span>`);
             }
           }).open();
         });
@@ -109,13 +135,9 @@ class PanelChat extends Modal {
       .addButton(btn => {
         this.saveBtn = btn;
         if (Platform.isMobile) btn.buttonEl.style.width = '3rem';
-        btn
-          .setIcon('save')
-          .setDisabled(!this.question)
-          .onClick(() => {
-            this.saveChat();
-            this.close();
-          });
+        btn.setIcon('gallery-horizontal-end').onClick(() => {
+          new FuzzySuggest(this.app, getBooksList(this.self.app, this.self.settings.chatSaveFolder), async ({ text }) => this.loadHistoryChat(text.path)).open();
+        });
       });
   }
 
@@ -126,25 +148,38 @@ class PanelChat extends Modal {
 
   async startChat() {
     let index = 0;
-    const content = this.file && (await this.self.app.vault.cachedRead(this.file));
-    const list = this.file ? `📄 ${this.file.path}\n\n` : '';
-    this.p.innerHTML += `<hr>${list}<b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.promptName}：</i></b>\n`;
-    const messgae = content ? `${content}\n${this.question}` : this.question;
-    await this.chat.open(messgae, text => {
+    let list = '';
+    const meesages: MESSAGE_TYEP[] = [{ role: 'user', content: this.question, type: 'question' }];
+    for (let file of this.files) {
+      const content = `${file.path}\n${await this.self.app.vault.cachedRead(file)}`;
+      meesages.push({ role: 'user', content, type: 'file' });
+      list += `📄 ${file.path}\n`;
+    }
+    this.chatArea.innerHTML += `<hr>${list}<b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.promptName}：</i></b>\n`;
+
+    await this.chat.open(meesages, text => {
       index++;
+      let titleIndex = 1;
       let iconIndex = Math.floor(index / 10) % 4;
       this.sendBtn.setIcon(iconIndex === 0 ? 'cloud' : iconIndex === 1 ? 'cloud-fog' : iconIndex === 2 ? 'cloud-lightning' : 'cloud-drizzle');
-
-      this.question = this.file = null;
-      this.p.innerHTML += text;
+      this.files.clear();
+      this.fileArea.innerHTML = '';
+      this.chatArea.innerHTML += text;
       this.sendBtn.setDisabled(true);
       this.saveBtn.setDisabled(true);
       if (!text && index > 2) {
+        if (this.title) {
+          this.saveChat();
+        }
         // 获取标题
         if (!this.title) {
           this.chat.getTitle(text => {
+            titleIndex++;
             this.title += text;
             this.setTitle(this.title);
+            if (!text && titleIndex > 2) {
+              this.saveChat();
+            }
           });
         }
         this.sendBtn.setDisabled(false);
@@ -155,15 +190,33 @@ class PanelChat extends Modal {
   }
 
   async saveChat() {
-    const text = this.chat.messages.reduce((ret, res) => {
-      if (res.type === 'question') ret += res.content + '\n\n';
-      if (res.type === 'answer') ret += '> ' + res.content.replace(/\n/gm, '\n> ') + '\n\n';
+    let file: TFile;
+    const text = this.chat.messages.reduce((ret, res, i, arr) => {
+      if (res.type === 'question') ret += res.content.trim().replace(/^</, '') + '\n\n';
+      else if (res.type === 'answer') ret += '> ' + res.content.replace(/\n/gm, '\n> ') + '\n\n';
+      else if (res.type === 'file') ret += `[[${res.content.split('\n')[0]}]]${arr[i + 1].type === 'file' ? '\n' : '\n\n'}`;
       return ret;
     }, '');
+    const sanitizedTitle = this.title.replace(/[\\\/<>\:\|\?]/g, '');
+    if (this.filepath) {
+      await this.app.vault.adapter.write(this.filepath, text);
+    } else {
+      this.filepath = this.self.settings.chatSaveFolder + '/' + sanitizedTitle + ' - ' + Date.now() + '.md';
+      file = await this.self.app.vault.create(this.filepath, text);
+    }
+  }
 
-    const path = this.self.settings.chatSaveFolder + '/' + this.title + '-' + Date.now() + '.md';
-    const file = await this.self.app.vault.create(path, text);
-    this.self.app.workspace.getLeaf(false).openFile(file);
+  async loadHistoryChat(path: string) {
+    const messages = await this.chat.loadHistoryChat(path);
+    this.filepath = path;
+    this.title = this.chat.title;
+    this.setTitle(this.title);
+    this.chatArea.innerHTML = messages.reduce((ret, res, i, arr) => {
+      if (res.type === 'question') ret += `<hr><b><i>叫我包仔：</i></b>\n${res.content}\n\n`;
+      else if (res.type === 'answer') ret += `<b><i>AI Cha：</i></b>\n${res.content}`;
+      else if (res.type === 'file') ret += `📄 ${res.content.split('\n')[0]}${arr[i + 1].type === 'file' ? '\n' : '\n\n'}`;
+      return ret;
+    }, '');
   }
 }
 
@@ -180,8 +233,7 @@ type MESSAGE_TYEP = {
   role: 'user' | 'system' | 'assistant';
   name?: string;
   prefix?: string;
-  type?: 'prompt' | 'question' | 'answer';
-  noSave?: boolean;
+  type?: string;
 };
 
 export class Chat {
@@ -189,6 +241,7 @@ export class Chat {
   self: Toolbox;
   promptContent: string;
   messages: MESSAGE_TYEP[] = [];
+  title = '';
   constructor(self: Toolbox) {
     this.self = self;
   }
@@ -204,20 +257,48 @@ export class Chat {
       const file = this.self.app.vault.getFileByPath(path);
       this.promptContent = await this.self.app.vault.cachedRead(file);
       const frontmatter = this.self.app.metadataCache.getFileCache(file)?.frontmatter || {};
-      frequency_penalty = frontmatter.frequency_penalty;
-      presence_penalty = frontmatter.presence_penalty;
-      temperature = frontmatter.temperature;
-      max_tokens = frontmatter.max_tokens;
-      top_p = frontmatter.top_p;
+      frequency_penalty = Number(frontmatter.frequency_penalty);
+      presence_penalty = Number(frontmatter.presence_penalty);
+      temperature = Number(frontmatter.temperature);
+      max_tokens = Number(frontmatter.max_tokens);
+      top_p = Number(frontmatter.top_p);
     }
 
     Object.assign(this.data, { frequency_penalty: frequency_penalty, presence_penalty: presence_penalty, max_tokens, temperature: temperature, top_p: top_p });
   }
 
   async getTitle(updateText: (text: string) => void) {
-    this.open({ role: 'user', content: '根据上面的内容给我一个简短的标题吧，不超过十个字', noSave: true }, async text => {
+    this.open({ role: 'user', content: '根据上面的内容给我一个简短的标题吧，不超过十个字', type: 'title' }, async text => {
       updateText(text);
+      this.title += text;
     });
+  }
+
+  async loadHistoryChat(path: string) {
+    const file = this.self.app.vault.getFileByPath(path);
+    if (file) {
+      const content = await this.self.app.vault.cachedRead(file);
+      const messages: MESSAGE_TYEP[] = [];
+      const items = content.split('\n\n').filter(Boolean);
+
+      for (let item of items) {
+        const path = item.match(/\[\[(.+?)\]\]/g);
+        if (path) {
+          for (let p of path) {
+            p = p.slice(2, -2);
+            messages.push({ role: 'user', content: `${p}\n${await this.self.app.vault.adapter.read(p)}`, type: 'file' });
+          }
+        } else if (item.startsWith('> ')) {
+          messages.push({ role: 'system', content: item.replace(/^> /gm, ''), type: 'answer' });
+        } else {
+          messages.push({ role: 'user', content: item, type: 'question' });
+        }
+      }
+
+      this.messages = messages;
+      this.title = file.basename.split(' - ')[0];
+      return messages;
+    }
   }
 
   async FIMCompletion(prefix: string, suffix: string, maxLength: number, updateText: (text: string) => void) {
@@ -245,16 +326,20 @@ export class Chat {
     }
   }
 
-  async open(messgae: MESSAGE_TYEP | string, updateText: (text: string) => void): Promise<void> {
+  async open(messgae: MESSAGE_TYEP[] | MESSAGE_TYEP | string, updateText: (text: string) => void): Promise<void> {
+    if (!messgae) return;
     const { chatKey, chatUrl, chatModel } = this.self.settings;
-
     if (typeof messgae === 'string') {
-      messgae = { content: messgae, role: 'user', type: 'question' };
+      messgae = [{ content: messgae, role: 'user', type: 'question' }];
+    } else if (!Array.isArray(messgae)) {
+      messgae = [messgae];
     }
+
+    const type = messgae[0].type;
     this.promptContent && this.messages.push({ role: 'system', content: this.promptContent, type: 'prompt' });
     this.promptContent = null;
-    this.messages.push(messgae);
-    const answer: MESSAGE_TYEP = { role: 'system', content: '', type: 'answer' };
+    this.messages = this.messages.concat(messgae);
+    const answer: MESSAGE_TYEP = { role: 'system', content: '', type: type === 'question' ? 'answer' : type };
     this.messages.push(answer);
 
     const openai = new OpenAI({
@@ -275,10 +360,6 @@ export class Chat {
         const text = chunk.choices[0].delta.content;
         updateText(text);
         answer.content += text;
-      }
-
-      if (messgae.noSave) {
-        this.messages = this.messages.slice(0, -2);
       }
     } catch (error) {
       new Notice(error.message);
