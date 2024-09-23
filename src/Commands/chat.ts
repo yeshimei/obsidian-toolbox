@@ -220,6 +220,31 @@ export class Chat {
     });
   }
 
+  async FIMCompletion(prefix: string, suffix: string, maxLength: number, updateText: (text: string) => void) {
+    if (!prefix) return;
+    const { chatKey, chatUrl, chatModel } = this.self.settings;
+    const openai = new OpenAI({
+      baseURL: chatUrl,
+      apiKey: chatKey,
+      dangerouslyAllowBrowser: true
+    });
+
+    try {
+      const completion = await openai.completions.create({
+        model: chatModel,
+        prompt: prefix,
+        suffix: suffix,
+        max_tokens: maxLength,
+        ...this.data
+      });
+
+      const text = completion.choices[0].text;
+      updateText(text);
+    } catch (error) {
+      new Notice(error.message);
+    }
+  }
+
   async open(messgae: MESSAGE_TYEP | string, updateText: (text: string) => void): Promise<void> {
     const { chatKey, chatUrl, chatModel } = this.self.settings;
 

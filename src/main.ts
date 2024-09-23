@@ -6,6 +6,7 @@ import Block from './Commands/Block';
 import blockReferenceCommand from './Commands/blockReference';
 import chatCommand from './Commands/chat';
 import clipboardFormatCommand from './Commands/clipboardFormat';
+import { completion } from './Commands/completion';
 import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
 import dialogueCommand from './Commands/dialogue';
 import { clearNotePass, decryptPopUpCommand, encOrDecPopUp, encryptPopUpCommand, toggleEncryptNote } from './Commands/encryption';
@@ -120,6 +121,13 @@ export default class Toolbox extends Plugin {
         resourceTo(this, file, null);
         // 当笔记插入视频时重排版
         repositionVideo(this, file);
+      })
+    );
+
+    this.registerEvent(
+      this.app.workspace.on('editor-change', file => {
+        // 补全
+        completion(this);
       })
     );
 

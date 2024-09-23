@@ -50,6 +50,17 @@ export interface ToolboxSettings {
   readingPageStyles: boolean;
   fontSize: number;
 
+  chat: boolean;
+  chatUrl: string;
+  chatKey: string;
+  chatModel: string;
+  chatPromptFolder: string;
+  chatSaveFolder: string;
+
+  completion: boolean;
+  completionDelay: number;
+  completionMaxLength: number;
+
   blockReference: boolean;
 
   encryption: boolean;
@@ -77,12 +88,6 @@ export interface ToolboxSettings {
   switchLibrary: boolean;
   savePass: boolean;
   savePassPath: string;
-  chat: boolean;
-  chatUrl: string;
-  chatKey: string;
-  chatModel: string;
-  chatPromptFolder: string;
-  chatSaveFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -125,6 +130,17 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   readingPageStyles: true,
   fontSize: 36,
 
+  chat: false,
+  chatUrl: 'https://api.deepseek.com/beta',
+  chatKey: '',
+  chatModel: 'deepseek-chat',
+  chatPromptFolder: '',
+  chatSaveFolder: '',
+
+  completion: true,
+  completionDelay: 300,
+  completionMaxLength: 128,
+
   blockReference: true,
 
   encryption: true,
@@ -150,13 +166,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   videoLinkFormatFolder: '',
   switchLibrary: false,
   savePass: false,
-  savePassPath: '我的/其他/账号管理',
-  chat: false,
-  chatUrl: 'https://api.deepseek.com/v1',
-  chatKey: '',
-  chatModel: 'deepseek-chat',
-  chatPromptFolder: '',
-  chatSaveFolder: ''
+  savePassPath: '我的/其他/账号管理'
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -400,6 +410,36 @@ export class ToolboxSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         })
       );
+
+      new Setting(containerEl)
+        .setName('自动补全')
+        .setDesc('根据当前段落内容，自动补全接下来的笔记内容。桌面端按空格键补全建议内容插入到光标位置，移动端点击补全建议内容插入到光标位置。')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.completion).onChange(async value => {
+            this.plugin.settings.completion = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+
+      if (this.plugin.settings.completion) {
+        new Setting(containerEl).setName('延迟').addText(cd =>
+          cd.setValue('' + this.plugin.settings.completionDelay).onChange(async value => {
+            this.plugin.settings.completionDelay = Number(value);
+            await this.plugin.saveSettings();
+          })
+        );
+
+        new Setting(containerEl).setName('最长字数').addText(cd =>
+          cd.setValue('' + this.plugin.settings.completionMaxLength).onChange(async value => {
+            this.plugin.settings.completionMaxLength = Number(value);
+            await this.plugin.saveSettings();
+          })
+        );
+      }
+    }
+
+    if (this.plugin.settings.chat) {
     }
 
     new Setting(containerEl)
