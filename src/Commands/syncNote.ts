@@ -25,15 +25,16 @@ export async function syncNote(self: Toolbox, file: TFile) {
   let outlinks = 0;
   let dialogue = 0;
 
-  const { links, frontmatter } = self.app.metadataCache.getFileCache(file);
+  let { links, frontmatter } = self.app.metadataCache.getFileCache(file);
   let content = '---\ntags: 读书笔记\n---';
   // 出链
+
   if (self.settings.outLink && links) {
     content += '\n\n# 出链\n\n';
-    uniqueBy(links, (link: any) => link.link)
-      .filter(link => /^([^.\s]+|.*\.md)$/i.test(link.link))
-      .forEach(({ link }) => (content += `[[${link}|${link.split('/').pop()}]] / `));
-    content = content.slice(0, -3);
+    links = uniqueBy(links, (link: any) => link.link)
+      .filter(link => self.app.vault.getMarkdownFiles().some(file => [`词语/${link.displayText}.md`, `卡片盒/${link.displayText}.md`, `卡片盒/归档/${link.displayText}.md`].some(path => file.path.includes(path))))
+      .map(({ link }) => (content += `[[${link}|${link.split('/').pop()}]] / `));
+    links.length && (content = content.slice(0, -3));
     outlinks = links.length;
   }
 

@@ -2,7 +2,6 @@ import { Editor, htmlToMarkdown, Notice } from 'obsidian';
 import { createElement, requestUrlToHTML } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelSearchForWord } from 'src/Modals/PanelSearchForWord';
-import { chat } from './chat';
 
 export default function searchForWordCommand(self: Toolbox) {
   self.settings.searchForWords &&
@@ -40,7 +39,7 @@ async function searchForWord(self: Toolbox, editor: Editor) {
   div.appendChild(h11);
   div.appendChild(JSummary || createElement('p', '空空如也'));
   notice.hide();
-  new PanelSearchForWord(self.app, `${word} ${pinyin}`, div || '空空如也', async type => {
+  new PanelSearchForWord(self, `${word} ${pinyin}`, div || '空空如也', async (type, chatContent) => {
     let file, content, filepath;
     if (type === 'words') {
       const meanings =
@@ -51,13 +50,11 @@ async function searchForWord(self: Toolbox, editor: Editor) {
           .join('；') || htmlToMarkdown(jnr.textContent);
       content = `${word}\`/${pinyin}/\`：${meanings}。`;
       filepath = '词语/' + word + '.md';
-    } else if (type === 'cards') {
+    } else if (type === 'card') {
       const html = JSummary?.textContent;
       let content = html ? htmlToMarkdown(html) : '';
       content = content.replace(/\[\d+\]/g, '');
       filepath = '卡片盒/' + word + '.md';
-    } else if (type === 'ai' && self.settings.chat) {
-      chat(self, word);
     }
 
     file = self.app.vault.getFileByPath(filepath);
@@ -69,10 +66,10 @@ async function searchForWord(self: Toolbox, editor: Editor) {
     if (file) {
       new Notice(type === 'words' ? '词语已存在' : '卡片笔记已存在');
     } else {
-      file = await self.app.vault.create(filepath, content);
+      file = await self.app.vault.create(filepath, chatContent || content);
     }
     editor.replaceSelection(`[[${word}]]`);
-    self.app.workspace.getLeaf(false).openFile(file);
+    self.app.workspace.getLeaf(true).openFile(file);
   }).open();
 }
 

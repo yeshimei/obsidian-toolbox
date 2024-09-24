@@ -9,7 +9,7 @@ export default function init(self: Toolbox) {
       readDataTracking: false,
       searchForWords: true,
       highlight: false,
-      readingNotes: false,
+      readingNotes: true,
       readingPageStyles: false,
       poster: false,
       dialogue: false,

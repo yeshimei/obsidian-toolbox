@@ -38,11 +38,14 @@ export default class DoubleInputBox extends Modal {
     new Setting(contentEl)
       .setDesc(textDescription)
       .setName(textName)
-      .addTextArea(text =>
+      .addTextArea(text => {
+        text.inputEl.style.width = '100%';
         text.onChange(value => {
+          text.inputEl.style.height = text.inputEl.scrollHeight + 'px';
           res2 = value;
-        })
-      );
+        });
+      }).infoEl.style.display = 'none';
+
     new Setting(contentEl).addButton(btn =>
       btn
         .setButtonText(submitText)

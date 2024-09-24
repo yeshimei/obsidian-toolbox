@@ -798,11 +798,22 @@ var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var imageSuffix = ["png", "jpg", "jpeg", "gif", "bmp", "svg"];
+function createChatArea() {
+  const chatArea = document.createElement("div");
+  chatArea.style.whiteSpace = "pre-wrap";
+  chatArea.style.userSelect = "text";
+  chatArea.style.padding = " 1rem 0";
+  return chatArea;
+}
 function escapeStringForRegex(str2) {
   return str2.replace(/[-\/\\^$.*+?()[\]{}|]/g, "\\$&");
 }
 function hasRootFolder(file, folderName) {
-  return new RegExp(`^${folderName}`).test(file.path);
+  let path;
+  if (typeof file !== "string") {
+    path = file.path;
+  }
+  return new RegExp(`^${folderName}`).test(path);
 }
 function getOptionList(app, folder) {
   return app.vault.getMarkdownFiles().filter((file) => hasRootFolder(file, folder)).map((file) => ({ name: file.basename, value: file.basename }));
@@ -815,19 +826,8 @@ function getBooksList(app, folderName) {
     return true;
   }).map((file) => ({
     text: file,
-    value: file.path + " - " + formatFileSize(file.stat.size)
+    value: file.path
   })).sort((a2, b) => b.text.stat.ctime - a2.text.stat.ctime);
-  const currentFile = app.workspace.getActiveFile();
-  if (currentFile) {
-    books.unshift({
-      text: currentFile,
-      value: currentFile.path + " - " + formatFileSize(currentFile.stat.size)
-    });
-  }
-  books.unshift({
-    text: null,
-    value: "\u{1F517}"
-  });
   return books;
 }
 function formatFileSize(sizeInBytes) {
@@ -6265,35 +6265,29 @@ var PanelChat = class extends import_obsidian6.Modal {
     this.files = /* @__PURE__ */ new Set();
     this.title = "";
     this.promptName = "AI Chat";
+    this.action = "deafult";
     this.question = "";
     this.self = self2;
     this.chat = new Chat3(self2);
     this.question = content;
-    this.prompts = getOptionList(self2.app, self2.settings.chatPromptFolder);
-    this.books = getBooksList(self2.app);
   }
   onOpen() {
     let defaultTextAreaHeight = "";
     const { contentEl } = this;
     this.setTitle(this.title || "AI Chat");
-    const chatArea = this.chatArea = document.createElement("div");
-    chatArea.style.whiteSpace = "pre-wrap";
-    chatArea.style.userSelect = "text";
-    chatArea.style.padding = " 1rem 0";
-    contentEl.appendChild(chatArea);
-    const fileArea = this.fileArea = document.createElement("div");
-    fileArea.style.whiteSpace = "pre-wrap";
-    fileArea.style.userSelect = "text";
-    fileArea.style.padding = " 1rem 0";
-    contentEl.appendChild(fileArea);
+    contentEl.appendChild(this.chatArea = createChatArea());
+    contentEl.appendChild(this.fileArea = createChatArea());
     contentEl.onclick = (evt) => {
       const target = evt.target;
       if (target.classList.contains("__remove")) {
         const { path } = target.dataset;
         const fileToRemove = Array.from(this.files).find((file) => file.path === path);
         if (fileToRemove) {
+          const size = this.files.size;
           this.files.delete(fileToRemove);
           target.parentNode.remove();
+          size ? this.AttacBtn.setCta() : this.AttacBtn.removeCta();
+          this.sendBtn.setDisabled(!size);
         }
       }
     };
@@ -6303,64 +6297,110 @@ var PanelChat = class extends import_obsidian6.Modal {
       defaultTextAreaHeight = text.inputEl.style.height;
       text.inputEl.style.height = text.inputEl.scrollHeight + "px";
       text.setValue(this.question).onChange((value) => {
+        this.sendBtn.setDisabled(!value);
         this.question = value;
         text.inputEl.style.height = text.inputEl.scrollHeight + "px";
       });
     }).addButton((btn) => {
       this.sendBtn = btn;
       btn.buttonEl.style.marginTop = "auto";
-      if (import_obsidian6.Platform.isMobile)
-        btn.buttonEl.style.width = "3rem";
-      btn.setIcon("send").setCta().onClick(async () => {
+      btn.buttonEl.style.width = "3rem";
+      btn.setIcon("send").setDisabled(!this.question).setCta().onClick(async () => {
         this.textArea.inputEl.style.height = defaultTextAreaHeight;
         await this.startChat();
       });
     }).infoEl.style.display = "none";
     new import_obsidian6.Setting(contentEl).addDropdown((cd) => {
       cd.addOption("", "\u9009\u62E9 prompt");
-      this.prompts.forEach((prompt) => {
+      getOptionList(this.self.app, this.self.settings.chatPromptFolder).forEach((prompt) => {
         cd.addOption(prompt.value, prompt.name);
       });
       cd.setValue("");
       cd.onChange(async (value) => {
         this.promptName = value || "AI Chat";
         await this.chat.specifyPrompt(value);
+        const action = actions.find((a2) => a2.text.name === this.chat.data.action) || actions[0];
+        this.action = action.text.name;
+        this.actionBtn.setIcon(action.text.icon);
+        this.action === "default" ? this.actionBtn.removeCta() : this.actionBtn.setCta();
       });
     }).addButton((btn) => {
-      this.saveBtn = btn;
-      if (import_obsidian6.Platform.isMobile)
-        btn.buttonEl.style.width = "3rem";
+      this.AttacBtn = btn;
+      btn.buttonEl.style.width = "3rem";
+      const paths = getBooksList(this.self.app).map(({ text }) => ({
+        value: text.path + " - " + formatFileSize(text.stat.size),
+        text
+      }));
+      const currentFile = this.self.app.workspace.getActiveFile();
+      if (currentFile) {
+        paths.unshift({
+          text: currentFile,
+          value: currentFile.path + " - " + formatFileSize(currentFile.stat.size)
+        });
+      }
       btn.setIcon("paperclip").onClick(() => {
-        new FuzzySuggest(this.app, this.books, async ({ text }) => {
+        new FuzzySuggest(this.app, paths, async ({ text }) => {
           if (text) {
             const fileSize = formatFileSize(text.stat.size);
             const size = this.files.size;
             this.files.add(text);
             const newSize = this.files.size;
-            newSize > size && (this.fileArea.innerHTML += `<span>\u{1F4C4} ${text.path} - ${fileSize} <span class="__remove" data-path="${text.path}">\u{1F525}</span><br></span>`);
+            newSize ? btn.setCta() : btn.removeCta();
+            this.sendBtn.setDisabled(!newSize);
+            let color = "unset";
+            if (text.stat.size > 1024 * 1024) {
+              color = "#FF4500";
+            } else if (text.stat.size > 1024 * 100) {
+              color = "#FFA500";
+            }
+            newSize > size && (this.fileArea.innerHTML += `<div>\u{1F4C4} ${text.path} - <span style="color: ${color};">${fileSize}</span> <span style="cursor: pointer;" class="__remove" data-path="${text.path}">\u{1F525}</span><br></div>`);
           }
         }).open();
       });
     }).addButton((btn) => {
       this.saveBtn = btn;
-      if (import_obsidian6.Platform.isMobile)
-        btn.buttonEl.style.width = "3rem";
+      btn.buttonEl.style.width = "3rem";
+      const paths = getBooksList(this.self.app, this.self.settings.chatSaveFolder).map(({ text }) => ({
+        value: text.basename.split(" - ").shift(),
+        text
+      }));
       btn.setIcon("gallery-horizontal-end").onClick(() => {
-        new FuzzySuggest(this.app, getBooksList(this.self.app, this.self.settings.chatSaveFolder), async ({ text }) => this.loadHistoryChat(text.path)).open();
+        new FuzzySuggest(this.app, paths, async ({ text }) => {
+          this.loadHistoryChat(text.path);
+          btn.setCta();
+        }).open();
+      });
+    }).addButton((btn) => {
+      this.actionBtn = btn;
+      btn.buttonEl.style.width = "3rem";
+      btn.setIcon(actions[0].text.icon).onClick(() => {
+        new FuzzySuggest(this.app, actions, async ({ text }) => {
+          btn.setIcon(text.icon);
+          this.action = text.name;
+          text.name === "default" ? btn.removeCta() : btn.setCta();
+        }).open();
       });
     });
   }
   onClose() {
     let { contentEl } = this;
     contentEl.empty();
+    switch (this.action) {
+      case "replace":
+        actionReplace(this.self, this.chat);
+        break;
+      case "wikiLink":
+        actionWikiLink(this.self, this.chat);
+    }
   }
   async startChat() {
     if (!this.chat.isStopped) {
       this.chat.stopChat();
       return;
     }
+    let question = this.question || "";
     let list = "";
-    const meesages = [{ role: "user", content: this.question, type: "question" }];
+    const meesages = [{ role: "user", content: question, type: "question" }];
     this.textArea.setValue("");
     for (let file of this.files) {
       const content = `${file.path}
@@ -6370,10 +6410,11 @@ ${await this.self.app.vault.cachedRead(file)}`;
 `;
     }
     this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
-${this.question}
+${question}
 
 <b><i>${this.promptName}\uFF1A</i></b>
 `;
+    this.question = "";
     this.sendBtn.setIcon("circle-slash");
     await this.chat.openChat(meesages, (text) => {
       this.files.clear();
@@ -6381,42 +6422,18 @@ ${this.question}
       this.chatArea.innerHTML += text;
       if (!text) {
         this.sendBtn.setIcon("send");
-        if (this.title) {
-          this.saveChat();
-        } else {
+        this.sendBtn.setDisabled(!this.question);
+        if (!this.title) {
           this.chat.getTitle((text2) => {
             this.title += text2;
             this.setTitle(this.title);
-            if (!text2) {
-              this.saveChat();
-            }
           });
         }
       }
     });
   }
-  async saveChat() {
-    let file;
-    const text = this.chat.messages.reduce((ret, res, i2, arr) => {
-      if (res.type === "question")
-        ret += res.content.trim().replace(/^</, "") + "\n\n";
-      else if (res.type === "answer")
-        ret += "> " + res.content.replace(/\n/gm, "\n> ") + "\n\n";
-      else if (res.type === "file")
-        ret += `[[${res.content.split("\n")[0]}]]${arr[i2 + 1].type === "file" ? "\n" : "\n\n"}`;
-      return ret;
-    }, "");
-    const sanitizedTitle = this.title.replace(/[\\\/<>\:\|\?]/g, "");
-    if (this.filepath) {
-      await this.app.vault.adapter.write(this.filepath, text);
-    } else {
-      this.filepath = this.self.settings.chatSaveFolder + "/" + sanitizedTitle + " - " + Date.now() + ".md";
-      file = await this.self.app.vault.create(this.filepath, text);
-    }
-  }
   async loadHistoryChat(path) {
     const messages = await this.chat.loadHistoryChat(path);
-    this.filepath = path;
     this.title = this.chat.title;
     this.setTitle(this.title);
     this.chatArea.innerHTML = messages.reduce((ret, res, i2, arr) => {
@@ -6434,33 +6451,22 @@ ${res.content}`;
     }, "");
   }
 };
+var defaultOpenAioptions = {
+  frequency_penalty: 0,
+  presence_penalty: 0,
+  temperature: 1,
+  top_p: 1,
+  action: "default",
+  save: true,
+  max_tokens: 1024 * 128
+};
 var Chat3 = class {
   constructor(self2) {
-    this.data = {};
-    this.messages = [];
+    this.data = { ...defaultOpenAioptions };
     this.title = "";
+    this.messages = [];
     this.isStopped = true;
     this.self = self2;
-  }
-  async specifyPrompt(name) {
-    var _a2;
-    let frequency_penalty = 0;
-    let presence_penalty = 0;
-    let temperature = 1;
-    let max_tokens = null;
-    let top_p = 1;
-    if (name) {
-      const path = this.self.settings.chatPromptFolder + "/" + name + ".md";
-      const file = this.self.app.vault.getFileByPath(path);
-      this.promptContent = await this.self.app.vault.cachedRead(file);
-      const frontmatter = ((_a2 = this.self.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) || {};
-      frequency_penalty = Number(frontmatter.frequency_penalty);
-      presence_penalty = Number(frontmatter.presence_penalty);
-      temperature = Number(frontmatter.temperature);
-      max_tokens = Number(frontmatter.max_tokens);
-      top_p = Number(frontmatter.top_p);
-    }
-    Object.assign(this.data, { frequency_penalty, presence_penalty, max_tokens, temperature, top_p });
   }
   async getTitle(updateText) {
     await this.openChat({ role: "user", content: "\u6839\u636E\u4E0A\u9762\u7684\u5185\u5BB9\u7ED9\u6211\u4E00\u4E2A\u7B80\u77ED\u7684\u6807\u9898\u5427\uFF0C\u4E0D\u8D85\u8FC7\u5341\u4E2A\u5B57", type: "title" }, async (text) => {
@@ -6469,6 +6475,58 @@ var Chat3 = class {
     });
     this.messages = this.messages.filter((res) => res.type !== "title");
   }
+  /**
+   * 指定 prompt，根据给定名称从文件系统中读取提示内容及其相关参数
+   * @param name - 要指定的 prompt 名称
+   */
+  async specifyPrompt(name) {
+    var _a2;
+    const path = this.self.settings.chatPromptFolder + "/" + name + ".md";
+    const file = this.self.app.vault.getFileByPath(path);
+    if (!file) {
+      this.data = { ...defaultOpenAioptions };
+      return;
+    }
+    this.rpomptName = name;
+    this.promptContent = (await this.self.app.vault.cachedRead(file)).replace(/---[\s\S]*?---/, "");
+    const frontmatter = ((_a2 = this.self.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) || {};
+    this.data.frequency_penalty = Number(frontmatter.frequency_penalty || defaultOpenAioptions.frequency_penalty);
+    this.data.presence_penalty = Number(frontmatter.presence_penalty || defaultOpenAioptions.presence_penalty);
+    this.data.temperature = Number(frontmatter.temperature || defaultOpenAioptions.temperature);
+    this.data.max_tokens = Number(frontmatter.max_tokens || defaultOpenAioptions.max_tokens);
+    this.data.top_p = Number(frontmatter.top_p || defaultOpenAioptions.top_p);
+    this.data.action = frontmatter.action || defaultOpenAioptions.action;
+    this.data.save = Boolean(frontmatter.save || defaultOpenAioptions.save);
+  }
+  /**
+   * 保存聊天记录
+   * 该方法将当前聊天记录中的消息格式化为文本，并保存为Markdown文件。
+   * @returns {Promise<TFile>} 返回保存的文件路径
+   */
+  async saveChat() {
+    const text = this.messages.reduce((ret, res, i2, arr) => {
+      if (res.type === "question")
+        ret += res.content.trim().replace(/^</, "") + "\n\n";
+      else if (res.type === "answer")
+        ret += "> " + res.content.replace(/\n/gm, "\n> ") + "\n\n";
+      else if (res.type === "file")
+        ret += `[[${res.content.split("\n")[0]}]]${arr[i2 + 1].type === "file" ? "\n" : "\n\n"}`;
+      return ret;
+    }, "");
+    const sanitizedTitle = this.title.replace(/[\\\/<>\:\|\?]/g, "");
+    if (this.saveChatFile) {
+      await this.self.app.vault.modify(this.saveChatFile, text);
+    } else {
+      const path = this.self.settings.chatSaveFolder + "/" + sanitizedTitle + " - " + Date.now() + ".md";
+      this.saveChatFile = await this.self.app.vault.create(path, text);
+    }
+    return this.saveChatFile;
+  }
+  /**
+   * 加载历史聊天记录
+   * @param path - 聊天记录文件的路径
+   * @returns {Promise<MESSAGE_TYEP[]>} 返回聊天记录
+   */
   async loadHistoryChat(path) {
     const file = this.self.app.vault.getFileByPath(path);
     if (file) {
@@ -6476,24 +6534,34 @@ var Chat3 = class {
       const messages = [];
       const items = content.split("\n\n").filter(Boolean);
       for (let item of items) {
-        const path2 = item.match(/\[\[(.+?)\]\]/g);
-        if (path2) {
-          for (let p of path2) {
-            p = p.slice(2, -2);
-            messages.push({ role: "user", content: `${p}
-${await this.self.app.vault.adapter.read(p)}`, type: "file" });
-          }
-        } else if (item.startsWith("> ")) {
+        if (item.startsWith("> ")) {
           messages.push({ role: "system", content: item.replace(/^> /gm, ""), type: "answer" });
         } else {
           messages.push({ role: "user", content: item, type: "question" });
+          continue;
+        }
+        const path2 = item.match(/\[\[(.+?\.md)\]\]/g);
+        if (path2) {
+          for (let p of path2) {
+            p = p.slice(1, -2);
+            messages.push({ role: "user", content: `${p}
+${await this.self.app.vault.adapter.read(p)}`, type: "file" });
+          }
         }
       }
       this.messages = messages;
+      this.saveChatFile = file;
       this.title = file.basename.split(" - ")[0];
       return messages;
     }
   }
+  /**
+   * 内容自动补全
+   * @param prefix - 输入文本前缀
+   * @param suffix - 输入文本后缀
+   * @param maxLength -  token 最大长度
+   * @param updateText - 更新文本的回调函数
+   */
   async FIMCompletion(prefix, suffix, maxLength, updateText) {
     if (!prefix)
       return;
@@ -6517,10 +6585,22 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
       new import_obsidian6.Notice(error.message);
     }
   }
+  /**
+   * 停止聊天
+   * 将 isStopped 标志设置为 true，表示聊天已停止
+   */
   async stopChat() {
     this.isStopped = true;
   }
+  /**
+   * 开启聊天
+   *
+   * @param messgae - 需要发送的消息
+   * @param updateText - 更新聊天内容的回调函数。
+   * @returns Promise<void>
+   */
   async openChat(messgae, updateText) {
+    console.log("\u{1F680} ~ Chat ~ openChat ~ messgae:", messgae);
     if (!messgae)
       return;
     this.isStopped = false;
@@ -6564,8 +6644,53 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
     } catch (error) {
       new import_obsidian6.Notice(error.message);
     }
+    this.data.save && await this.saveChat();
   }
 };
+var actions = [
+  {
+    value: "\u9ED8\u8BA4 \u{1F63D}",
+    text: {
+      name: "default",
+      icon: "cat"
+    }
+  },
+  {
+    value: "\u9009\u4E2D\u6587\u672C\u66FF\u6362\u4E3A\u7B2C\u4E00\u4E2A\u56DE\u7B54 \u270F\uFE0F",
+    text: {
+      name: "replace",
+      icon: "pencil-line"
+    }
+  },
+  {
+    value: "\u9009\u4E2D\u6587\u672C\u66FF\u6362\u4E3A wiki \u94FE\u63A5\uFF08\u6574\u4E2A\u5BF9\u8BDD\uFF09 \u{1F517}",
+    text: {
+      name: "wikiLink",
+      icon: "link"
+    }
+  }
+];
+function actionReplace(self2, chat3) {
+  var _a2;
+  const content = chat3.messages.find((message) => message.type === "answer");
+  const editor = (_a2 = self2.app.workspace.getActiveViewOfType(import_obsidian6.MarkdownView)) == null ? void 0 : _a2.editor;
+  if (editor) {
+    const text = editor.getSelection();
+    if (text) {
+      editor.replaceSelection(content.content);
+    }
+  }
+}
+function actionWikiLink(self2, chat3) {
+  var _a2;
+  const editor = (_a2 = self2.app.workspace.getActiveViewOfType(import_obsidian6.MarkdownView)) == null ? void 0 : _a2.editor;
+  if (editor) {
+    const text = editor.getSelection();
+    if (text) {
+      editor.replaceSelection(`[[${chat3.saveChatFile.path}|${text}]]`);
+    }
+  }
+}
 
 // src/Commands/clipboardFormat.ts
 async function clipboardFormatCommand(self2) {
@@ -6826,11 +6951,13 @@ var DoubleInputBox = class extends import_obsidian9.Modal {
         res1 = value;
       })
     );
-    new import_obsidian9.Setting(contentEl).setDesc(textDescription).setName(textName).addTextArea(
-      (text) => text.onChange((value) => {
+    new import_obsidian9.Setting(contentEl).setDesc(textDescription).setName(textName).addTextArea((text) => {
+      text.inputEl.style.width = "100%";
+      text.onChange((value) => {
+        text.inputEl.style.height = text.inputEl.scrollHeight + "px";
         res2 = value;
-      })
-    );
+      });
+    }).infoEl.style.display = "none";
     new import_obsidian9.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
         this.close();
@@ -9586,7 +9713,7 @@ function init(self2) {
       readDataTracking: false,
       searchForWords: true,
       highlight: false,
-      readingNotes: false,
+      readingNotes: true,
       readingPageStyles: false,
       poster: false,
       dialogue: false,
@@ -9923,35 +10050,46 @@ var import_obsidian24 = require("obsidian");
 // src/Modals/PanelSearchForWord.ts
 var import_obsidian23 = require("obsidian");
 var PanelSearchForWord = class extends import_obsidian23.Modal {
-  constructor(app, title, content, onSubmit) {
-    super(app);
+  constructor(self2, title, content, onSubmit) {
+    super(self2.app);
+    this.chatContent = "";
+    this.self = self2;
     this.title = title;
     this.content = content;
     this.onSubmit = onSubmit;
+    this.chat = new Chat3(self2);
   }
   onOpen() {
     const { contentEl, titleEl } = this;
     titleEl.setText(this.title);
     contentEl.setText(this.content);
+    contentEl.appendChild(this.chatArea = createChatArea());
     new import_obsidian23.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("\u5199\u751F\u8BCD").setCta().onClick(() => {
         this.close();
-        this.onSubmit("words");
+        this.onSubmit("words", this.chatContent);
       })
     ).addButton(
       (btn) => btn.setButtonText("\u5199\u5361\u7247").setCta().onClick(() => {
         this.close();
-        this.onSubmit("card");
+        this.onSubmit("card", this.chatContent);
       })
     ).addButton(
       (btn) => btn.setIcon("bot").setCta().onClick(() => {
-        this.close();
-        this.onSubmit("ai");
+        this.chat.data.temperature = 0.5;
+        const word = this.title.split(" ").shift();
+        this.chatArea.innerHTML = "";
+        this.chatArea.innerHTML += `<h1>AI Chat</h1>`;
+        this.chat.openChat(`\u6211\u60F3\u8BA9\u6210\u4E3A\u4E00\u4E2A\u767E\u79D1\uFF0C\u4EE5\u4E13\u4E1A\u7684\u89D2\u5EA6\u548C\u4E25\u8C28\u7684\u77E5\u8BC6\u7528\u4E00\u6BB5\u8BDD\u6765\u56DE\u7B54\u6211\uFF0C\u8FD9\u6BB5\u8BDD\u8981\u6C42\u8DB3\u591F\u5168\u9762\u3002\u6211\u73B0\u5728\u6211\u8F93\u5165\u7684\u8BCD\u6761\u662F${word}`, (text) => {
+          this.chatArea.innerHTML += text;
+          this.chatContent += text;
+          btn.setDisabled(!text);
+        });
       })
     );
   }
   onClose() {
-    editorBlur(this.app);
+    editorBlur(this.self.app);
     let { contentEl } = this;
     contentEl.empty();
   }
@@ -9989,19 +10127,17 @@ async function searchForWord(self2, editor) {
   div.appendChild(h11);
   div.appendChild(JSummary || createElement("p", "\u7A7A\u7A7A\u5982\u4E5F"));
   notice.hide();
-  new PanelSearchForWord(self2.app, `${word} ${pinyin}`, div || "\u7A7A\u7A7A\u5982\u4E5F", async (type) => {
+  new PanelSearchForWord(self2, `${word} ${pinyin}`, div || "\u7A7A\u7A7A\u5982\u4E5F", async (type, chatContent) => {
     let file, content, filepath;
     if (type === "words") {
       const meanings = removeDuplicates(Array.from(jnr.querySelectorAll(".cino, .encs")).map((el) => el.parentNode.textContent)).map((text) => filterChineseAndPunctuation(text)).map((text) => trimNonChineseChars(text)).map((text) => text.replace(";", "\uFF1B")).join("\uFF1B") || (0, import_obsidian24.htmlToMarkdown)(jnr.textContent);
       content = `${word}\`/${pinyin}/\`\uFF1A${meanings}\u3002`;
       filepath = "\u8BCD\u8BED/" + word + ".md";
-    } else if (type === "cards") {
+    } else if (type === "card") {
       const html3 = JSummary == null ? void 0 : JSummary.textContent;
       let content2 = html3 ? (0, import_obsidian24.htmlToMarkdown)(html3) : "";
       content2 = content2.replace(/\[\d+\]/g, "");
       filepath = "\u5361\u7247\u76D2/" + word + ".md";
-    } else if (type === "ai" && self2.settings.chat) {
-      chat(self2, word);
     }
     file = self2.app.vault.getFileByPath(filepath);
     if (type === "cards") {
@@ -10010,10 +10146,10 @@ async function searchForWord(self2, editor) {
     if (file) {
       new import_obsidian24.Notice(type === "words" ? "\u8BCD\u8BED\u5DF2\u5B58\u5728" : "\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
     } else {
-      file = await self2.app.vault.create(filepath, content);
+      file = await self2.app.vault.create(filepath, chatContent || content);
     }
     editor.replaceSelection(`[[${word}]]`);
-    self2.app.workspace.getLeaf(false).openFile(file);
+    self2.app.workspace.getLeaf(true).openFile(file);
   }).open();
 }
 function filterChineseAndPunctuation(str2) {
@@ -10085,12 +10221,12 @@ async function syncNote(self2, file) {
   let thinks = 0;
   let outlinks = 0;
   let dialogue2 = 0;
-  const { links, frontmatter } = self2.app.metadataCache.getFileCache(file);
+  let { links, frontmatter } = self2.app.metadataCache.getFileCache(file);
   let content = "---\ntags: \u8BFB\u4E66\u7B14\u8BB0\n---";
   if (self2.settings.outLink && links) {
     content += "\n\n# \u51FA\u94FE\n\n";
-    uniqueBy(links, (link) => link.link).filter((link) => /^([^.\s]+|.*\.md)$/i.test(link.link)).forEach(({ link }) => content += `[[${link}|${link.split("/").pop()}]] / `);
-    content = content.slice(0, -3);
+    links = uniqueBy(links, (link) => link.link).filter((link) => self2.app.vault.getMarkdownFiles().some((file2) => [`\u8BCD\u8BED/${link.displayText}.md`, `\u5361\u7247\u76D2/${link.displayText}.md`, `\u5361\u7247\u76D2/\u5F52\u6863/${link.displayText}.md`].some((path) => file2.path.includes(path)))).map(({ link }) => content += `[[${link}|${link.split("/").pop()}]] / `);
+    links.length && (content = content.slice(0, -3));
     outlinks = links.length;
   }
   let { bookReview } = frontmatter;

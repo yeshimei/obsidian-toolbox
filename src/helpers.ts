@@ -8,12 +8,24 @@ export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'];
 
+export function createChatArea() {
+  const chatArea = document.createElement('div');
+  chatArea.style.whiteSpace = 'pre-wrap';
+  chatArea.style.userSelect = 'text';
+  chatArea.style.padding = ' 1rem 0';
+  return chatArea;
+}
+
 export function escapeStringForRegex(str: string) {
   return str.replace(/[-\/\\^$.*+?()[\]{}|]/g, '\\$&');
 }
 
-export function hasRootFolder(file: TFile, folderName: string) {
-  return new RegExp(`^${folderName}`).test(file.path);
+export function hasRootFolder(file: TFile | string, folderName: string) {
+  let path;
+  if (typeof file !== 'string') {
+    path = file.path;
+  }
+  return new RegExp(`^${folderName}`).test(path);
 }
 
 /**
@@ -46,22 +58,9 @@ export function getBooksList(app: App, folderName?: string): Array<{ text: any; 
     })
     .map(file => ({
       text: file,
-      value: file.path + ' - ' + formatFileSize(file.stat.size)
+      value: file.path
     }))
     .sort((a, b) => b.text.stat.ctime - a.text.stat.ctime);
-
-  const currentFile = app.workspace.getActiveFile();
-  if (currentFile) {
-    books.unshift({
-      text: currentFile,
-      value: currentFile.path + ' - ' + formatFileSize(currentFile.stat.size)
-    });
-  }
-
-  books.unshift({
-    text: null,
-    value: '🔗'
-  });
 
   return books;
 }
