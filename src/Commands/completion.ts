@@ -1,9 +1,12 @@
 import { Editor, MarkdownView } from 'obsidian';
+import { escapeStringForRegex } from 'src/helpers';
 import Toolbox from 'src/main';
 import { Chat } from './chat';
 
+const chat = new Chat(null);
 let lastPrefix: string;
 let timer: number;
+let completionText = '';
 
 export default function completionCommand(self: Toolbox) {
   self.addCommand({
@@ -28,7 +31,7 @@ export function completion(self: Toolbox): void {
   const prefix = text.slice(0, ch);
   const suffix = text.slice(ch);
 
-  let match = suffix.match(/^%%[\s\S]*?%%/);
+  let match = suffix.match(new RegExp(`^%%${completionText}%%`, 'm'));
   document.onkeydown = evt => {
     if (evt.key === ' ') {
       if (match && match[1] !== undefined) {
@@ -66,28 +69,31 @@ export function completion(self: Toolbox): void {
     if (timer) clearTimeout(timer);
     const currentCursor = editor.getCursor();
     timer = window.setTimeout(() => {
-      let chat = new Chat(self);
+      chat.self = self;
       chat.FIMCompletion(prefix, suffix, self.settings.completionMaxLength, text => {
         const newCursor = editor.getCursor();
-        if (newCursor.line === currentCursor.line && newCursor.ch === currentCursor.ch && text) {
+        const suffix = editor.getLine(editor.getCursor().line).slice(editor.getCursor().ch);
+        const match = suffix.match(new RegExp(`%%${completionText}%%`, 'm'));
+        if (newCursor.line === currentCursor.line && newCursor.ch === currentCursor.ch && text && !match) {
+          completionText = escapeStringForRegex(text);
           editor.replaceRange(`%%${text}%%`, { line, ch });
         } else {
           completion(self);
         }
       });
-    }, Math.max(self.settings.completionDelay, 1000));
+    }, Math.max(self.settings.completionDelay, 100));
   }
 }
 
 function clearPlaceholder(editor: Editor): void {
   const content = editor.getValue();
-  const hasPlaceholders = /%%[\s\S]*?%%/.test(content);
+  const hasPlaceholders = new RegExp(`%%${completionText}%%`, 'm').test(content);
 
   if (!hasPlaceholders) {
     return;
   }
   const cursorPos = editor.getCursor();
-  const updatedContent = content.replace(/%%[\s\S]*?%%/g, '');
+  const updatedContent = content.replace(new RegExp(`%%${completionText}%%`, 'm'), '');
   editor.setValue(updatedContent);
 
   editor.setCursor(cursorPos);

@@ -798,6 +798,9 @@ var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var imageSuffix = ["png", "jpg", "jpeg", "gif", "bmp", "svg"];
+function escapeStringForRegex(str2) {
+  return str2.replace(/[-\/\\^$.*+?()[\]{}|]/g, "\\$&");
+}
 function hasRootFolder(file, folderName) {
   return new RegExp(`^${folderName}`).test(file.path);
 }
@@ -6276,11 +6279,12 @@ var PanelChat = class extends import_obsidian6.Modal {
     const chatArea = this.chatArea = document.createElement("div");
     chatArea.style.whiteSpace = "pre-wrap";
     chatArea.style.userSelect = "text";
-    chatArea.style.marginBottom = "3rem";
+    chatArea.style.padding = " 1rem 0";
     contentEl.appendChild(chatArea);
     const fileArea = this.fileArea = document.createElement("div");
     fileArea.style.whiteSpace = "pre-wrap";
     fileArea.style.userSelect = "text";
+    fileArea.style.padding = " 1rem 0";
     contentEl.appendChild(fileArea);
     contentEl.onclick = (evt) => {
       const target = evt.target;
@@ -6300,7 +6304,6 @@ var PanelChat = class extends import_obsidian6.Modal {
       text.inputEl.style.height = text.inputEl.scrollHeight + "px";
       text.setValue(this.question).onChange((value) => {
         this.question = value;
-        this.sendBtn.setDisabled(!value);
         text.inputEl.style.height = text.inputEl.scrollHeight + "px";
       });
     }).addButton((btn) => {
@@ -6308,8 +6311,7 @@ var PanelChat = class extends import_obsidian6.Modal {
       btn.buttonEl.style.marginTop = "auto";
       if (import_obsidian6.Platform.isMobile)
         btn.buttonEl.style.width = "3rem";
-      btn.setIcon("send").setDisabled(!this.question).setCta().onClick(async () => {
-        this.textArea.setValue("");
+      btn.setIcon("send").setCta().onClick(async () => {
         this.textArea.inputEl.style.height = defaultTextAreaHeight;
         await this.startChat();
       });
@@ -6323,14 +6325,13 @@ var PanelChat = class extends import_obsidian6.Modal {
       cd.onChange(async (value) => {
         this.promptName = value || "AI Chat";
         await this.chat.specifyPrompt(value);
-        this.sendBtn.setDisabled(false);
       });
     }).addButton((btn) => {
       this.saveBtn = btn;
       if (import_obsidian6.Platform.isMobile)
         btn.buttonEl.style.width = "3rem";
       btn.setIcon("paperclip").onClick(() => {
-        new FuzzySuggest(this.app, this.books, async ({ text, value }) => {
+        new FuzzySuggest(this.app, this.books, async ({ text }) => {
           if (text) {
             const fileSize = formatFileSize(text.stat.size);
             const size = this.files.size;
@@ -6354,9 +6355,13 @@ var PanelChat = class extends import_obsidian6.Modal {
     contentEl.empty();
   }
   async startChat() {
-    let index = 0;
+    if (!this.chat.isStopped) {
+      this.chat.stopChat();
+      return;
+    }
     let list = "";
     const meesages = [{ role: "user", content: this.question, type: "question" }];
+    this.textArea.setValue("");
     for (let file of this.files) {
       const content = `${file.path}
 ${await this.self.app.vault.cachedRead(file)}`;
@@ -6364,38 +6369,29 @@ ${await this.self.app.vault.cachedRead(file)}`;
       list += `\u{1F4C4} ${file.path}
 `;
     }
-    this.chatArea.innerHTML += `<hr>${list}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+    this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
 ${this.question}
 
 <b><i>${this.promptName}\uFF1A</i></b>
 `;
-    await this.chat.open(meesages, (text) => {
-      index++;
-      let titleIndex = 1;
-      let iconIndex = Math.floor(index / 10) % 4;
-      this.sendBtn.setIcon(iconIndex === 0 ? "cloud" : iconIndex === 1 ? "cloud-fog" : iconIndex === 2 ? "cloud-lightning" : "cloud-drizzle");
+    this.sendBtn.setIcon("circle-slash");
+    await this.chat.openChat(meesages, (text) => {
       this.files.clear();
       this.fileArea.innerHTML = "";
       this.chatArea.innerHTML += text;
-      this.sendBtn.setDisabled(true);
-      this.saveBtn.setDisabled(true);
-      if (!text && index > 2) {
+      if (!text) {
+        this.sendBtn.setIcon("send");
         if (this.title) {
           this.saveChat();
-        }
-        if (!this.title) {
+        } else {
           this.chat.getTitle((text2) => {
-            titleIndex++;
             this.title += text2;
             this.setTitle(this.title);
-            if (!text2 && titleIndex > 2) {
+            if (!text2) {
               this.saveChat();
             }
           });
         }
-        this.sendBtn.setDisabled(false);
-        this.saveBtn.setDisabled(false);
-        this.sendBtn.setIcon("send");
       }
     });
   }
@@ -6443,6 +6439,7 @@ var Chat3 = class {
     this.data = {};
     this.messages = [];
     this.title = "";
+    this.isStopped = true;
     this.self = self2;
   }
   async specifyPrompt(name) {
@@ -6466,10 +6463,11 @@ var Chat3 = class {
     Object.assign(this.data, { frequency_penalty, presence_penalty, max_tokens, temperature, top_p });
   }
   async getTitle(updateText) {
-    this.open({ role: "user", content: "\u6839\u636E\u4E0A\u9762\u7684\u5185\u5BB9\u7ED9\u6211\u4E00\u4E2A\u7B80\u77ED\u7684\u6807\u9898\u5427\uFF0C\u4E0D\u8D85\u8FC7\u5341\u4E2A\u5B57", type: "title" }, async (text) => {
+    await this.openChat({ role: "user", content: "\u6839\u636E\u4E0A\u9762\u7684\u5185\u5BB9\u7ED9\u6211\u4E00\u4E2A\u7B80\u77ED\u7684\u6807\u9898\u5427\uFF0C\u4E0D\u8D85\u8FC7\u5341\u4E2A\u5B57", type: "title" }, async (text) => {
       updateText(text);
       this.title += text;
     });
+    this.messages = this.messages.filter((res) => res.type !== "title");
   }
   async loadHistoryChat(path) {
     const file = this.self.app.vault.getFileByPath(path);
@@ -6519,9 +6517,13 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
       new import_obsidian6.Notice(error.message);
     }
   }
-  async open(messgae, updateText) {
+  async stopChat() {
+    this.isStopped = true;
+  }
+  async openChat(messgae, updateText) {
     if (!messgae)
       return;
+    this.isStopped = false;
     const { chatKey, chatUrl, chatModel } = this.self.settings;
     if (typeof messgae === "string") {
       messgae = [{ content: messgae, role: "user", type: "question" }];
@@ -6547,9 +6549,17 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
         ...this.data
       });
       for await (const chunk of completion2) {
-        const text = chunk.choices[0].delta.content;
-        updateText(text);
-        answer.content += text;
+        if (this.isStopped) {
+          updateText("");
+          break;
+        }
+        const choices = chunk.choices;
+        const text = choices[0].delta.content;
+        const finish = this.isStopped = choices[0].finish_reason;
+        if (text || finish) {
+          updateText(text);
+          answer.content += text;
+        }
       }
     } catch (error) {
       new import_obsidian6.Notice(error.message);
@@ -6576,8 +6586,10 @@ async function clipboardFormat(self2, editor) {
 
 // src/Commands/completion.ts
 var import_obsidian7 = require("obsidian");
+var chat2 = new Chat3(null);
 var lastPrefix;
 var timer;
+var completionText = "";
 function completionCommand(self2) {
   self2.addCommand({
     id: "completion",
@@ -6601,7 +6613,7 @@ function completion(self2) {
   const text = editor.getLine(line);
   const prefix = text.slice(0, ch);
   const suffix = text.slice(ch);
-  let match = suffix.match(/^%%[\s\S]*?%%/);
+  let match = suffix.match(new RegExp(`^%%${completionText}%%`, "m"));
   document.onkeydown = (evt) => {
     if (evt.key === " ") {
       if (match && match[1] !== void 0) {
@@ -6637,26 +6649,29 @@ function completion(self2) {
       clearTimeout(timer);
     const currentCursor = editor.getCursor();
     timer = window.setTimeout(() => {
-      let chat2 = new Chat3(self2);
+      chat2.self = self2;
       chat2.FIMCompletion(prefix, suffix, self2.settings.completionMaxLength, (text2) => {
         const newCursor = editor.getCursor();
-        if (newCursor.line === currentCursor.line && newCursor.ch === currentCursor.ch && text2) {
+        const suffix2 = editor.getLine(editor.getCursor().line).slice(editor.getCursor().ch);
+        const match2 = suffix2.match(new RegExp(`%%${completionText}%%`, "m"));
+        if (newCursor.line === currentCursor.line && newCursor.ch === currentCursor.ch && text2 && !match2) {
+          completionText = escapeStringForRegex(text2);
           editor.replaceRange(`%%${text2}%%`, { line, ch });
         } else {
           completion(self2);
         }
       });
-    }, Math.max(self2.settings.completionDelay, 1e3));
+    }, Math.max(self2.settings.completionDelay, 100));
   }
 }
 function clearPlaceholder(editor) {
   const content = editor.getValue();
-  const hasPlaceholders = /%%[\s\S]*?%%/.test(content);
+  const hasPlaceholders = new RegExp(`%%${completionText}%%`, "m").test(content);
   if (!hasPlaceholders) {
     return;
   }
   const cursorPos = editor.getCursor();
-  const updatedContent = content.replace(/%%[\s\S]*?%%/g, "");
+  const updatedContent = content.replace(new RegExp(`%%${completionText}%%`, "m"), "");
   editor.setValue(updatedContent);
   editor.setCursor(cursorPos);
 }
@@ -10179,7 +10194,7 @@ var DEFAULT_SETTINGS = {
   chatPromptFolder: "",
   chatSaveFolder: "",
   completion: true,
-  completionDelay: 1e3,
+  completionDelay: 100,
   completionMaxLength: 128,
   blockReference: true,
   encryption: true,
@@ -10401,7 +10416,7 @@ var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
         })
       );
       if (this.plugin.settings.completion) {
-        new import_obsidian26.Setting(containerEl).setName("\u5EF6\u8FDF\uFF08ms\uFF09,\u4E0D\u4F4E\u4E8E 1000ms").addText(
+        new import_obsidian26.Setting(containerEl).setName("\u5EF6\u8FDF\uFF08ms\uFF09,\u4E0D\u4F4E\u4E8E 100ms").addText(
           (cd) => cd.setValue("" + this.plugin.settings.completionDelay).onChange(async (value) => {
             this.plugin.settings.completionDelay = Number(value);
             await this.plugin.saveSettings();

@@ -8,6 +8,10 @@ export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'];
 
+export function escapeStringForRegex(str: string) {
+  return str.replace(/[-\/\\^$.*+?()[\]{}|]/g, '\\$&');
+}
+
 export function hasRootFolder(file: TFile, folderName: string) {
   return new RegExp(`^${folderName}`).test(file.path);
 }

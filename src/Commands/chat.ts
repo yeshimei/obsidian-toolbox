@@ -55,12 +55,13 @@ class PanelChat extends Modal {
     const chatArea = (this.chatArea = document.createElement('div'));
     chatArea.style.whiteSpace = 'pre-wrap';
     chatArea.style.userSelect = 'text';
-    chatArea.style.marginBottom = '3rem';
+    chatArea.style.padding = ' 1rem 0';
     contentEl.appendChild(chatArea);
 
     const fileArea = (this.fileArea = document.createElement('div'));
     fileArea.style.whiteSpace = 'pre-wrap';
     fileArea.style.userSelect = 'text';
+    fileArea.style.padding = ' 1rem 0';
     contentEl.appendChild(fileArea);
 
     contentEl.onclick = evt => {
@@ -84,7 +85,6 @@ class PanelChat extends Modal {
 
         text.setValue(this.question).onChange(value => {
           this.question = value;
-          this.sendBtn.setDisabled(!value);
           text.inputEl.style.height = text.inputEl.scrollHeight + 'px';
         });
       })
@@ -94,10 +94,8 @@ class PanelChat extends Modal {
         if (Platform.isMobile) btn.buttonEl.style.width = '3rem';
         btn
           .setIcon('send')
-          .setDisabled(!this.question)
           .setCta()
           .onClick(async () => {
-            this.textArea.setValue('');
             this.textArea.inputEl.style.height = defaultTextAreaHeight;
             await this.startChat();
           });
@@ -113,14 +111,13 @@ class PanelChat extends Modal {
         cd.onChange(async (value: any) => {
           this.promptName = value || 'AI Chat';
           await this.chat.specifyPrompt(value);
-          this.sendBtn.setDisabled(false);
         });
       })
       .addButton(btn => {
         this.saveBtn = btn;
         if (Platform.isMobile) btn.buttonEl.style.width = '3rem';
         btn.setIcon('paperclip').onClick(() => {
-          new FuzzySuggest(this.app, this.books, async ({ text, value }) => {
+          new FuzzySuggest(this.app, this.books, async ({ text }) => {
             if (text) {
               const fileSize = formatFileSize(text.stat.size);
               const size = this.files.size;
@@ -147,44 +144,40 @@ class PanelChat extends Modal {
   }
 
   async startChat() {
-    let index = 0;
+    if (!this.chat.isStopped) {
+      this.chat.stopChat();
+      return;
+    }
+
     let list = '';
     const meesages: MESSAGE_TYEP[] = [{ role: 'user', content: this.question, type: 'question' }];
+    this.textArea.setValue('');
     for (let file of this.files) {
       const content = `${file.path}\n${await this.self.app.vault.cachedRead(file)}`;
       meesages.push({ role: 'user', content, type: 'file' });
       list += `📄 ${file.path}\n`;
     }
-    this.chatArea.innerHTML += `<hr>${list}<b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.promptName}：</i></b>\n`;
+    this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.promptName}：</i></b>\n`;
 
-    await this.chat.open(meesages, text => {
-      index++;
-      let titleIndex = 1;
-      let iconIndex = Math.floor(index / 10) % 4;
-      this.sendBtn.setIcon(iconIndex === 0 ? 'cloud' : iconIndex === 1 ? 'cloud-fog' : iconIndex === 2 ? 'cloud-lightning' : 'cloud-drizzle');
+    this.sendBtn.setIcon('circle-slash');
+    await this.chat.openChat(meesages, text => {
       this.files.clear();
       this.fileArea.innerHTML = '';
       this.chatArea.innerHTML += text;
-      this.sendBtn.setDisabled(true);
-      this.saveBtn.setDisabled(true);
-      if (!text && index > 2) {
+      if (!text) {
+        this.sendBtn.setIcon('send');
+
         if (this.title) {
           this.saveChat();
-        }
-        // 获取标题
-        if (!this.title) {
+        } else {
           this.chat.getTitle(text => {
-            titleIndex++;
             this.title += text;
             this.setTitle(this.title);
-            if (!text && titleIndex > 2) {
+            if (!text) {
               this.saveChat();
             }
           });
         }
-        this.sendBtn.setDisabled(false);
-        this.saveBtn.setDisabled(false);
-        this.sendBtn.setIcon('send');
       }
     });
   }
@@ -242,6 +235,7 @@ export class Chat {
   promptContent: string;
   messages: MESSAGE_TYEP[] = [];
   title = '';
+  isStopped = true;
   constructor(self: Toolbox) {
     this.self = self;
   }
@@ -252,6 +246,7 @@ export class Chat {
     let temperature = 1;
     let max_tokens: number = null;
     let top_p = 1;
+
     if (name) {
       const path = this.self.settings.chatPromptFolder + '/' + name + '.md';
       const file = this.self.app.vault.getFileByPath(path);
@@ -268,10 +263,12 @@ export class Chat {
   }
 
   async getTitle(updateText: (text: string) => void) {
-    this.open({ role: 'user', content: '根据上面的内容给我一个简短的标题吧，不超过十个字', type: 'title' }, async text => {
+    await this.openChat({ role: 'user', content: '根据上面的内容给我一个简短的标题吧，不超过十个字', type: 'title' }, async text => {
       updateText(text);
       this.title += text;
     });
+
+    this.messages = this.messages.filter(res => res.type !== 'title');
   }
 
   async loadHistoryChat(path: string) {
@@ -326,8 +323,13 @@ export class Chat {
     }
   }
 
-  async open(messgae: MESSAGE_TYEP[] | MESSAGE_TYEP | string, updateText: (text: string) => void): Promise<void> {
+  async stopChat() {
+    this.isStopped = true;
+  }
+
+  async openChat(messgae: MESSAGE_TYEP[] | MESSAGE_TYEP | string, updateText: (text: string) => void): Promise<void> {
     if (!messgae) return;
+    this.isStopped = false;
     const { chatKey, chatUrl, chatModel } = this.self.settings;
     if (typeof messgae === 'string') {
       messgae = [{ content: messgae, role: 'user', type: 'question' }];
@@ -357,9 +359,18 @@ export class Chat {
       });
 
       for await (const chunk of completion) {
-        const text = chunk.choices[0].delta.content;
-        updateText(text);
-        answer.content += text;
+        if (this.isStopped) {
+          updateText('');
+          break;
+        }
+
+        const choices = chunk.choices as any;
+        const text = choices[0].delta.content;
+        const finish = (this.isStopped = choices[0].finish_reason);
+        if (text || finish) {
+          updateText(text);
+          answer.content += text;
+        }
       }
     } catch (error) {
       new Notice(error.message);

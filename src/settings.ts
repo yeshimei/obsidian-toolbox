@@ -138,7 +138,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   chatSaveFolder: '',
 
   completion: true,
-  completionDelay: 1000,
+  completionDelay: 100,
   completionMaxLength: 128,
 
   blockReference: true,
@@ -423,7 +423,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
 
       if (this.plugin.settings.completion) {
-        new Setting(containerEl).setName('延迟（ms）,不低于 1000ms').addText(cd =>
+        new Setting(containerEl).setName('延迟（ms）,不低于 100ms').addText(cd =>
           cd.setValue('' + this.plugin.settings.completionDelay).onChange(async value => {
             this.plugin.settings.completionDelay = Number(value);
             await this.plugin.saveSettings();
