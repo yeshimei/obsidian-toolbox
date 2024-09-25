@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, TFile, moment, requestUrl } from 'obsidian';
+import { App, Component, Editor, MarkdownRenderer, MarkdownView, TFile, moment, requestUrl } from 'obsidian';
 
 export const SOURCE_VIEW_CLASS = '.cm-scroller';
 export const MASK_CLASS = '.__mask';
@@ -7,6 +7,13 @@ export const MOBILE_NAVBAR_CLASS = '.mobile-navbar-actions';
 export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'];
+
+export function render(app: App, text: string, el: HTMLElement) {
+  const component = new Component();
+  const sourcePath = app.workspace.getActiveFile()?.path;
+  'markdown-preview-view markdown-rendered node-insert-event is-readable-line-width allow-fold-headings show-indentation-guide allow-fold-lists'.split(' ').forEach(className => el.classList.add(className));
+  MarkdownRenderer.render(app, text, el, sourcePath, component);
+}
 
 export function createChatArea() {
   const chatArea = document.createElement('div');

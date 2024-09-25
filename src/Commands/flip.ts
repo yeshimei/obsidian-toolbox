@@ -77,22 +77,30 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
       mask.show();
       // 点击划线，显示其评论
       if (target.hasClass(COMMENT_CLASS.slice(1))) {
-        const text = target.textContent;
-        const { comment, date, tagging } = target.dataset;
-        new PanelExhibition(self.app, '评论', comment ? createElement('p', `${comment}${date ? ('</br></br><i>' + date + tagging ? '（' + tagging + '）' : '' + '</i>') : ''}`) : '空空如也').open();
+        let { comment, date, tagging } = target.dataset;
+        tagging && (tagging = `（${tagging}）`);
+        date && (date = `*${date}*`);
+        new PanelExhibition(self.app, '评论', comment ? `${comment}${tagging}\n${date}` : '空空如也').open();
       }
       // 点击双链，显示其内容
       else if (target.hasClass(OUT_LINK_CLASS.slice(1))) {
         target.click();
         const text = target.textContent.split('|').shift();
-        const file = self.getFileByShort(text);
-        new PanelExhibition(self.app, text, file ? createElement('p', await self.app.vault.read(file)) : '空空如也', file && (() => self.app.workspace.getLeaf(false).openFile(file))).open();
+        let file = self.getFileByShort(text);
+        // [[|]] 形式的链接无法解析，无法获取 | 后的文件名
+        // if (!file) {
+        //   const unresolvedLink = Array.from(document.querySelectorAll('a.internal-link.is-unresolved')).find(el => el.textContent === text) as HTMLElement;
+        //   if (unresolvedLink) {
+        //     file = self.getFileByShort(unresolvedLink.dataset.href);
+        //   }
+        // }
+        new PanelExhibition(self.app, text, file ? await self.app.vault.read(file) : '空空如也', file && (() => self.app.workspace.getLeaf(false).openFile(file))).open();
         // 点击脚注，显示其内容
       } else if (target.className === 'cm-footref cm-hmd-barelink') {
         const footnote = target.textContent;
         const context = await self.app.vault.cachedRead(file);
         const text = new RegExp(`\\[\\^${footnote}\\]: (.*)`).exec(context);
-        new PanelExhibition(self.app, '脚注', createElement('p', text ? text[1] : '空空如也')).open();
+        new PanelExhibition(self.app, '脚注', text ? text[1] : '空空如也').open();
       } else {
         flip(self, file);
       }

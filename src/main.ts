@@ -163,7 +163,8 @@ export default class Toolbox extends Plugin {
   }
 
   getFileByShort(filename: string) {
-    return this.app.vault.getMarkdownFiles().find(({ basename, path, extension }) => basename === filename || path.replace('.' + extension, '') === filename);
+    if (!filename) return;
+    return this.app.vault.getMarkdownFiles().find(({ basename, path, extension }) => path === filename || path === filename + '.' + extension || basename === filename || basename === filename + '.' + extension);
   }
 
   getMetadata(file: TFile, key: string) {

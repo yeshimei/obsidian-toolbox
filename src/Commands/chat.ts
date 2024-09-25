@@ -1,6 +1,6 @@
 import { ButtonComponent, MarkdownView, Modal, Notice, Setting, TextAreaComponent, TFile } from 'obsidian';
 import OpenAI from 'openai';
-import { createChatArea, formatFileSize, getBooksList, getOptionList } from 'src/helpers';
+import { createChatArea, formatFileSize, getBooksList, getOptionList, render } from 'src/helpers';
 import Toolbox from 'src/main';
 import FuzzySuggest from 'src/Modals/FuzzySuggest';
 
@@ -29,10 +29,10 @@ class PanelChat extends Modal {
   files: Set<TFile> = new Set();
   chatArea: HTMLDivElement;
   fileArea: HTMLDivElement;
-  title = '';
   promptName = 'AI Chat';
   action = 'deafult';
   question = '';
+  content = '';
   sendBtn: ButtonComponent;
   AttacBtn: ButtonComponent;
   saveBtn: ButtonComponent;
@@ -48,10 +48,9 @@ class PanelChat extends Modal {
   onOpen() {
     let defaultTextAreaHeight = '';
     const { contentEl } = this;
-    this.setTitle(this.title || 'AI Chat');
+    this.setTitle('AI Chat');
     contentEl.appendChild((this.chatArea = createChatArea()));
     contentEl.appendChild((this.fileArea = createChatArea()));
-
     contentEl.onclick = evt => {
       const target = evt.target as HTMLElement;
       if (target.classList.contains('__remove')) {
@@ -196,7 +195,6 @@ class PanelChat extends Modal {
       this.chat.stopChat();
       return;
     }
-
     let question = this.question || '';
     let list = '';
     const meesages: MESSAGE_TYEP[] = [{ role: 'user', content: question, type: 'question' }];
@@ -206,31 +204,32 @@ class PanelChat extends Modal {
       meesages.push({ role: 'user', content, type: 'file' });
       list += `📄 ${file.path}\n`;
     }
-    this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>叫我包仔：</i></b>\n${question}\n\n<b><i>${this.promptName}：</i></b>\n`;
+    this.content += `---${list}\n***叫我包仔***：\n${question}\n***${this.promptName}：***\n`;
+    render(this.self.app, this.content, this.chatArea);
     this.question = '';
 
     this.sendBtn.setIcon('circle-slash');
-    await this.chat.openChat(meesages, text => {
+    await this.chat.openChat(meesages, (text, type) => {
       this.files.clear();
       this.fileArea.innerHTML = '';
-      this.chatArea.innerHTML += text;
+      if (type === 'content') {
+        this.chatArea.innerHTML = '';
+        this.content += text;
+        render(this.self.app, this.content, this.chatArea);
+      } else if (type === 'title') {
+        this.setTitle(this.chat.title);
+      }
+
       if (!text) {
         this.sendBtn.setIcon('send');
         this.sendBtn.setDisabled(!this.question);
-        if (!this.title) {
-          this.chat.getTitle(text => {
-            this.title += text;
-            this.setTitle(this.title);
-          });
-        }
       }
     });
   }
 
   async loadHistoryChat(path: string) {
     const messages = await this.chat.loadHistoryChat(path);
-    this.title = this.chat.title;
-    this.setTitle(this.title);
+    this.setTitle(this.chat.title);
     this.chatArea.innerHTML = messages.reduce((ret, res, i, arr) => {
       if (res.type === 'question') ret += `<hr><b><i>叫我包仔：</i></b>\n${res.content}\n\n`;
       else if (res.type === 'answer') ret += `<b><i>AI Cha：</i></b>\n${res.content}`;
@@ -264,8 +263,7 @@ const defaultOpenAioptions = {
   temperature: 1,
   top_p: 1,
   action: 'default',
-  save: true,
-  max_tokens: 1024 * 128
+  save: true
 };
 
 export class Chat {
@@ -308,7 +306,7 @@ export class Chat {
     this.data.frequency_penalty = Number(frontmatter.frequency_penalty || defaultOpenAioptions.frequency_penalty);
     this.data.presence_penalty = Number(frontmatter.presence_penalty || defaultOpenAioptions.presence_penalty);
     this.data.temperature = Number(frontmatter.temperature || defaultOpenAioptions.temperature);
-    this.data.max_tokens = Number(frontmatter.max_tokens || defaultOpenAioptions.max_tokens);
+    this.data.max_tokens = frontmatter.max_tokens ? Number(frontmatter.max_tokens) : null;
     this.data.top_p = Number(frontmatter.top_p || defaultOpenAioptions.top_p);
     this.data.action = frontmatter.action || defaultOpenAioptions.action;
     this.data.save = Boolean(frontmatter.save || defaultOpenAioptions.save);
@@ -420,8 +418,7 @@ export class Chat {
    * @param updateText - 更新聊天内容的回调函数。
    * @returns Promise<void>
    */
-  async openChat(messgae: MESSAGE_TYEP[] | MESSAGE_TYEP | string, updateText: (text: string) => void): Promise<void> {
-    console.log('🚀 ~ Chat ~ openChat ~ messgae:', messgae);
+  async openChat(messgae: MESSAGE_TYEP[] | MESSAGE_TYEP | string, updateText: (text: string, type: string) => void): Promise<void> {
     if (!messgae) return;
     this.isStopped = false;
     const { chatKey, chatUrl, chatModel } = this.self.settings;
@@ -454,7 +451,7 @@ export class Chat {
 
       for await (const chunk of completion) {
         if (this.isStopped) {
-          updateText('');
+          updateText('', 'content');
           break;
         }
 
@@ -462,15 +459,21 @@ export class Chat {
         const text = choices[0].delta.content;
         const finish = (this.isStopped = choices[0].finish_reason);
         if (text || finish) {
-          updateText(text);
+          updateText(text, 'content');
           answer.content += text;
+        }
+
+        if (finish && !this.title) {
+          this.getTitle(text => {
+            updateText(text, 'title');
+          });
         }
       }
     } catch (error) {
       new Notice(error.message);
     }
 
-    this.data.save && (await this.saveChat());
+    this.data.save && this.isStopped && this.title && (await this.saveChat());
   }
 }
 

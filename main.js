@@ -798,6 +798,13 @@ var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var imageSuffix = ["png", "jpg", "jpeg", "gif", "bmp", "svg"];
+function render(app, text, el) {
+  var _a2;
+  const component = new import_obsidian3.Component();
+  const sourcePath = (_a2 = app.workspace.getActiveFile()) == null ? void 0 : _a2.path;
+  "markdown-preview-view markdown-rendered node-insert-event is-readable-line-width allow-fold-headings show-indentation-guide allow-fold-lists".split(" ").forEach((className) => el.classList.add(className));
+  import_obsidian3.MarkdownRenderer.render(app, text, el, sourcePath, component);
+}
 function createChatArea() {
   const chatArea = document.createElement("div");
   chatArea.style.whiteSpace = "pre-wrap";
@@ -6263,10 +6270,10 @@ var PanelChat = class extends import_obsidian6.Modal {
   constructor(self2, content) {
     super(self2.app);
     this.files = /* @__PURE__ */ new Set();
-    this.title = "";
     this.promptName = "AI Chat";
     this.action = "deafult";
     this.question = "";
+    this.content = "";
     this.self = self2;
     this.chat = new Chat3(self2);
     this.question = content;
@@ -6274,7 +6281,7 @@ var PanelChat = class extends import_obsidian6.Modal {
   onOpen() {
     let defaultTextAreaHeight = "";
     const { contentEl } = this;
-    this.setTitle(this.title || "AI Chat");
+    this.setTitle("AI Chat");
     contentEl.appendChild(this.chatArea = createChatArea());
     contentEl.appendChild(this.fileArea = createChatArea());
     contentEl.onclick = (evt) => {
@@ -6409,33 +6416,33 @@ ${await this.self.app.vault.cachedRead(file)}`;
       list += `\u{1F4C4} ${file.path}
 `;
     }
-    this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+    this.content += `---${list}
+***\u53EB\u6211\u5305\u4ED4***\uFF1A
 ${question}
-
-<b><i>${this.promptName}\uFF1A</i></b>
+***${this.promptName}\uFF1A***
 `;
+    render(this.self.app, this.content, this.chatArea);
     this.question = "";
     this.sendBtn.setIcon("circle-slash");
-    await this.chat.openChat(meesages, (text) => {
+    await this.chat.openChat(meesages, (text, type) => {
       this.files.clear();
       this.fileArea.innerHTML = "";
-      this.chatArea.innerHTML += text;
+      if (type === "content") {
+        this.chatArea.innerHTML = "";
+        this.content += text;
+        render(this.self.app, this.content, this.chatArea);
+      } else if (type === "title") {
+        this.setTitle(this.chat.title);
+      }
       if (!text) {
         this.sendBtn.setIcon("send");
         this.sendBtn.setDisabled(!this.question);
-        if (!this.title) {
-          this.chat.getTitle((text2) => {
-            this.title += text2;
-            this.setTitle(this.title);
-          });
-        }
       }
     });
   }
   async loadHistoryChat(path) {
     const messages = await this.chat.loadHistoryChat(path);
-    this.title = this.chat.title;
-    this.setTitle(this.title);
+    this.setTitle(this.chat.title);
     this.chatArea.innerHTML = messages.reduce((ret, res, i2, arr) => {
       if (res.type === "question")
         ret += `<hr><b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
@@ -6457,8 +6464,7 @@ var defaultOpenAioptions = {
   temperature: 1,
   top_p: 1,
   action: "default",
-  save: true,
-  max_tokens: 1024 * 128
+  save: true
 };
 var Chat3 = class {
   constructor(self2) {
@@ -6493,7 +6499,7 @@ var Chat3 = class {
     this.data.frequency_penalty = Number(frontmatter.frequency_penalty || defaultOpenAioptions.frequency_penalty);
     this.data.presence_penalty = Number(frontmatter.presence_penalty || defaultOpenAioptions.presence_penalty);
     this.data.temperature = Number(frontmatter.temperature || defaultOpenAioptions.temperature);
-    this.data.max_tokens = Number(frontmatter.max_tokens || defaultOpenAioptions.max_tokens);
+    this.data.max_tokens = frontmatter.max_tokens ? Number(frontmatter.max_tokens) : null;
     this.data.top_p = Number(frontmatter.top_p || defaultOpenAioptions.top_p);
     this.data.action = frontmatter.action || defaultOpenAioptions.action;
     this.data.save = Boolean(frontmatter.save || defaultOpenAioptions.save);
@@ -6600,7 +6606,6 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
    * @returns Promise<void>
    */
   async openChat(messgae, updateText) {
-    console.log("\u{1F680} ~ Chat ~ openChat ~ messgae:", messgae);
     if (!messgae)
       return;
     this.isStopped = false;
@@ -6630,21 +6635,26 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
       });
       for await (const chunk of completion2) {
         if (this.isStopped) {
-          updateText("");
+          updateText("", "content");
           break;
         }
         const choices = chunk.choices;
         const text = choices[0].delta.content;
         const finish = this.isStopped = choices[0].finish_reason;
         if (text || finish) {
-          updateText(text);
+          updateText(text, "content");
           answer.content += text;
+        }
+        if (finish && !this.title) {
+          this.getTitle((text2) => {
+            updateText(text2, "title");
+          });
         }
       }
     } catch (error) {
       new import_obsidian6.Notice(error.message);
     }
-    this.data.save && await this.saveChat();
+    this.data.save && this.isStopped && this.title && await this.saveChat();
   }
 };
 var actions = [
@@ -9494,7 +9504,7 @@ var PanelExhibition = class extends import_obsidian13.Modal {
   onOpen() {
     const { contentEl, titleEl } = this;
     titleEl.setText(this.title);
-    contentEl.setText(this.content);
+    render(this.app, this.content, contentEl);
     if (this.onSubmit) {
       new import_obsidian13.Setting(contentEl).addButton(
         (btn) => btn.setButtonText("\u67E5\u770B").setCta().onClick(() => {
@@ -9581,19 +9591,21 @@ function readingPageMask(self2, el, file) {
       const target = document.elementFromPoint(x, y);
       mask.show();
       if (target.hasClass(COMMENT_CLASS.slice(1))) {
-        const text = target.textContent;
-        const { comment, date, tagging } = target.dataset;
-        new PanelExhibition(self2.app, "\u8BC4\u8BBA", comment ? createElement("p", `${comment}${date ? "</br></br><i>" + date + tagging ? "\uFF08" + tagging + "\uFF09" : "</i>" : ""}`) : "\u7A7A\u7A7A\u5982\u4E5F").open();
+        let { comment, date, tagging } = target.dataset;
+        tagging && (tagging = `\uFF08${tagging}\uFF09`);
+        date && (date = `*${date}*`);
+        new PanelExhibition(self2.app, "\u8BC4\u8BBA", comment ? `${comment}${tagging}
+${date}` : "\u7A7A\u7A7A\u5982\u4E5F").open();
       } else if (target.hasClass(OUT_LINK_CLASS.slice(1))) {
         target.click();
         const text = target.textContent.split("|").shift();
-        const file2 = self2.getFileByShort(text);
-        new PanelExhibition(self2.app, text, file2 ? createElement("p", await self2.app.vault.read(file2)) : "\u7A7A\u7A7A\u5982\u4E5F", file2 && (() => self2.app.workspace.getLeaf(false).openFile(file2))).open();
+        let file2 = self2.getFileByShort(text);
+        new PanelExhibition(self2.app, text, file2 ? await self2.app.vault.read(file2) : "\u7A7A\u7A7A\u5982\u4E5F", file2 && (() => self2.app.workspace.getLeaf(false).openFile(file2))).open();
       } else if (target.className === "cm-footref cm-hmd-barelink") {
         const footnote = target.textContent;
         const context = await self2.app.vault.cachedRead(file);
         const text = new RegExp(`\\[\\^${footnote}\\]: (.*)`).exec(context);
-        new PanelExhibition(self2.app, "\u811A\u6CE8", createElement("p", text ? text[1] : "\u7A7A\u7A7A\u5982\u4E5F")).open();
+        new PanelExhibition(self2.app, "\u811A\u6CE8", text ? text[1] : "\u7A7A\u7A7A\u5982\u4E5F").open();
       } else {
         flip(self2, file);
       }
@@ -10872,7 +10884,9 @@ var Toolbox = class extends import_obsidian27.Plugin {
     return (_a2 = this.getView()) == null ? void 0 : _a2.editor;
   }
   getFileByShort(filename) {
-    return this.app.vault.getMarkdownFiles().find(({ basename, path, extension }) => basename === filename || path.replace("." + extension, "") === filename);
+    if (!filename)
+      return;
+    return this.app.vault.getMarkdownFiles().find(({ basename, path, extension }) => path === filename || path === filename + "." + extension || basename === filename || basename === filename + "." + extension);
   }
   getMetadata(file, key) {
     var _a2, _b;

@@ -1,4 +1,5 @@
-import { App, MarkdownView, Modal, Setting } from 'obsidian';
+import { App, Modal, Setting } from 'obsidian';
+import { render } from 'src/helpers';
 
 export class PanelExhibition extends Modal {
   title: string;
@@ -15,7 +16,7 @@ export class PanelExhibition extends Modal {
   onOpen() {
     const { contentEl, titleEl } = this;
     titleEl.setText(this.title);
-    contentEl.setText(this.content);
+    render(this.app, this.content, contentEl);
 
     if (this.onSubmit) {
       new Setting(contentEl).addButton(btn =>
