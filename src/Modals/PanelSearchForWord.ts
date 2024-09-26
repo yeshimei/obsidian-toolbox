@@ -18,6 +18,7 @@ export class PanelSearchForWord extends Modal {
     this.content = content;
     this.onSubmit = onSubmit;
     this.chat = new Chat(self);
+    this.chat.data.save = false;
   }
 
   onOpen() {

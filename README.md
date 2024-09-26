@@ -49,6 +49,7 @@ temperature: 1
 /*
 选择一个默认的 action
 在 AI Chat 页面可以随时更换其他的 action
+- notSaveChat：不保存当前对话 
 - replace：选中文本替换为第一个回答
 - wikiLink: 选中文本替换为 wiki 链接（整个对话）
 */

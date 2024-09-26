@@ -6403,6 +6403,9 @@ var PanelChat = class extends import_obsidian6.Modal {
         break;
       case "wikiLink":
         actionWikiLink(this.self, this.chat);
+        break;
+      case "notSaveChat":
+        actionnotSaveChat(this.self, this.chat);
     }
   }
   async startChat() {
@@ -6669,6 +6672,13 @@ var actions = [
     }
   },
   {
+    value: "\u4E0D\u4FDD\u5B58\u5F53\u524D\u5BF9\u8BDD \u{1F5D1}\uFE0F",
+    text: {
+      name: "notSaveChat",
+      icon: "trash"
+    }
+  },
+  {
     value: "\u9009\u4E2D\u6587\u672C\u66FF\u6362\u4E3A\u7B2C\u4E00\u4E2A\u56DE\u7B54 \u270F\uFE0F",
     text: {
       name: "replace",
@@ -6703,6 +6713,10 @@ function actionWikiLink(self2, chat3) {
       editor.replaceSelection(`[[${chat3.saveChatFile.path}|${text}]]`);
     }
   }
+}
+function actionnotSaveChat(self2, chat3) {
+  chat3.stopChat();
+  chat3.saveChatFile && self2.app.vault.delete(chat3.saveChatFile);
 }
 
 // src/Commands/clipboardFormat.ts
@@ -10098,6 +10112,7 @@ var PanelSearchForWord = class extends import_obsidian23.Modal {
     this.content = content;
     this.onSubmit = onSubmit;
     this.chat = new Chat3(self2);
+    this.chat.data.save = false;
   }
   onOpen() {
     const { contentEl, titleEl } = this;

@@ -186,6 +186,9 @@ class PanelChat extends Modal {
         break;
       case 'wikiLink':
         actionWikiLink(this.self, this.chat);
+        break;
+      case 'notSaveChat':
+        actionnotSaveChat(this.self, this.chat);
     }
   }
 
@@ -483,6 +486,13 @@ const actions = [
     }
   },
   {
+    value: '不保存当前对话 🗑️',
+    text: {
+      name: 'notSaveChat',
+      icon: 'trash'
+    }
+  },
+  {
     value: '选中文本替换为第一个回答 ✏️',
     text: {
       name: 'replace',
@@ -517,4 +527,9 @@ function actionWikiLink(self: Toolbox, chat: Chat) {
       editor.replaceSelection(`[[${chat.saveChatFile.path}|${text}]]`);
     }
   }
+}
+
+function actionnotSaveChat(self: Toolbox, chat: Chat) {
+  chat.stopChat();
+  chat.saveChatFile && self.app.vault.delete(chat.saveChatFile);
 }
