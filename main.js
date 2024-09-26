@@ -737,6 +737,8 @@ async function clearRootFFolder(self2) {
 
 // src/Commands/adjustReadingPageStyle.ts
 function adjustReadingPageStyle(self2, el, file) {
+  if (!el)
+    return;
   if (self2.settings.readingPageStyles && self2.hasReadingPage(file)) {
     el.style.fontSize = self2.settings.fontSize + "px";
   } else {
@@ -762,6 +764,8 @@ var Block = class {
     });
   }
   async exec(self2, file) {
+    if (file.extension !== "md")
+      return;
     let content = await self2.app.vault.read(file);
     this.blocks.forEach(({ name, fn }) => {
       const regex = new RegExp(`(?<header>%%${name}(?<paramStringify>.*?)%%).+?(?<footer>%%${name}%%)`, "gs");
@@ -797,7 +801,8 @@ var MOBILE_HEADER_CLASS = ".view-header";
 var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
-var imageSuffix = ["png", "jpg", "jpeg", "gif", "bmp", "svg"];
+var imageSuffix = ["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp"];
+var vidoeSuffix = ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm"];
 function render(app, text, el) {
   var _a2;
   const component = new import_obsidian3.Component();
@@ -810,6 +815,7 @@ function createChatArea() {
   chatArea.style.whiteSpace = "pre-wrap";
   chatArea.style.userSelect = "text";
   chatArea.style.padding = " 1rem 0";
+  chatArea.style.overflowY = "auto";
   return chatArea;
 }
 function escapeStringForRegex(str2) {
@@ -6273,7 +6279,6 @@ var PanelChat = class extends import_obsidian6.Modal {
     this.promptName = "AI Chat";
     this.action = "deafult";
     this.question = "";
-    this.content = "";
     this.self = self2;
     this.chat = new Chat3(self2);
     this.question = content;
@@ -6416,21 +6421,19 @@ ${await this.self.app.vault.cachedRead(file)}`;
       list += `\u{1F4C4} ${file.path}
 `;
     }
-    this.content += `---${list}
-***\u53EB\u6211\u5305\u4ED4***\uFF1A
-${question}
-***${this.promptName}\uFF1A***
+    this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+${this.question}
+
+<b><i>${this.promptName}\uFF1A</i></b>
 `;
-    render(this.self.app, this.content, this.chatArea);
     this.question = "";
     this.sendBtn.setIcon("circle-slash");
     await this.chat.openChat(meesages, (text, type) => {
       this.files.clear();
       this.fileArea.innerHTML = "";
       if (type === "content") {
-        this.chatArea.innerHTML = "";
-        this.content += text;
-        render(this.self.app, this.content, this.chatArea);
+        this.chatArea.innerHTML += text;
+        setTimeout(() => this.chatArea.scrollTo(0, this.chatArea.scrollHeight), 0);
       } else if (type === "title") {
         this.setTitle(this.chat.title);
       }
@@ -9585,6 +9588,7 @@ function readingPageMask(self2, el, file) {
       }
     };
     mask.onclick = async (e2) => {
+      var _a2, _b;
       const x = e2.clientX;
       const y = e2.clientY;
       mask.hide();
@@ -9599,8 +9603,12 @@ ${date}` : "\u7A7A\u7A7A\u5982\u4E5F").open();
       } else if (target.hasClass(OUT_LINK_CLASS.slice(1))) {
         target.click();
         const text = target.textContent.split("|").shift();
-        let file2 = self2.getFileByShort(text);
-        new PanelExhibition(self2.app, text, file2 ? await self2.app.vault.read(file2) : "\u7A7A\u7A7A\u5982\u4E5F", file2 && (() => self2.app.workspace.getLeaf(false).openFile(file2))).open();
+        let links = (_a2 = self2.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.links;
+        const link = (_b = links.find((link2) => link2.displayText === text)) == null ? void 0 : _b.link;
+        if (link) {
+          let file2 = self2.getFileByShort(link);
+          new PanelExhibition(self2.app, getBasename(link), file2 ? await self2.app.vault.read(file2) : "\u7A7A\u7A7A\u5982\u4E5F", file2 && (() => self2.app.workspace.getLeaf(true).openFile(file2))).open();
+        }
       } else if (target.className === "cm-footref cm-hmd-barelink") {
         const footnote = target.textContent;
         const context = await self2.app.vault.cachedRead(file);
@@ -9723,9 +9731,9 @@ function init(self2) {
       flip: false,
       fullScreenMode: false,
       readDataTracking: false,
-      searchForWords: true,
+      searchForWords: false,
       highlight: false,
-      readingNotes: true,
+      readingNotes: false,
       readingPageStyles: false,
       poster: false,
       dialogue: false,
@@ -9865,25 +9873,45 @@ function readingDataTracking(self2, el, file) {
   });
 }
 
+// src/Commands/repositionImage.ts
+async function repositionImage(self2, file) {
+  var _a2;
+  if (!self2.settings.imageLinkFormat || !self2.hasTag(file, "imageLinkFormat"))
+    return;
+  let content = await self2.app.vault.read(file);
+  const imageLinkRegex = new RegExp(`!\\[\\[(.*?\\.(${imageSuffix.join("|")}))\\]\\]`, "i");
+  const iamgeLink = (_a2 = content.match(imageLinkRegex)) == null ? void 0 : _a2[1];
+  if (!iamgeLink)
+    return;
+  const caption = await navigator.clipboard.readText();
+  content = content.replace(`![[${iamgeLink}]]`, "") + `
+
+![[${iamgeLink}|${caption}]]
+
+`;
+  content = content.replace(/(!\[\[.*?\]\])[\n\s]+/g, "$1\n\n");
+  await self2.app.vault.modify(file, content);
+}
+
 // src/Commands/repositionVideo.ts
 async function repositionVideo(self2, file) {
-  if (!self2.settings.videoLinkFormat || file.path !== self2.settings.videoLinkFormatFolder + ".md")
+  var _a2;
+  if (!self2.settings.videoLinkFormat || !self2.hasTag(file, "videoLinkFormat"))
     return;
   const content = await self2.app.vault.read(file);
-  const videoLinkRegex = /\[\[(.*?\.(mp4|mkv|avi|mov|wmv|flv|webm))\]\]/g;
-  let match;
-  while ((match = videoLinkRegex.exec(content)) !== null) {
-    const videoLink = match[1];
-    new InputBox(self2.app, {
-      title: videoLink,
-      name: "\u5916\u94FE",
-      onSubmit: (res) => {
-        const link = res.split("/?").shift();
-        self2.app.vault.modify(file, content.replace(`![[${videoLink}]]`, "").replace("[![[bilibili.png|15]]]", `[![[bilibili.png|15]]](${link}) [[${videoLink}|${videoLink.replace(/\..*?$/, "")}]]
+  const videoLinkRegex = new RegExp(`!\\[\\[(.*?\\.${vidoeSuffix.join("|")})\\]\\]`, "i");
+  const videoLink = (_a2 = content.match(videoLinkRegex)) == null ? void 0 : _a2[1];
+  if (!videoLink)
+    return;
+  new InputBox(self2.app, {
+    title: videoLink,
+    name: "\u5916\u94FE",
+    onSubmit: (res) => {
+      const link = res.split("/?").shift();
+      self2.app.vault.modify(file, content.replace(`![[${videoLink}]]`, "").replace("[![[bilibili.png|15]]]", `[![[bilibili.png|15]]](${link}) [[${videoLink}|${videoLink.replace(/\..*?$/, "")}]]
 [![[bilibili.png|15]]]`));
-      }
-    }).open();
-  }
+    }
+  }).open();
 }
 
 // src/Commands/resourceTo.ts
@@ -10092,10 +10120,12 @@ var PanelSearchForWord = class extends import_obsidian23.Modal {
         const word = this.title.split(" ").shift();
         this.chatArea.innerHTML = "";
         this.chatArea.innerHTML += `<h1>AI Chat</h1>`;
-        this.chat.openChat(`\u6211\u60F3\u8BA9\u6210\u4E3A\u4E00\u4E2A\u767E\u79D1\uFF0C\u4EE5\u4E13\u4E1A\u7684\u89D2\u5EA6\u548C\u4E25\u8C28\u7684\u77E5\u8BC6\u7528\u4E00\u6BB5\u8BDD\u6765\u56DE\u7B54\u6211\uFF0C\u8FD9\u6BB5\u8BDD\u8981\u6C42\u8DB3\u591F\u5168\u9762\u3002\u6211\u73B0\u5728\u6211\u8F93\u5165\u7684\u8BCD\u6761\u662F${word}`, (text) => {
-          this.chatArea.innerHTML += text;
-          this.chatContent += text;
-          btn.setDisabled(!text);
+        this.chat.openChat(`\u6211\u60F3\u8BA9\u6210\u4E3A\u4E00\u4E2A\u767E\u79D1\uFF0C\u4EE5\u4E13\u4E1A\u7684\u89D2\u5EA6\u548C\u4E25\u8C28\u7684\u77E5\u8BC6\u7528\u4E00\u6BB5\u8BDD\u6765\u56DE\u7B54\u6211\uFF0C\u8FD9\u6BB5\u8BDD\u8981\u6C42\u8DB3\u591F\u5168\u9762\u5E76\u4E14\u7528\u8BCD\u8BB2\u7A76\u3002\u6211\u73B0\u5728\u6211\u8F93\u5165\u7684\u8BCD\u6761\u662F${word}`, (text, type) => {
+          if (type === "content") {
+            this.chatArea.innerHTML += text;
+            this.chatContent += text;
+            btn.setDisabled(!!text);
+          }
         });
       })
     );
@@ -10234,10 +10264,11 @@ async function syncNote(self2, file) {
   let outlinks = 0;
   let dialogue2 = 0;
   let { links, frontmatter } = self2.app.metadataCache.getFileCache(file);
+  console.log("\u{1F680} ~ syncNote ~ links:", links);
   let content = "---\ntags: \u8BFB\u4E66\u7B14\u8BB0\n---";
   if (self2.settings.outLink && links) {
     content += "\n\n# \u51FA\u94FE\n\n";
-    links = uniqueBy(links, (link) => link.link).filter((link) => self2.app.vault.getMarkdownFiles().some((file2) => [`\u8BCD\u8BED/${link.displayText}.md`, `\u5361\u7247\u76D2/${link.displayText}.md`, `\u5361\u7247\u76D2/\u5F52\u6863/${link.displayText}.md`].some((path) => file2.path.includes(path)))).map(({ link }) => content += `[[${link}|${link.split("/").pop()}]] / `);
+    links = uniqueBy(links, (link) => link.link).filter((link) => self2.app.vault.getMarkdownFiles().some((file2) => [`\u8BCD\u8BED/${link.link}.md`, `\u5361\u7247\u76D2/${link.link}.md`, `\u5361\u7247\u76D2/\u5F52\u6863/${link.link}.md`].some((path) => file2.path.includes(path)))).map(({ link }) => content += `[[${link}|${link.split("/").pop()}]] / `);
     links.length && (content = content.slice(0, -3));
     outlinks = links.length;
   }
@@ -10365,7 +10396,8 @@ var DEFAULT_SETTINGS = {
   videoLinkFormatFolder: "",
   switchLibrary: false,
   savePass: false,
-  savePassPath: "\u6211\u7684/\u5176\u4ED6/\u8D26\u53F7\u7BA1\u7406"
+  savePassPath: "\u6211\u7684/\u5176\u4ED6/\u8D26\u53F7\u7BA1\u7406",
+  imageLinkFormat: false
 };
 var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
   constructor(app, plugin) {
@@ -10705,7 +10737,7 @@ var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
       );
     }
     new import_obsidian26.Setting(containerEl).setName("\u{1F3C5} \u6742\u9879").setDesc("\u5B9A\u5236\u5316\u529F\u80FD").addDropdown(
-      (cd) => cd.addOption("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316", "\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addOption("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939", "\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").addOption("\u67E5\u690D\u7269", "\u67E5\u690D\u7269").addOption("\u4E66\u5E93", "\u4E66\u5E93").addOption("\u4FDD\u5B58\u5BC6\u7801", "\u4FDD\u5B58\u5BC6\u7801").setValue(this.plugin.settings.miscellaneous).onChange(async (value) => {
+      (cd) => cd.addOption("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316", "\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u56FE\u7247\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u56FE\u7247\u65F6\u91CD\u6392\u7248").addOption("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939", "\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").addOption("\u67E5\u690D\u7269", "\u67E5\u690D\u7269").addOption("\u4E66\u5E93", "\u4E66\u5E93").addOption("\u4FDD\u5B58\u5BC6\u7801", "\u4FDD\u5B58\u5BC6\u7801").setValue(this.plugin.settings.miscellaneous).onChange(async (value) => {
         this.plugin.settings.miscellaneous = value;
         await this.plugin.saveSettings();
         this.display();
@@ -10747,21 +10779,22 @@ var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
       }
     }
     if (this.plugin.settings.miscellaneous === "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248") {
-      new import_obsidian26.Setting(containerEl).setName("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addToggle(
+      new import_obsidian26.Setting(containerEl).setName("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").setDesc('tags: "videoLinkFormat"').addToggle(
         (cd) => cd.setValue(this.plugin.settings.videoLinkFormat).onChange(async (value) => {
           this.plugin.settings.videoLinkFormat = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      if (this.plugin.settings.videoLinkFormat) {
-        new import_obsidian26.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u7BC7\u7B14\u8BB0").addText(
-          (cd) => cd.setValue("" + this.plugin.settings.videoLinkFormatFolder).onChange(async (value) => {
-            this.plugin.settings.videoLinkFormatFolder = value;
-            await this.plugin.saveSettings();
-          })
-        );
-      }
+    }
+    if (this.plugin.settings.miscellaneous === "\u5F53\u7B14\u8BB0\u63D2\u5165\u56FE\u7247\u65F6\u91CD\u6392\u7248") {
+      new import_obsidian26.Setting(containerEl).setName("\u5F53\u7B14\u8BB0\u63D2\u5165\u56FE\u7247\u65F6\u91CD\u6392\u7248").setDesc('tags: "imageLinkFormat"').addToggle(
+        (cd) => cd.setValue(this.plugin.settings.imageLinkFormat).onChange(async (value) => {
+          this.plugin.settings.imageLinkFormat = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
     }
     if (this.plugin.settings.miscellaneous === "\u4E66\u5E93") {
       new import_obsidian26.Setting(containerEl).setName("\u4E66\u5E93").addToggle(
@@ -10851,10 +10884,11 @@ var Toolbox = class extends import_obsidian27.Plugin {
         const file = f2;
         resourceTo(this, file, null);
         repositionVideo(this, file);
+        repositionImage(this, file);
       })
     );
     this.registerEvent(
-      this.app.workspace.on("editor-change", (file) => {
+      this.app.workspace.on("editor-change", () => {
         completion(this);
       })
     );

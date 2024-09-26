@@ -6,11 +6,13 @@ export const MOBILE_HEADER_CLASS = '.view-header';
 export const MOBILE_NAVBAR_CLASS = '.mobile-navbar-actions';
 export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
-export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'svg'];
+export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp'];
+export const vidoeSuffix = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
 
 export function render(app: App, text: string, el: HTMLElement) {
   const component = new Component();
   const sourcePath = app.workspace.getActiveFile()?.path;
+
   'markdown-preview-view markdown-rendered node-insert-event is-readable-line-width allow-fold-headings show-indentation-guide allow-fold-lists'.split(' ').forEach(className => el.classList.add(className));
   MarkdownRenderer.render(app, text, el, sourcePath, component);
 }
@@ -20,6 +22,7 @@ export function createChatArea() {
   chatArea.style.whiteSpace = 'pre-wrap';
   chatArea.style.userSelect = 'text';
   chatArea.style.padding = ' 1rem 0';
+  chatArea.style.overflowY = 'auto';
   return chatArea;
 }
 

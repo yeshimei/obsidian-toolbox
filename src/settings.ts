@@ -88,6 +88,7 @@ export interface ToolboxSettings {
   switchLibrary: boolean;
   savePass: boolean;
   savePassPath: string;
+  imageLinkFormat: boolean;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -166,7 +167,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   videoLinkFormatFolder: '',
   switchLibrary: false,
   savePass: false,
-  savePassPath: '我的/其他/账号管理'
+  savePassPath: '我的/其他/账号管理',
+  imageLinkFormat: false
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -619,6 +621,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         cd
           .addOption('剪切板内容格式化', '剪切板内容格式化')
           .addOption('当笔记插入视频时重排版', '当笔记插入视频时重排版')
+          .addOption('当笔记插入图片时重排版', '当笔记插入图片时重排版')
           .addOption('移动笔记中的资源至指定文件夹', '移动笔记中的资源至指定文件夹')
           .addOption('查植物', '查植物')
           .addOption('书库', '书库')
@@ -676,22 +679,28 @@ export class ToolboxSettingTab extends PluginSettingTab {
     }
 
     if (this.plugin.settings.miscellaneous === '当笔记插入视频时重排版') {
-      new Setting(containerEl).setName('当笔记插入视频时重排版').addToggle(cd =>
-        cd.setValue(this.plugin.settings.videoLinkFormat).onChange(async value => {
-          this.plugin.settings.videoLinkFormat = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-      if (this.plugin.settings.videoLinkFormat) {
-        new Setting(containerEl).setName('跟踪哪篇笔记').addText(cd =>
-          cd.setValue('' + this.plugin.settings.videoLinkFormatFolder).onChange(async value => {
-            this.plugin.settings.videoLinkFormatFolder = value;
+      new Setting(containerEl)
+        .setName('当笔记插入视频时重排版')
+        .setDesc('tags: "videoLinkFormat"')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.videoLinkFormat).onChange(async value => {
+            this.plugin.settings.videoLinkFormat = value;
             await this.plugin.saveSettings();
+            this.display();
           })
         );
-      }
+    }
+    if (this.plugin.settings.miscellaneous === '当笔记插入图片时重排版') {
+      new Setting(containerEl)
+        .setName('当笔记插入图片时重排版')
+        .setDesc('tags: "imageLinkFormat"')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.imageLinkFormat).onChange(async value => {
+            this.plugin.settings.imageLinkFormat = value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
     }
 
     if (this.plugin.settings.miscellaneous === '书库') {

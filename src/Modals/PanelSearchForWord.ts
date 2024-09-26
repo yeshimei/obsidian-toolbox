@@ -53,10 +53,12 @@ export class PanelSearchForWord extends Modal {
             const word = this.title.split(' ').shift();
             this.chatArea.innerHTML = '';
             this.chatArea.innerHTML += `<h1>AI Chat</h1>`;
-            this.chat.openChat(`我想让成为一个百科，以专业的角度和严谨的知识用一段话来回答我，这段话要求足够全面。我现在我输入的词条是${word}`, text => {
-              this.chatArea.innerHTML += text;
-              this.chatContent += text;
-              btn.setDisabled(!text);
+            this.chat.openChat(`我想让成为一个百科，以专业的角度和严谨的知识用一段话来回答我，这段话要求足够全面并且用词讲究。我现在我输入的词条是${word}`, (text, type) => {
+              if (type === 'content') {
+                this.chatArea.innerHTML += text;
+                this.chatContent += text;
+                btn.setDisabled(!!text);
+              }
             });
           })
       );

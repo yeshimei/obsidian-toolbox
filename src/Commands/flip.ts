@@ -1,5 +1,5 @@
 import { Notice, TFile } from 'obsidian';
-import { $, COMMENT_CLASS, createElement, editorBlur, MASK_CLASS, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS } from 'src/helpers';
+import { $, COMMENT_CLASS, createElement, editorBlur, getBasename, MASK_CLASS, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelExhibition } from 'src/Modals/PanelExhibition';
 
@@ -86,15 +86,12 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
       else if (target.hasClass(OUT_LINK_CLASS.slice(1))) {
         target.click();
         const text = target.textContent.split('|').shift();
-        let file = self.getFileByShort(text);
-        // [[|]] 形式的链接无法解析，无法获取 | 后的文件名
-        // if (!file) {
-        //   const unresolvedLink = Array.from(document.querySelectorAll('a.internal-link.is-unresolved')).find(el => el.textContent === text) as HTMLElement;
-        //   if (unresolvedLink) {
-        //     file = self.getFileByShort(unresolvedLink.dataset.href);
-        //   }
-        // }
-        new PanelExhibition(self.app, text, file ? await self.app.vault.read(file) : '空空如也', file && (() => self.app.workspace.getLeaf(false).openFile(file))).open();
+        let links = self.app.metadataCache.getFileCache(file)?.links;
+        const link = links.find((link: any) => link.displayText === text)?.link;
+        if (link) {
+          let file = self.getFileByShort(link);
+          new PanelExhibition(self.app, getBasename(link), file ? await self.app.vault.read(file) : '空空如也', file && (() => self.app.workspace.getLeaf(true).openFile(file))).open();
+        }
         // 点击脚注，显示其内容
       } else if (target.className === 'cm-footref cm-hmd-barelink') {
         const footnote = target.textContent;

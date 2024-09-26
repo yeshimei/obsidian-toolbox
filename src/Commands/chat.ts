@@ -1,6 +1,6 @@
 import { ButtonComponent, MarkdownView, Modal, Notice, Setting, TextAreaComponent, TFile } from 'obsidian';
 import OpenAI from 'openai';
-import { createChatArea, formatFileSize, getBooksList, getOptionList, render } from 'src/helpers';
+import { createChatArea, formatFileSize, getBooksList, getOptionList } from 'src/helpers';
 import Toolbox from 'src/main';
 import FuzzySuggest from 'src/Modals/FuzzySuggest';
 
@@ -32,7 +32,6 @@ class PanelChat extends Modal {
   promptName = 'AI Chat';
   action = 'deafult';
   question = '';
-  content = '';
   sendBtn: ButtonComponent;
   AttacBtn: ButtonComponent;
   saveBtn: ButtonComponent;
@@ -204,8 +203,7 @@ class PanelChat extends Modal {
       meesages.push({ role: 'user', content, type: 'file' });
       list += `📄 ${file.path}\n`;
     }
-    this.content += `---${list}\n***叫我包仔***：\n${question}\n***${this.promptName}：***\n`;
-    render(this.self.app, this.content, this.chatArea);
+    this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.promptName}：</i></b>\n`;
     this.question = '';
 
     this.sendBtn.setIcon('circle-slash');
@@ -213,9 +211,8 @@ class PanelChat extends Modal {
       this.files.clear();
       this.fileArea.innerHTML = '';
       if (type === 'content') {
-        this.chatArea.innerHTML = '';
-        this.content += text;
-        render(this.self.app, this.content, this.chatArea);
+        this.chatArea.innerHTML += text;
+        setTimeout(() => this.chatArea.scrollTo(0, this.chatArea.scrollHeight), 0);
       } else if (type === 'title') {
         this.setTitle(this.chat.title);
       }

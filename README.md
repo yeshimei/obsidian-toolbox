@@ -24,7 +24,7 @@
 
 # AI Chat
 
-支持 OpenAI SDK 接口的大模型。 目前，仅测试了 keepseek（以下以此为例）
+支持 OpenAI SDK 接口的大模型。 目前，仅测试了 deepseek（以下以此为例）
 
 - 自定义提示词（prompt）
 - 笔记作为附件

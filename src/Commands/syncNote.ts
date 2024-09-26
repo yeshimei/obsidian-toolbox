@@ -26,13 +26,14 @@ export async function syncNote(self: Toolbox, file: TFile) {
   let dialogue = 0;
 
   let { links, frontmatter } = self.app.metadataCache.getFileCache(file);
+  console.log('🚀 ~ syncNote ~ links:', links);
   let content = '---\ntags: 读书笔记\n---';
   // 出链
 
   if (self.settings.outLink && links) {
     content += '\n\n# 出链\n\n';
     links = uniqueBy(links, (link: any) => link.link)
-      .filter(link => self.app.vault.getMarkdownFiles().some(file => [`词语/${link.displayText}.md`, `卡片盒/${link.displayText}.md`, `卡片盒/归档/${link.displayText}.md`].some(path => file.path.includes(path))))
+      .filter(link => self.app.vault.getMarkdownFiles().some(file => [`词语/${link.link}.md`, `卡片盒/${link.link}.md`, `卡片盒/归档/${link.link}.md`].some(path => file.path.includes(path))))
       .map(({ link }) => (content += `[[${link}|${link.split('/').pop()}]] / `));
     links.length && (content = content.slice(0, -3));
     outlinks = links.length;

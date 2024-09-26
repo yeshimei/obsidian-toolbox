@@ -19,6 +19,7 @@ import polysemy from './Commands/polysemy';
 import poster from './Commands/poster';
 import readingDataTracking from './Commands/readingDataTracking';
 import renumberFootnoteCommand from './Commands/renumberFootnote';
+import repositionImage from './Commands/repositionImage';
 import repositionVideo from './Commands/repositionVideo';
 import resourcesToCommand, { resourceTo } from './Commands/resourceTo';
 import reviewOfReadingNote from './Commands/reviewOfReadingNote';
@@ -123,11 +124,13 @@ export default class Toolbox extends Plugin {
         resourceTo(this, file, null);
         // 当笔记插入视频时重排版
         repositionVideo(this, file);
+        // 当笔记插入图片时重排版
+        repositionImage(this, file);
       })
     );
 
     this.registerEvent(
-      this.app.workspace.on('editor-change', file => {
+      this.app.workspace.on('editor-change', () => {
         // 补全
         completion(this);
       })
