@@ -10565,7 +10565,8 @@ var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
         this.display();
       })
     );
-    new import_obsidian26.Setting(containerEl).setName("\u{1F916} AI Chat").addToggle(
+    const AIChatEl = new import_obsidian26.Setting(containerEl).setName("\u{1F916} AI Chat");
+    AIChatEl.addToggle(
       (cd) => cd.setValue(this.plugin.settings.chat).onChange(async (value) => {
         this.plugin.settings.chat = value;
         await this.plugin.saveSettings();
@@ -10573,6 +10574,25 @@ var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
       })
     );
     if (this.plugin.settings.chat) {
+      if (this.plugin.settings.chatUrl.indexOf("deepseek") > -1) {
+        const url = "https://api.deepseek.com/user/balance";
+        let config = {
+          method: "get",
+          maxBodyLength: Infinity,
+          url: "https://api.deepseek.com/user/balance",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${this.plugin.settings.chatKey}`
+          }
+        };
+        fetch(url, config).then((response) => {
+          if (response.ok) {
+            response.json().then((data) => {
+              AIChatEl.nameEl.innerText = `\u{1F916} AI Chat\uFF08${data.balance_infos[0].total_balance} ${data.balance_infos[0].currency}\uFF09`;
+            });
+          }
+        });
+      }
       new import_obsidian26.Setting(containerEl).setName("Url").addText(
         (cd) => cd.setValue("" + this.plugin.settings.chatUrl).onChange(async (value) => {
           this.plugin.settings.chatUrl = value;

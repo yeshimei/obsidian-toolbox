@@ -370,7 +370,8 @@ export class ToolboxSettingTab extends PluginSettingTab {
       })
     );
 
-    new Setting(containerEl).setName('🤖 AI Chat').addToggle(cd =>
+    const AIChatEl = new Setting(containerEl).setName('🤖 AI Chat');
+    AIChatEl.addToggle(cd =>
       cd.setValue(this.plugin.settings.chat).onChange(async value => {
         this.plugin.settings.chat = value;
         await this.plugin.saveSettings();
@@ -379,6 +380,27 @@ export class ToolboxSettingTab extends PluginSettingTab {
     );
 
     if (this.plugin.settings.chat) {
+      if (this.plugin.settings.chatUrl.indexOf('deepseek') > -1) {
+        const url = 'https://api.deepseek.com/user/balance';
+        let config = {
+          method: 'get',
+          maxBodyLength: Infinity,
+          url: 'https://api.deepseek.com/user/balance',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${this.plugin.settings.chatKey}`
+          }
+        };
+
+        fetch(url, config).then(response => {
+          if (response.ok) {
+            response.json().then(data => {
+              AIChatEl.nameEl.innerText = `🤖 AI Chat（${data.balance_infos[0].total_balance} ${data.balance_infos[0].currency}）`;
+            });
+          }
+        });
+      }
+
       new Setting(containerEl).setName('Url').addText(cd =>
         cd.setValue('' + this.plugin.settings.chatUrl).onChange(async value => {
           this.plugin.settings.chatUrl = value;
