@@ -1,282 +1,9 @@
-import { ButtonComponent, MarkdownView, Modal, Notice, Setting, TextAreaComponent, TFile } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import OpenAI from 'openai';
-import { createChatArea, formatFileSize, getBooksList, getOptionList } from 'src/helpers';
 import Toolbox from 'src/main';
-import FuzzySuggest from 'src/Modals/FuzzySuggest';
+import inPrompts from './AIChatInPrompt';
 
-export default function chatCommand(self: Toolbox) {
-  self.settings.chat &&
-    self.addCommand({
-      id: 'AI Chat',
-      name: 'AI Chat',
-      icon: 'bot',
-      callback: () => chat(self, null)
-    });
-}
-
-export async function chat(self: Toolbox, text: string) {
-  if (!self.settings.chat) return;
-  if (!text) {
-    const editor = self.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-    if (editor) text = editor.getSelection();
-  }
-  new PanelChat(self, text).open();
-}
-
-class PanelChat extends Modal {
-  chat: Chat;
-  self: Toolbox;
-  files: Set<TFile> = new Set();
-  chatArea: HTMLDivElement;
-  fileArea: HTMLDivElement;
-  promptName = 'AI Chat';
-  action = 'deafult';
-  question = '';
-  sendBtn: ButtonComponent;
-  AttacBtn: ButtonComponent;
-  saveBtn: ButtonComponent;
-  actionBtn: ButtonComponent;
-  textArea: TextAreaComponent;
-  constructor(self: Toolbox, content: string) {
-    super(self.app);
-    this.self = self;
-    this.chat = new Chat(self);
-    this.question = content;
-  }
-
-  onOpen() {
-    let defaultTextAreaHeight = '';
-    const { contentEl } = this;
-    this.setTitle('AI Chat');
-    contentEl.appendChild((this.chatArea = createChatArea()));
-    contentEl.appendChild((this.fileArea = createChatArea()));
-    contentEl.onclick = evt => {
-      const target = evt.target as HTMLElement;
-      if (target.classList.contains('__remove')) {
-        const { path } = target.dataset;
-        const fileToRemove = Array.from(this.files).find((file: TFile) => file.path === path);
-        if (fileToRemove) {
-          this.files.delete(fileToRemove);
-          const size = this.files.size;
-          (target.parentNode as HTMLElement).remove();
-          size ? this.AttacBtn.setCta() : this.AttacBtn.removeCta();
-          this.sendBtn.setDisabled(!size);
-        }
-      }
-    };
-
-    new Setting(contentEl)
-      .addTextArea(text => {
-        this.textArea = text;
-        text.inputEl.style.width = '100%';
-        defaultTextAreaHeight = text.inputEl.style.height;
-        text.inputEl.style.height = text.inputEl.scrollHeight + 'px';
-
-        text.setValue(this.question).onChange(value => {
-          this.sendBtn.setDisabled(!value);
-          this.question = value;
-          text.inputEl.style.height = text.inputEl.scrollHeight + 'px';
-        });
-      })
-      // 发送
-      .addButton(btn => {
-        this.sendBtn = btn;
-        btn.buttonEl.style.marginTop = 'auto';
-        btn.buttonEl.style.width = '3rem';
-        btn
-          .setIcon('send')
-          .setDisabled(!this.question)
-          .setCta()
-          .onClick(async () => {
-            this.textArea.inputEl.style.height = defaultTextAreaHeight;
-            await this.startChat();
-          });
-      }).infoEl.style.display = 'none';
-
-    new Setting(contentEl)
-      // 选择一个 prompt
-      .addDropdown(cd => {
-        cd.addOption('', '选择 prompt');
-        cd.addOption('in-summarizeNote:总结当前笔记,并保存到元数据（summay）中', '📝 总结当前笔记（内置）');
-        getOptionList(this.self.app, this.self.settings.chatPromptFolder).forEach((prompt: any) => {
-          cd.addOption(prompt.value, prompt.name);
-        });
-        cd.setValue('');
-        cd.onChange(async (value: any) => {
-          if (value.indexOf('in-') === 0) {
-            this.sendBtn.setDisabled(false);
-            this.textArea.setDisabled(true);
-            this.AttacBtn.setDisabled(true);
-            this.saveBtn.setDisabled(true);
-            this.textArea.setPlaceholder(value.split(':').pop());
-          } else {
-            this.sendBtn.setDisabled(!this.question);
-            this.textArea.setDisabled(false);
-            this.AttacBtn.setDisabled(false);
-            this.saveBtn.setDisabled(false);
-            this.textArea.setPlaceholder('');
-          }
-
-          this.promptName = value || 'AI Chat';
-          await this.chat.specifyPrompt(value);
-          const action = actions.find(a => a.text.name === this.chat.data.action) || actions[0];
-          this.action = action.text.name;
-          this.actionBtn.setIcon(action.text.icon);
-          this.action === 'default' ? this.actionBtn.removeCta() : this.actionBtn.setCta();
-        });
-      })
-      // 选择一篇笔记作为附件
-      .addButton(btn => {
-        this.AttacBtn = btn;
-        btn.buttonEl.style.width = '3rem';
-        const paths = getBooksList(this.self.app).map(({ text }) => ({
-          value: text.path + ' - ' + formatFileSize(text.stat.size),
-          text: text
-        }));
-        const currentFile = this.self.app.workspace.getActiveFile();
-        if (currentFile) {
-          paths.unshift({
-            text: currentFile,
-            value: currentFile.path + ' - ' + formatFileSize(currentFile.stat.size)
-          });
-        }
-        btn.setIcon('paperclip').onClick(() => {
-          new FuzzySuggest(this.app, paths, async ({ text }) => {
-            if (text) {
-              const fileSize = formatFileSize(text.stat.size);
-              const size = this.files.size;
-              this.files.add(text);
-              const newSize = this.files.size;
-              newSize ? btn.setCta() : btn.removeCta();
-              this.sendBtn.setDisabled(!newSize);
-              let color = 'unset';
-              if (text.stat.size > 1024 * 1024) {
-                // 大于1M
-                color = '#FF4500'; // 危险色
-              } else if (text.stat.size > 1024 * 100) {
-                // 大于100K
-                color = '#FFA500'; // 警告色
-              }
-              newSize > size && (this.fileArea.innerHTML += `<div>📄 ${text.path} - <span style="color: ${color};">${fileSize}</span> <span style="cursor: pointer;" class="__remove" data-path="${text.path}">🔥</span><br></div>`);
-            }
-          }).open();
-        });
-      })
-
-      // 打开历史对话
-      .addButton(btn => {
-        this.saveBtn = btn;
-        btn.buttonEl.style.width = '3rem';
-        const paths = getBooksList(this.self.app, this.self.settings.chatSaveFolder).map(({ text }) => ({
-          value: text.basename.split(' - ').shift(),
-          text: text
-        }));
-        btn.setIcon('gallery-horizontal-end').onClick(() => {
-          new FuzzySuggest(this.app, paths, async ({ text }) => {
-            this.loadHistoryChat(text.path);
-            btn.setCta();
-          }).open();
-        });
-      })
-      // 选择一个 Action
-      .addButton(btn => {
-        this.actionBtn = btn;
-        btn.buttonEl.style.width = '3rem';
-        btn.setIcon(actions[0].text.icon).onClick(() => {
-          new FuzzySuggest(this.app, actions, async ({ text }) => this.choiceAction(text.name)).open();
-        });
-      });
-  }
-
-  choiceAction(action: string) {
-    this.actionBtn.setIcon(actions.find(a => a.text.name === action).text.icon);
-    this.action = action;
-    this.action === 'default' ? this.actionBtn.removeCta() : this.actionBtn.setCta();
-  }
-
-  onClose() {
-    let { contentEl } = this;
-    contentEl.empty();
-    switch (this.action) {
-      case 'replace':
-        actionReplace(this.self, this.chat);
-        break;
-      case 'wikiLink':
-        actionWikiLink(this.self, this.chat);
-        break;
-      case 'notSaveChat':
-        actionnotSaveChat(this.self, this.chat);
-    }
-  }
-
-  async startChat() {
-    if (!this.chat.isStopped) {
-      this.chat.stopChat();
-      return;
-    }
-
-    if (this.promptName.indexOf('in-') === 0) {
-      const name = this.promptName.split(':').shift();
-      switch (name) {
-        case 'in-summarizeNote':
-          await summarizeNote.call(this);
-          break;
-      }
-
-      return;
-    }
-
-    let question = this.question || '';
-    let list = '';
-    const meesages: MESSAGE_TYEP[] = [{ role: 'user', content: question, type: 'question' }];
-    this.textArea.setValue('');
-    for (let file of this.files) {
-      const content = `${file.path}\n${await this.self.app.vault.cachedRead(file)}`;
-      meesages.push({ role: 'user', content, type: 'file' });
-      list += `📄 ${file.path}\n`;
-    }
-    this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.promptName}：</i></b>\n`;
-    this.question = '';
-
-    this.sendBtn.setIcon('circle-slash');
-    await this.chat.openChat(meesages, (text, type) => {
-      this.files.clear();
-      this.fileArea.innerHTML = '';
-      if (type === 'content') {
-        this.updateChat(text);
-        setTimeout(() => this.chatArea.scrollTo(0, this.chatArea.scrollHeight), 0);
-      } else if (type === 'title') {
-        this.setTitle(this.chat.title);
-      }
-
-      if (!text) {
-        this.sendBtn.setIcon('send');
-        this.sendBtn.setDisabled(!this.question);
-      }
-    });
-  }
-
-  async loadHistoryChat(path: string) {
-    const messages = await this.chat.loadHistoryChat(path);
-    this.setTitle(this.chat.title);
-    this.chatArea.innerHTML = messages.reduce((ret, res, i, arr) => {
-      if (res.type === 'question') ret += `<hr><b><i>叫我包仔：</i></b>\n${res.content}\n\n`;
-      else if (res.type === 'answer') ret += `<b><i>AI Cha：</i></b>\n${res.content}`;
-      else if (res.type === 'file') ret += `📄 ${res.content.split('\n')[0]}${arr[i + 1].type === 'file' ? '\n' : '\n\n'}`;
-      return ret;
-    }, '');
-  }
-
-  updateChat(content: string) {
-    this.chatArea.innerHTML += content;
-  }
-
-  clearChat() {
-    this.chatArea.innerHTML = '';
-  }
-}
-
-type REQUEST_BODY = {
+export type REQUEST_BODY = {
   frequency_penalty?: number;
   presence_penalty?: number;
   max_tokens?: number;
@@ -286,7 +13,7 @@ type REQUEST_BODY = {
   save?: boolean;
 };
 
-type MESSAGE_TYEP = {
+export type MESSAGE_TYEP = {
   content: string;
   role: 'user' | 'system' | 'assistant';
   name?: string;
@@ -303,12 +30,12 @@ const defaultOpenAioptions = {
   save: true
 };
 
-export class Chat {
+export default class Chat {
   data: REQUEST_BODY = { ...defaultOpenAioptions };
   self: Toolbox;
   title = '';
   messages: MESSAGE_TYEP[] = [];
-  rpomptName: string;
+  promptName: string;
   promptContent: string;
   saveChatFile: TFile;
   isStopped = true;
@@ -317,7 +44,7 @@ export class Chat {
   }
 
   async getTitle(updateText: (text: string) => void) {
-    await this.openChat({ role: 'user', content: '根据上面的内容给我一个简短的标题吧，不超过十个字', type: 'title' }, async text => {
+    await this.openChat({ role: 'user', content: inPrompts['namingTitle'].promptContent, type: 'title' }, async text => {
       updateText(text);
       this.title += text;
     });
@@ -337,7 +64,7 @@ export class Chat {
       return;
     }
 
-    this.rpomptName = name;
+    this.promptName = name;
     this.promptContent = (await this.self.app.vault.cachedRead(file)).replace(/---[\s\S]*?---/, '');
     const frontmatter = this.self.app.metadataCache.getFileCache(file)?.frontmatter || {};
     this.data.frequency_penalty = Number(frontmatter.frequency_penalty || defaultOpenAioptions.frequency_penalty);
@@ -440,6 +167,10 @@ export class Chat {
     }
   }
 
+  clearMessage() {
+    this.messages = [];
+  }
+
   /**
    * 停止聊天
    * 将 isStopped 标志设置为 true，表示聊天已停止
@@ -512,88 +243,4 @@ export class Chat {
 
     this.data.save && this.isStopped && this.title && (await this.saveChat());
   }
-}
-
-const actions = [
-  {
-    value: '默认 😽',
-    text: {
-      name: 'default',
-      icon: 'cat'
-    }
-  },
-  {
-    value: '不保存当前对话 🗑️',
-    text: {
-      name: 'notSaveChat',
-      icon: 'trash'
-    }
-  },
-  {
-    value: '选中文本替换为第一个回答 ✏️',
-    text: {
-      name: 'replace',
-      icon: 'pencil-line'
-    }
-  },
-  {
-    value: '选中文本替换为 wiki 链接（整个对话） 🔗',
-    text: {
-      name: 'wikiLink',
-      icon: 'link'
-    }
-  }
-];
-
-function actionReplace(self: Toolbox, chat: Chat) {
-  const content = chat.messages.find(message => message.type === 'answer');
-  const editor = self.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-  if (editor) {
-    const text = editor.getSelection();
-    if (text) {
-      editor.replaceSelection(content.content);
-    }
-  }
-}
-
-function actionWikiLink(self: Toolbox, chat: Chat) {
-  const editor = self.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-  if (editor) {
-    const text = editor.getSelection();
-    if (text) {
-      editor.replaceSelection(`[[${chat.saveChatFile.path}|${text}]]`);
-    }
-  }
-}
-
-function actionnotSaveChat(self: Toolbox, chat: Chat) {
-  chat.stopChat();
-  chat.saveChatFile && self.app.vault.delete(chat.saveChatFile);
-}
-
-async function summarizeNote() {
-  const file = this.self.app.workspace.getActiveFile();
-  if (!file) return;
-  let content = await this.self.app.vault.cachedRead(file);
-  let promptContent = '你是一个文章总结助手，专注于快速、准确地总结各类文章。适用于学术论文、新闻报道、博客文章等多种文本类型。提取关键信息，生成简洁明了的摘要，识别并突出文章的主要论点、结论和重要数据。支持多语言文本处理。熟悉多种学科领域的专业术语和概念。掌握信息提取和文本摘要的先进算法，了解不同类型文章的结构和写作风格。请使用一段话概括以下内容';
-  if (!content) return;
-  let summary = '';
-  this.clearChat();
-  this.setTitle('总结当前笔记');
-  this.choiceAction('notSaveChat');
-  await this.chat.openChat(
-    [
-      { role: 'system', content: promptContent, type: 'prompt' },
-      { role: 'user', content: content, type: 'file' }
-    ],
-    (text: string, type: string) => {
-      if (type === 'content') {
-        this.updateChat(text);
-        summary += text;
-        if (!text) {
-          this.self.updateFrontmatter(file, 'summary', summary.replace(/\n/g, ' '));
-        }
-      }
-    }
-  );
 }

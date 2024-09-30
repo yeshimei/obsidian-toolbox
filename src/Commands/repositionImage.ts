@@ -3,7 +3,7 @@ import { imageSuffix } from 'src/helpers';
 import Toolbox from 'src/main';
 
 export default async function repositionImage(self: Toolbox, file: TFile) {
-  if (!self.settings.imageLinkFormat || !self.hasTag(file, 'imageLinkFormat')) return;
+  if (!file || file.extension !== 'md' || !self.settings.imageLinkFormat || !self.hasTag(file, 'imageLinkFormat')) return;
   let content = await self.app.vault.read(file);
   const imageLinkRegex = new RegExp(`!\\[\\[(.*?\\.(${imageSuffix.join('|')}))\\]\\]`, 'i');
   const iamgeLink = content.match(imageLinkRegex)?.[1];

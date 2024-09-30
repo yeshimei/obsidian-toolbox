@@ -17,7 +17,7 @@ export default async function clipboardFormatCommand(self: Toolbox) {
  * @param editor - 编辑器实例
  */
 async function clipboardFormat(self: Toolbox, editor: Editor) {
-  if (!self.settings.cleanClipboardContent) return;
+  if (!editor || !self.settings.cleanClipboardContent) return;
   const text = await navigator.clipboard.readText();
   const cleaned = text
     .replace(/\s+/g, ' ')

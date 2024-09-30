@@ -2,9 +2,9 @@ import { MarkdownView, Plugin, TFile } from 'obsidian';
 import 'test';
 import test from 'test/Test';
 import adjustReadingPageStyle from './Commands/adjustReadingPageStyle';
+import chatCommand from './Commands/AIChat';
 import Block from './Commands/Block';
 import blockReferenceCommand from './Commands/blockReference';
-import chatCommand from './Commands/chat';
 import clipboardFormatCommand from './Commands/clipboardFormat';
 import completionCommand, { completion } from './Commands/completion';
 import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
@@ -26,6 +26,7 @@ import resourcesToCommand, { resourceTo } from './Commands/resourceTo';
 import reviewOfReadingNote from './Commands/reviewOfReadingNote';
 import searchForPlantCommand from './Commands/searchForPlant';
 import searchForWordCommand from './Commands/searchForWord';
+import summarizeAndRenameNote from './Commands/summarizeAndRenameNote';
 import switchLibrary from './Commands/switchLibrary';
 import asyncNoteCommand from './Commands/syncNote';
 import { $, debounce, hasRootFolder, SOURCE_VIEW_CLASS } from './helpers';
@@ -105,6 +106,8 @@ export default class Toolbox extends Plugin {
         clearNotePass(this);
         // 切换人物关系视图
         switchCharacterRelationship(this, file);
+        // 为笔记生成标题和摘要
+        summarizeAndRenameNote(this, file);
       })
     );
 
@@ -147,8 +150,8 @@ export default class Toolbox extends Plugin {
     });
   }
 
-  updateFrontmatter(file: TFile, key: string, value: string | number) {
-    this.app.fileManager.processFrontMatter(file, frontmatter => {
+  async updateFrontmatter(file: TFile, key: string, value: string | number) {
+    await this.app.fileManager.processFrontMatter(file, frontmatter => {
       frontmatter[key] = value;
     });
   }

@@ -21,6 +21,8 @@ export interface ToolboxSettings {
   footnoteRenumbering: boolean;
 
   searchForWords: boolean;
+  wordsSaveFolder: string;
+  cardSaveFolder: string;
 
   flip: boolean;
   fileCorrect: number;
@@ -91,6 +93,8 @@ export interface ToolboxSettings {
   imageLinkFormat: boolean;
   bilibiliAISummaryFormat: boolean;
   bilibiliAISummaryFormatFolder: string;
+  summarizeAndRenameNote: boolean;
+  summarizeAndRenameNoteFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -104,6 +108,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   polysemy: true,
   footnoteRenumbering: true,
   searchForWords: true,
+  wordsSaveFolder: '',
+  cardSaveFolder: '',
 
   flip: true,
   fileCorrect: -35,
@@ -172,7 +178,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   savePassPath: '我的/其他/账号管理',
   imageLinkFormat: false,
   bilibiliAISummaryFormat: false,
-  bilibiliAISummaryFormatFolder: '归档/BILIBILI AI 视频总结'
+  bilibiliAISummaryFormatFolder: '归档/BILIBILI AI 视频总结',
+  summarizeAndRenameNote: false,
+  summarizeAndRenameNoteFolder: ''
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -268,6 +276,22 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
+      if (this.plugin.settings.searchForWords) {
+        new Setting(containerEl).setName('生词放在哪个文件夹？').addText(cd =>
+          cd.setValue('' + this.plugin.settings.wordsSaveFolder).onChange(async value => {
+            this.plugin.settings.wordsSaveFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+
+        new Setting(containerEl).setName('卡片笔记放在哪个文件夹？').addText(cd =>
+          cd.setValue('' + this.plugin.settings.characterRelationshipsFolder).onChange(async value => {
+            this.plugin.settings.characterRelationshipsFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
+
       new Setting(containerEl).setName('✏️ 划线').addToggle(cd =>
         cd.setValue(this.plugin.settings.highlight).onChange(async value => {
           this.plugin.settings.highlight = value;
@@ -300,8 +324,8 @@ export class ToolboxSettingTab extends PluginSettingTab {
 
       if (this.plugin.settings.characterRelationships) {
         new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
-          cd.setValue('' + this.plugin.settings.characterRelationshipsFolder).onChange(async value => {
-            this.plugin.settings.characterRelationshipsFolder = value;
+          cd.setValue('' + this.plugin.settings.cardSaveFolder).onChange(async value => {
+            this.plugin.settings.cardSaveFolder = value;
             await this.plugin.saveSettings();
           })
         );
@@ -646,6 +670,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       .addDropdown(cd =>
         cd
           .addOption('剪切板内容格式化', '剪切板内容格式化')
+          .addOption('为笔记生成标题和摘要', '为笔记生成标题和摘要')
           .addOption('当笔记插入视频时重排版', '当笔记插入视频时重排版')
           .addOption('当笔记插入图片时重排版', '当笔记插入图片时重排版')
           .addOption('为哔哩哔哩AI视频总结笔记加入时间转跳', '为哔哩哔哩AI视频总结笔记加入时间转跳')
@@ -660,6 +685,25 @@ export class ToolboxSettingTab extends PluginSettingTab {
             this.display();
           })
       );
+
+    if (this.plugin.settings.miscellaneous === '为笔记生成标题和摘要') {
+      new Setting(containerEl).setName('为笔记生成标题和摘要').addToggle(cd =>
+        cd.setValue(this.plugin.settings.summarizeAndRenameNote).onChange(async value => {
+          this.plugin.settings.summarizeAndRenameNote = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+      if (this.plugin.settings.searchForPlants) {
+        new Setting(containerEl).setName('跟踪哪些文件夹，使用,分隔').addText(cd =>
+          cd.setValue('' + this.plugin.settings.summarizeAndRenameNoteFolder).onChange(async value => {
+            this.plugin.settings.summarizeAndRenameNoteFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
+    }
 
     if (this.plugin.settings.miscellaneous === '剪切板内容格式化') {
       new Setting(containerEl)

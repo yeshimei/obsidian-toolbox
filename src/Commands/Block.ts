@@ -21,7 +21,7 @@ class Block {
   }
 
   async exec(self: Toolbox, file: TFile) {
-    if (file.extension !== 'md') return;
+    if (!file || file.extension !== 'md') return;
     let content = await self.app.vault.read(file);
     this.blocks.forEach(({ name, fn }) => {
       const regex = new RegExp(`(?<header>%%${name}(?<paramStringify>.*?)%%).+?(?<footer>%%${name}%%)`, 'gs');

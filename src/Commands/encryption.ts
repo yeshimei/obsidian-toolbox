@@ -29,6 +29,7 @@ export function decryptPopUpCommand(self: Toolbox) {
 }
 
 export async function encOrDecPopUp(self: Toolbox, file: TFile) {
+  if (!file) return;
   const type = self.settings.encryptionRememberPassMode;
   const tempPass = self.encryptionTempData[file.path];
   const encrypted = isNoteEncrypt(await self.app.vault.cachedRead(file));
@@ -46,6 +47,7 @@ export async function encOrDecPopUp(self: Toolbox, file: TFile) {
 }
 
 export async function toggleEncryptNote(self: Toolbox, file: TFile) {
+  if (!file) return;
   const content = await self.app.vault.read(file);
   const editorViewLine = $('.markdown-source-view .cm-content');
   const previewViewLine = $('.markdown-preview-view p[dir="auto"]');
@@ -108,7 +110,7 @@ export async function decryptPopUp(self: Toolbox, file: TFile) {
 }
 
 export async function encryptionNote(self: Toolbox, file: TFile, pass: string, convert = true) {
-  if (!self.settings.encryption || !pass) return;
+  if (!file || !self.settings.encryption || !pass) return;
   let content = await self.app.vault.read(file);
   if (!content) return;
   let decryptContent;

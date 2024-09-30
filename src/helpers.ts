@@ -9,6 +9,16 @@ export const OUT_LINK_CLASS = '.cm-underline';
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp'];
 export const vidoeSuffix = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
 
+/**
+ * 清理文件名，移除无效字符
+ * @param fileName - 需要清理的文件名
+ * @returns 清理后的文件名
+ */
+export function sanitizeFileName(fileName: string): string {
+  const invalidChars = /[\\\/:*?"<>|]/g;
+  return fileName.replace(invalidChars, '');
+}
+
 export function render(app: App, text: string, el: HTMLElement) {
   const component = new Component();
   const sourcePath = app.workspace.getActiveFile()?.path;
@@ -26,11 +36,13 @@ export function createChatArea() {
   return chatArea;
 }
 
+
 export function escapeStringForRegex(str: string) {
   return str.replace(/[-\/\\^$.*+?()[\]{}|]/g, '\\$&');
 }
 
 export function hasRootFolder(file: TFile | string, folderName: string) {
+  if (!file) return;
   let path;
   if (typeof file !== 'string') {
     path = file.path;
@@ -121,6 +133,7 @@ export function insertString(original: string, index: number, insert: string) {
   }
   return original.substring(0, index) + insert + original.substring(index);
 }
+
 export async function createFile(app: App, path: string, cover = false) {
   let file = app.vault.getFileByPath(path);
   file ? cover && (await app.vault.modify(file, '')) : (file = await app.vault.create(path, ''));

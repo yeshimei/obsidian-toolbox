@@ -21,7 +21,7 @@ export default function resourcesToCommand(self: Toolbox) {
 
 export async function resourceTo(self: Toolbox, file: TFile, targetFolder: string) {
   targetFolder = targetFolder || self.getMetadata(file, 'moveResourcesTo');
-  if (!self.settings.resourceTo || !targetFolder) return;
+  if (!file || file.extension !== 'md' || !self.settings.resourceTo || !targetFolder) return;
   let content = await self.app.vault.read(file);
   const paths = Object.keys(self.app.metadataCache.resolvedLinks[file.path])
     .filter(path => path.indexOf(targetFolder) === -1)

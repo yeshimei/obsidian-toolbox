@@ -1,5 +1,5 @@
 import { Editor, htmlToMarkdown, Notice } from 'obsidian';
-import { createElement, requestUrlToHTML } from 'src/helpers';
+import { createElement, hasRootFolder, requestUrlToHTML } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelSearchForWord } from 'src/Modals/PanelSearchForWord';
 
@@ -40,7 +40,7 @@ async function searchForWord(self: Toolbox, editor: Editor) {
   div.appendChild(JSummary || createElement('p', '空空如也'));
   notice.hide();
   new PanelSearchForWord(self, `${word} ${pinyin}`, div || '空空如也', async (type, chatContent) => {
-    let file, content, filepath;
+    let file, content, folder: string;
     if (type === 'words') {
       const meanings =
         removeDuplicates(Array.from(jnr.querySelectorAll('.cino, .encs')).map(el => el.parentNode.textContent))
@@ -49,23 +49,20 @@ async function searchForWord(self: Toolbox, editor: Editor) {
           .map(text => text.replace(';', '；'))
           .join('；') || htmlToMarkdown(jnr.textContent);
       content = `${word}\`/${pinyin}/\`：${meanings}。`;
-      filepath = '词语/' + word + '.md';
+      folder = self.settings.wordsSaveFolder;
     } else if (type === 'card') {
       const html = JSummary?.textContent;
       let content = html ? htmlToMarkdown(html) : '';
       content = content.replace(/\[\d+\]/g, '');
-      filepath = '卡片盒/' + word + '.md';
+      folder = self.settings.cardSaveFolder;
     }
 
-    file = self.app.vault.getFileByPath(filepath);
-
-    if (type === 'cards') {
-      file = self.app.vault.getFileByPath('卡片盒/归档/' + word + '.md');
-    }
+    self.app.vault.getMarkdownFiles().find(file => hasRootFolder(file, folder) && file.basename === word);
 
     if (file) {
       new Notice(type === 'words' ? '词语已存在' : '卡片笔记已存在');
     } else {
+      const filepath = `${folder}/${word}.md`;
       file = await self.app.vault.create(filepath, chatContent || content);
     }
     editor.replaceSelection(`[[${word}]]`);

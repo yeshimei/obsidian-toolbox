@@ -3,7 +3,7 @@ import { escapeStringForRegex, hasRootFolder } from 'src/helpers';
 import Toolbox from 'src/main';
 
 export default async function repositionBilibiliAISummary(self: Toolbox, file: TFile) {
-  if (!self.settings.bilibiliAISummaryFormat || !hasRootFolder(file, self.settings.bilibiliAISummaryFormatFolder)) return;
+  if (!file || file.extension !== 'md' || !self.settings.bilibiliAISummaryFormat || !hasRootFolder(file, self.settings.bilibiliAISummaryFormatFolder)) return;
   let content = await self.app.vault.read(file);
 
   const url = content.match(/https:\/\/www.bilibili.com\/video\/[a-zA-Z0-9]+/)?.[0];

@@ -1,5 +1,5 @@
 import { Modal, Setting } from 'obsidian';
-import { Chat } from 'src/Commands/chat';
+import Chat from 'src/Commands/Chat';
 import Toolbox from 'src/main';
 import { createChatArea, editorBlur } from '../helpers';
 
