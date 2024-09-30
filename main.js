@@ -6295,8 +6295,8 @@ var PanelChat = class extends import_obsidian6.Modal {
         const { path } = target.dataset;
         const fileToRemove = Array.from(this.files).find((file) => file.path === path);
         if (fileToRemove) {
-          const size = this.files.size;
           this.files.delete(fileToRemove);
+          const size = this.files.size;
           target.parentNode.remove();
           size ? this.AttacBtn.setCta() : this.AttacBtn.removeCta();
           this.sendBtn.setDisabled(!size);
@@ -6324,11 +6324,25 @@ var PanelChat = class extends import_obsidian6.Modal {
     }).infoEl.style.display = "none";
     new import_obsidian6.Setting(contentEl).addDropdown((cd) => {
       cd.addOption("", "\u9009\u62E9 prompt");
+      cd.addOption("in-summarizeNote:\u603B\u7ED3\u5F53\u524D\u7B14\u8BB0,\u5E76\u4FDD\u5B58\u5230\u5143\u6570\u636E\uFF08summay\uFF09\u4E2D", "\u{1F4DD} \u603B\u7ED3\u5F53\u524D\u7B14\u8BB0\uFF08\u5185\u7F6E\uFF09");
       getOptionList(this.self.app, this.self.settings.chatPromptFolder).forEach((prompt) => {
         cd.addOption(prompt.value, prompt.name);
       });
       cd.setValue("");
       cd.onChange(async (value) => {
+        if (value.indexOf("in-") === 0) {
+          this.sendBtn.setDisabled(false);
+          this.textArea.setDisabled(true);
+          this.AttacBtn.setDisabled(true);
+          this.saveBtn.setDisabled(true);
+          this.textArea.setPlaceholder(value.split(":").pop());
+        } else {
+          this.sendBtn.setDisabled(!this.question);
+          this.textArea.setDisabled(false);
+          this.AttacBtn.setDisabled(false);
+          this.saveBtn.setDisabled(false);
+          this.textArea.setPlaceholder("");
+        }
         this.promptName = value || "AI Chat";
         await this.chat.specifyPrompt(value);
         const action = actions.find((a2) => a2.text.name === this.chat.data.action) || actions[0];
@@ -6386,13 +6400,14 @@ var PanelChat = class extends import_obsidian6.Modal {
       this.actionBtn = btn;
       btn.buttonEl.style.width = "3rem";
       btn.setIcon(actions[0].text.icon).onClick(() => {
-        new FuzzySuggest(this.app, actions, async ({ text }) => {
-          btn.setIcon(text.icon);
-          this.action = text.name;
-          text.name === "default" ? btn.removeCta() : btn.setCta();
-        }).open();
+        new FuzzySuggest(this.app, actions, async ({ text }) => this.choiceAction(text.name)).open();
       });
     });
+  }
+  choiceAction(action) {
+    this.actionBtn.setIcon(actions.find((a2) => a2.text.name === action).text.icon);
+    this.action = action;
+    this.action === "default" ? this.actionBtn.removeCta() : this.actionBtn.setCta();
   }
   onClose() {
     let { contentEl } = this;
@@ -6411,6 +6426,15 @@ var PanelChat = class extends import_obsidian6.Modal {
   async startChat() {
     if (!this.chat.isStopped) {
       this.chat.stopChat();
+      return;
+    }
+    if (this.promptName.indexOf("in-") === 0) {
+      const name = this.promptName.split(":").shift();
+      switch (name) {
+        case "in-summarizeNote":
+          await summarizeNote.call(this);
+          break;
+      }
       return;
     }
     let question = this.question || "";
@@ -6435,7 +6459,7 @@ ${this.question}
       this.files.clear();
       this.fileArea.innerHTML = "";
       if (type === "content") {
-        this.chatArea.innerHTML += text;
+        this.updateChat(text);
         setTimeout(() => this.chatArea.scrollTo(0, this.chatArea.scrollHeight), 0);
       } else if (type === "title") {
         this.setTitle(this.chat.title);
@@ -6462,6 +6486,12 @@ ${res.content}`;
         ret += `\u{1F4C4} ${res.content.split("\n")[0]}${arr[i2 + 1].type === "file" ? "\n" : "\n\n"}`;
       return ret;
     }, "");
+  }
+  updateChat(content) {
+    this.chatArea.innerHTML += content;
+  }
+  clearChat() {
+    this.chatArea.innerHTML = "";
   }
 };
 var defaultOpenAioptions = {
@@ -6717,6 +6747,34 @@ function actionWikiLink(self2, chat3) {
 function actionnotSaveChat(self2, chat3) {
   chat3.stopChat();
   chat3.saveChatFile && self2.app.vault.delete(chat3.saveChatFile);
+}
+async function summarizeNote() {
+  const file = this.self.app.workspace.getActiveFile();
+  if (!file)
+    return;
+  let content = await this.self.app.vault.cachedRead(file);
+  let promptContent = "\u4F60\u662F\u4E00\u4E2A\u6587\u7AE0\u603B\u7ED3\u52A9\u624B\uFF0C\u4E13\u6CE8\u4E8E\u5FEB\u901F\u3001\u51C6\u786E\u5730\u603B\u7ED3\u5404\u7C7B\u6587\u7AE0\u3002\u9002\u7528\u4E8E\u5B66\u672F\u8BBA\u6587\u3001\u65B0\u95FB\u62A5\u9053\u3001\u535A\u5BA2\u6587\u7AE0\u7B49\u591A\u79CD\u6587\u672C\u7C7B\u578B\u3002\u63D0\u53D6\u5173\u952E\u4FE1\u606F\uFF0C\u751F\u6210\u7B80\u6D01\u660E\u4E86\u7684\u6458\u8981\uFF0C\u8BC6\u522B\u5E76\u7A81\u51FA\u6587\u7AE0\u7684\u4E3B\u8981\u8BBA\u70B9\u3001\u7ED3\u8BBA\u548C\u91CD\u8981\u6570\u636E\u3002\u652F\u6301\u591A\u8BED\u8A00\u6587\u672C\u5904\u7406\u3002\u719F\u6089\u591A\u79CD\u5B66\u79D1\u9886\u57DF\u7684\u4E13\u4E1A\u672F\u8BED\u548C\u6982\u5FF5\u3002\u638C\u63E1\u4FE1\u606F\u63D0\u53D6\u548C\u6587\u672C\u6458\u8981\u7684\u5148\u8FDB\u7B97\u6CD5\uFF0C\u4E86\u89E3\u4E0D\u540C\u7C7B\u578B\u6587\u7AE0\u7684\u7ED3\u6784\u548C\u5199\u4F5C\u98CE\u683C\u3002\u8BF7\u4F7F\u7528\u4E00\u6BB5\u8BDD\u6982\u62EC\u4EE5\u4E0B\u5185\u5BB9";
+  if (!content)
+    return;
+  let summary = "";
+  this.clearChat();
+  this.setTitle("\u603B\u7ED3\u5F53\u524D\u7B14\u8BB0");
+  this.choiceAction("notSaveChat");
+  await this.chat.openChat(
+    [
+      { role: "system", content: promptContent, type: "prompt" },
+      { role: "user", content, type: "file" }
+    ],
+    (text, type) => {
+      if (type === "content") {
+        this.updateChat(text);
+        summary += text;
+        if (!text) {
+          this.self.updateFrontmatter(file, "summary", summary.replace(/\n/g, " "));
+        }
+      }
+    }
+  );
 }
 
 // src/Commands/clipboardFormat.ts
@@ -9887,6 +9945,32 @@ function readingDataTracking(self2, el, file) {
   });
 }
 
+// src/Commands/repositionBilibiliAISummary.ts
+async function repositionBilibiliAISummary(self2, file) {
+  var _a2;
+  if (!self2.settings.bilibiliAISummaryFormat || !hasRootFolder(file, self2.settings.bilibiliAISummaryFormatFolder))
+    return;
+  let content = await self2.app.vault.read(file);
+  const url = (_a2 = content.match(/https:\/\/www.bilibili.com\/video\/[a-zA-Z0-9]+/)) == null ? void 0 : _a2[0];
+  if (!url)
+    return;
+  if (!new RegExp(`!\\[\\]\\(${escapeStringForRegex(url)}\\)`).test(content)) {
+    content = content.replace(/(# .*)/, `$1
+
+![](${url})`);
+    await self2.app.vault.modify(file, content);
+  }
+  const timeRegex = /(?<minutes>\d{2}):(?<seconds>\d{2})[\s:-]*(?!\]\(|\))/g;
+  if (!timeRegex.test(content))
+    return;
+  content = content.replace(timeRegex, (...args) => {
+    let { minutes, seconds } = args.pop();
+    const time = Number(minutes) * 60 + Number(seconds);
+    return `[${minutes}:${seconds}](${url}/?t=${time}#t=${minutes}:${seconds}) - `;
+  });
+  await self2.app.vault.modify(file, content);
+}
+
 // src/Commands/repositionImage.ts
 async function repositionImage(self2, file) {
   var _a2;
@@ -10412,7 +10496,9 @@ var DEFAULT_SETTINGS = {
   switchLibrary: false,
   savePass: false,
   savePassPath: "\u6211\u7684/\u5176\u4ED6/\u8D26\u53F7\u7BA1\u7406",
-  imageLinkFormat: false
+  imageLinkFormat: false,
+  bilibiliAISummaryFormat: false,
+  bilibiliAISummaryFormatFolder: "\u5F52\u6863/BILIBILI AI \u89C6\u9891\u603B\u7ED3"
 };
 var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
   constructor(app, plugin) {
@@ -10772,7 +10858,7 @@ var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
       );
     }
     new import_obsidian26.Setting(containerEl).setName("\u{1F3C5} \u6742\u9879").setDesc("\u5B9A\u5236\u5316\u529F\u80FD").addDropdown(
-      (cd) => cd.addOption("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316", "\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u56FE\u7247\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u56FE\u7247\u65F6\u91CD\u6392\u7248").addOption("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939", "\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").addOption("\u67E5\u690D\u7269", "\u67E5\u690D\u7269").addOption("\u4E66\u5E93", "\u4E66\u5E93").addOption("\u4FDD\u5B58\u5BC6\u7801", "\u4FDD\u5B58\u5BC6\u7801").setValue(this.plugin.settings.miscellaneous).onChange(async (value) => {
+      (cd) => cd.addOption("\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316", "\u526A\u5207\u677F\u5185\u5BB9\u683C\u5F0F\u5316").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u89C6\u9891\u65F6\u91CD\u6392\u7248").addOption("\u5F53\u7B14\u8BB0\u63D2\u5165\u56FE\u7247\u65F6\u91CD\u6392\u7248", "\u5F53\u7B14\u8BB0\u63D2\u5165\u56FE\u7247\u65F6\u91CD\u6392\u7248").addOption("\u4E3A\u54D4\u54E9\u54D4\u54E9AI\u89C6\u9891\u603B\u7ED3\u7B14\u8BB0\u52A0\u5165\u65F6\u95F4\u8F6C\u8DF3", "\u4E3A\u54D4\u54E9\u54D4\u54E9AI\u89C6\u9891\u603B\u7ED3\u7B14\u8BB0\u52A0\u5165\u65F6\u95F4\u8F6C\u8DF3").addOption("\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939", "\u79FB\u52A8\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939").addOption("\u67E5\u690D\u7269", "\u67E5\u690D\u7269").addOption("\u4E66\u5E93", "\u4E66\u5E93").addOption("\u4FDD\u5B58\u5BC6\u7801", "\u4FDD\u5B58\u5BC6\u7801").setValue(this.plugin.settings.miscellaneous).onChange(async (value) => {
         this.plugin.settings.miscellaneous = value;
         await this.plugin.saveSettings();
         this.display();
@@ -10830,6 +10916,23 @@ var ToolboxSettingTab = class extends import_obsidian26.PluginSettingTab {
           this.display();
         })
       );
+    }
+    if (this.plugin.settings.miscellaneous === "\u4E3A\u54D4\u54E9\u54D4\u54E9AI\u89C6\u9891\u603B\u7ED3\u7B14\u8BB0\u52A0\u5165\u65F6\u95F4\u8F6C\u8DF3") {
+      new import_obsidian26.Setting(containerEl).setName("\u4E3A\u54D4\u54E9\u54D4\u54E9AI\u89C6\u9891\u603B\u7ED3\u7B14\u8BB0\u52A0\u5165\u65F6\u95F4\u8F6C\u8DF3").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.bilibiliAISummaryFormat).onChange(async (value) => {
+          this.plugin.settings.bilibiliAISummaryFormat = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+      if (this.plugin.settings.bilibiliAISummaryFormat) {
+        new import_obsidian26.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+          (cd) => cd.setValue("" + this.plugin.settings.bilibiliAISummaryFormatFolder).onChange(async (value) => {
+            this.plugin.settings.bilibiliAISummaryFormatFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
     }
     if (this.plugin.settings.miscellaneous === "\u4E66\u5E93") {
       new import_obsidian26.Setting(containerEl).setName("\u4E66\u5E93").addToggle(
@@ -10920,6 +11023,7 @@ var Toolbox = class extends import_obsidian27.Plugin {
         resourceTo(this, file, null);
         repositionVideo(this, file);
         repositionImage(this, file);
+        repositionBilibiliAISummary(this, file);
       })
     );
     this.registerEvent(

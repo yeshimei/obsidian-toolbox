@@ -56,8 +56,8 @@ class PanelChat extends Modal {
         const { path } = target.dataset;
         const fileToRemove = Array.from(this.files).find((file: TFile) => file.path === path);
         if (fileToRemove) {
-          const size = this.files.size;
           this.files.delete(fileToRemove);
+          const size = this.files.size;
           (target.parentNode as HTMLElement).remove();
           size ? this.AttacBtn.setCta() : this.AttacBtn.removeCta();
           this.sendBtn.setDisabled(!size);
@@ -97,11 +97,26 @@ class PanelChat extends Modal {
       // 选择一个 prompt
       .addDropdown(cd => {
         cd.addOption('', '选择 prompt');
+        cd.addOption('in-summarizeNote:总结当前笔记,并保存到元数据（summay）中', '📝 总结当前笔记（内置）');
         getOptionList(this.self.app, this.self.settings.chatPromptFolder).forEach((prompt: any) => {
           cd.addOption(prompt.value, prompt.name);
         });
         cd.setValue('');
         cd.onChange(async (value: any) => {
+          if (value.indexOf('in-') === 0) {
+            this.sendBtn.setDisabled(false);
+            this.textArea.setDisabled(true);
+            this.AttacBtn.setDisabled(true);
+            this.saveBtn.setDisabled(true);
+            this.textArea.setPlaceholder(value.split(':').pop());
+          } else {
+            this.sendBtn.setDisabled(!this.question);
+            this.textArea.setDisabled(false);
+            this.AttacBtn.setDisabled(false);
+            this.saveBtn.setDisabled(false);
+            this.textArea.setPlaceholder('');
+          }
+
           this.promptName = value || 'AI Chat';
           await this.chat.specifyPrompt(value);
           const action = actions.find(a => a.text.name === this.chat.data.action) || actions[0];
@@ -168,13 +183,15 @@ class PanelChat extends Modal {
         this.actionBtn = btn;
         btn.buttonEl.style.width = '3rem';
         btn.setIcon(actions[0].text.icon).onClick(() => {
-          new FuzzySuggest(this.app, actions, async ({ text }) => {
-            btn.setIcon(text.icon);
-            this.action = text.name;
-            text.name === 'default' ? btn.removeCta() : btn.setCta();
-          }).open();
+          new FuzzySuggest(this.app, actions, async ({ text }) => this.choiceAction(text.name)).open();
         });
       });
+  }
+
+  choiceAction(action: string) {
+    this.actionBtn.setIcon(actions.find(a => a.text.name === action).text.icon);
+    this.action = action;
+    this.action === 'default' ? this.actionBtn.removeCta() : this.actionBtn.setCta();
   }
 
   onClose() {
@@ -197,6 +214,18 @@ class PanelChat extends Modal {
       this.chat.stopChat();
       return;
     }
+
+    if (this.promptName.indexOf('in-') === 0) {
+      const name = this.promptName.split(':').shift();
+      switch (name) {
+        case 'in-summarizeNote':
+          await summarizeNote.call(this);
+          break;
+      }
+
+      return;
+    }
+
     let question = this.question || '';
     let list = '';
     const meesages: MESSAGE_TYEP[] = [{ role: 'user', content: question, type: 'question' }];
@@ -214,7 +243,7 @@ class PanelChat extends Modal {
       this.files.clear();
       this.fileArea.innerHTML = '';
       if (type === 'content') {
-        this.chatArea.innerHTML += text;
+        this.updateChat(text);
         setTimeout(() => this.chatArea.scrollTo(0, this.chatArea.scrollHeight), 0);
       } else if (type === 'title') {
         this.setTitle(this.chat.title);
@@ -236,6 +265,14 @@ class PanelChat extends Modal {
       else if (res.type === 'file') ret += `📄 ${res.content.split('\n')[0]}${arr[i + 1].type === 'file' ? '\n' : '\n\n'}`;
       return ret;
     }, '');
+  }
+
+  updateChat(content: string) {
+    this.chatArea.innerHTML += content;
+  }
+
+  clearChat() {
+    this.chatArea.innerHTML = '';
   }
 }
 
@@ -532,4 +569,31 @@ function actionWikiLink(self: Toolbox, chat: Chat) {
 function actionnotSaveChat(self: Toolbox, chat: Chat) {
   chat.stopChat();
   chat.saveChatFile && self.app.vault.delete(chat.saveChatFile);
+}
+
+async function summarizeNote() {
+  const file = this.self.app.workspace.getActiveFile();
+  if (!file) return;
+  let content = await this.self.app.vault.cachedRead(file);
+  let promptContent = '你是一个文章总结助手，专注于快速、准确地总结各类文章。适用于学术论文、新闻报道、博客文章等多种文本类型。提取关键信息，生成简洁明了的摘要，识别并突出文章的主要论点、结论和重要数据。支持多语言文本处理。熟悉多种学科领域的专业术语和概念。掌握信息提取和文本摘要的先进算法，了解不同类型文章的结构和写作风格。请使用一段话概括以下内容';
+  if (!content) return;
+  let summary = '';
+  this.clearChat();
+  this.setTitle('总结当前笔记');
+  this.choiceAction('notSaveChat');
+  await this.chat.openChat(
+    [
+      { role: 'system', content: promptContent, type: 'prompt' },
+      { role: 'user', content: content, type: 'file' }
+    ],
+    (text: string, type: string) => {
+      if (type === 'content') {
+        this.updateChat(text);
+        summary += text;
+        if (!text) {
+          this.self.updateFrontmatter(file, 'summary', summary.replace(/\n/g, ' '));
+        }
+      }
+    }
+  );
 }

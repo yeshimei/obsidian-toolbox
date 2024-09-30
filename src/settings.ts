@@ -89,6 +89,8 @@ export interface ToolboxSettings {
   savePass: boolean;
   savePassPath: string;
   imageLinkFormat: boolean;
+  bilibiliAISummaryFormat: boolean;
+  bilibiliAISummaryFormatFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -168,7 +170,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   switchLibrary: false,
   savePass: false,
   savePassPath: '我的/其他/账号管理',
-  imageLinkFormat: false
+  imageLinkFormat: false,
+  bilibiliAISummaryFormat: false,
+  bilibiliAISummaryFormatFolder: '归档/BILIBILI AI 视频总结'
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -644,6 +648,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
           .addOption('剪切板内容格式化', '剪切板内容格式化')
           .addOption('当笔记插入视频时重排版', '当笔记插入视频时重排版')
           .addOption('当笔记插入图片时重排版', '当笔记插入图片时重排版')
+          .addOption('为哔哩哔哩AI视频总结笔记加入时间转跳', '为哔哩哔哩AI视频总结笔记加入时间转跳')
           .addOption('移动笔记中的资源至指定文件夹', '移动笔记中的资源至指定文件夹')
           .addOption('查植物', '查植物')
           .addOption('书库', '书库')
@@ -723,6 +728,25 @@ export class ToolboxSettingTab extends PluginSettingTab {
             this.display();
           })
         );
+    }
+
+    if (this.plugin.settings.miscellaneous === '为哔哩哔哩AI视频总结笔记加入时间转跳') {
+      new Setting(containerEl).setName('为哔哩哔哩AI视频总结笔记加入时间转跳').addToggle(cd =>
+        cd.setValue(this.plugin.settings.bilibiliAISummaryFormat).onChange(async value => {
+          this.plugin.settings.bilibiliAISummaryFormat = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+      if (this.plugin.settings.bilibiliAISummaryFormat) {
+        new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
+          cd.setValue('' + this.plugin.settings.bilibiliAISummaryFormatFolder).onChange(async value => {
+            this.plugin.settings.bilibiliAISummaryFormatFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
     }
 
     if (this.plugin.settings.miscellaneous === '书库') {

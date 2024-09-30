@@ -19,6 +19,7 @@ import polysemy from './Commands/polysemy';
 import poster from './Commands/poster';
 import readingDataTracking from './Commands/readingDataTracking';
 import renumberFootnoteCommand from './Commands/renumberFootnote';
+import repositionBilibiliAISummary from './Commands/repositionBilibiliAISummary';
 import repositionImage from './Commands/repositionImage';
 import repositionVideo from './Commands/repositionVideo';
 import resourcesToCommand, { resourceTo } from './Commands/resourceTo';
@@ -126,6 +127,8 @@ export default class Toolbox extends Plugin {
         repositionVideo(this, file);
         // 当笔记插入图片时重排版
         repositionImage(this, file);
+        // 为哔哩哔哩AI视频总结笔记加入时间转跳
+        repositionBilibiliAISummary(this, file);
       })
     );
 
