@@ -190,18 +190,26 @@ export default class Chat {
     if (!messgae) return;
     this.isStopped = false;
     const { chatKey, chatUrl, chatModel } = this.self.settings;
+
+    this.promptContent && this.messages.push({ role: 'system', content: this.promptContent, type: 'prompt' });
+    this.promptContent = null;
+
     if (typeof messgae === 'string') {
       messgae = [{ content: messgae, role: 'user', type: 'question' }];
     } else if (!Array.isArray(messgae)) {
       messgae = [messgae];
     }
 
+    // 仅保留最后一个问题
+    let messages = this.messages.filter(res => res.type !== 'question');
+
     const type = messgae[0].type;
-    this.promptContent && this.messages.push({ role: 'system', content: this.promptContent, type: 'prompt' });
-    this.promptContent = null;
+
     this.messages = this.messages.concat(messgae);
+    messages = messages.concat(messgae);
     const answer: MESSAGE_TYEP = { role: 'system', content: '', type: type === 'question' ? 'answer' : type };
     this.messages.push(answer);
+    messages.push(answer);
 
     const openai = new OpenAI({
       baseURL: chatUrl,
@@ -211,7 +219,7 @@ export default class Chat {
 
     try {
       const completion = await openai.chat.completions.create({
-        messages: this.messages,
+        messages,
         model: chatModel,
         stream: true,
         ...this.data

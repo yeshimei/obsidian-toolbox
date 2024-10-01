@@ -6475,17 +6475,20 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
       return;
     this.isStopped = false;
     const { chatKey, chatUrl, chatModel } = this.self.settings;
+    this.promptContent && this.messages.push({ role: "system", content: this.promptContent, type: "prompt" });
+    this.promptContent = null;
     if (typeof messgae === "string") {
       messgae = [{ content: messgae, role: "user", type: "question" }];
     } else if (!Array.isArray(messgae)) {
       messgae = [messgae];
     }
+    let messages = this.messages.filter((res) => res.type !== "question");
     const type = messgae[0].type;
-    this.promptContent && this.messages.push({ role: "system", content: this.promptContent, type: "prompt" });
-    this.promptContent = null;
     this.messages = this.messages.concat(messgae);
+    messages = messages.concat(messgae);
     const answer = { role: "system", content: "", type: type === "question" ? "answer" : type };
     this.messages.push(answer);
+    messages.push(answer);
     const openai = new openai_default({
       baseURL: chatUrl,
       apiKey: chatKey,
@@ -6493,7 +6496,7 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
     });
     try {
       const completion2 = await openai.chat.completions.create({
-        messages: this.messages,
+        messages,
         model: chatModel,
         stream: true,
         ...this.data
