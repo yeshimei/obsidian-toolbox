@@ -285,8 +285,8 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
 
         new Setting(containerEl).setName('卡片笔记放在哪个文件夹？').addText(cd =>
-          cd.setValue('' + this.plugin.settings.characterRelationshipsFolder).onChange(async value => {
-            this.plugin.settings.characterRelationshipsFolder = value;
+          cd.setValue('' + this.plugin.settings.cardSaveFolder).onChange(async value => {
+            this.plugin.settings.cardSaveFolder = value;
             await this.plugin.saveSettings();
           })
         );

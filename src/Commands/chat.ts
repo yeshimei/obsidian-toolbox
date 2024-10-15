@@ -73,7 +73,7 @@ export default class Chat {
     this.data.max_tokens = frontmatter.max_tokens ? Number(frontmatter.max_tokens) : null;
     this.data.top_p = Number(frontmatter.top_p || defaultOpenAioptions.top_p);
     this.data.action = frontmatter.action || defaultOpenAioptions.action;
-    this.data.save = Boolean(frontmatter.save || defaultOpenAioptions.save);
+    this.data.save = frontmatter.save === 'false' || frontmatter.save === '0' ? false : true || defaultOpenAioptions.save;
   }
 
   /**

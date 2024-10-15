@@ -55,15 +55,17 @@ async function searchForWord(self: Toolbox, editor: Editor) {
       let content = html ? htmlToMarkdown(html) : '';
       content = content.replace(/\[\d+\]/g, '');
       folder = self.settings.cardSaveFolder;
+      console.log('🚀 ~ newPanelSearchForWord ~ folder:', self.settings);
     }
 
-    self.app.vault.getMarkdownFiles().find(file => hasRootFolder(file, folder) && file.basename === word);
+    file = self.app.vault.getMarkdownFiles().find(file => hasRootFolder(file, folder) && file.basename === word);
 
     if (file) {
       new Notice(type === 'words' ? '词语已存在' : '卡片笔记已存在');
     } else {
       const filepath = `${folder}/${word}.md`;
-      file = await self.app.vault.create(filepath, chatContent || content);
+      console.log('🚀 ~ newPanelSearchForWord ~ filepath:', filepath);
+      file = await self.app.vault.create(filepath, chatContent || content || '');
     }
     editor.replaceSelection(`[[${word}]]`);
     self.app.workspace.getLeaf(true).openFile(file);

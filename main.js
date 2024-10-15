@@ -1079,7 +1079,7 @@ var inPrompts = {
   namingTitle: {
     title: "\u{1F3AF} \u8D77\u6807\u9898",
     description: "\u4E3A\u5F53\u524D\u7B14\u8BB0\u5FEB\u901F\u751F\u6210\u5438\u5F15\u4EBA\u7684\u6807\u9898\uFF0C\u5E76\u4FDD\u5B58\u5230\u7B14\u8BB0\u7684 frontmatter \u4E2D\u3002",
-    promptContent: '\u6839\u636E\u6587\u7AE0\u5185\u5BB9\u5FEB\u901F\u751F\u6210\u5438\u5F15\u4EBA\u7684\u6807\u9898\uFF0C\u7406\u89E3\u6587\u7AE0\u7684\u6838\u5FC3\u4E3B\u9898\u548C\u5173\u952E\u4FE1\u606F\uFF0C\u5C3D\u91CF\u4FDD\u6301\u7B80\u77ED\uFF0C\u4E0D\u5141\u8BB8\u51FA\u73B0\u4EE5\u4E0B\u7279\u6B8A\u7B26\u53F7 *\xA0"\xA0\xA0/\xA0<\xA0>\xA0:\xA0|\xA0?',
+    promptContent: '\u6839\u636E\u6587\u7AE0\u5185\u5BB9\u5FEB\u901F\u751F\u6210\u5438\u5F15\u4EBA\u7684\u6807\u9898\uFF0C\u7406\u89E3\u6587\u7AE0\u7684\u6838\u5FC3\u4E3B\u9898\u548C\u5173\u952E\u4FE1\u606F\uFF0C\u5C3D\u91CF\u4FDD\u6301\u7B80\u77ED\uFF0C\u4E0D\u8D85\u8FC715\u4E2A\u5B57\uFF0C\u4E0D\u5141\u8BB8\u51FA\u73B0\u4EE5\u4E0B\u7279\u6B8A\u7B26\u53F7 *\xA0"\xA0\xA0/\xA0<\xA0>\xA0:\xA0|\xA0?',
     actionName: "notSaveChat",
     fn: namingTitle
   }
@@ -6364,7 +6364,7 @@ var Chat3 = class {
     this.data.max_tokens = frontmatter.max_tokens ? Number(frontmatter.max_tokens) : null;
     this.data.top_p = Number(frontmatter.top_p || defaultOpenAioptions.top_p);
     this.data.action = frontmatter.action || defaultOpenAioptions.action;
-    this.data.save = Boolean(frontmatter.save || defaultOpenAioptions.save);
+    this.data.save = frontmatter.save === "false" || frontmatter.save === "0" ? false : true;
   }
   /**
    * 保存聊天记录
@@ -9290,8 +9290,6 @@ function decryptPopUpCommand(self2) {
   });
 }
 async function encOrDecPopUp(self2, file) {
-  if (!file)
-    return;
   const type = self2.settings.encryptionRememberPassMode;
   const tempPass = self2.encryptionTempData[file.path];
   const encrypted = isNoteEncrypt(await self2.app.vault.cachedRead(file));
@@ -9307,8 +9305,6 @@ async function encOrDecPopUp(self2, file) {
   }
 }
 async function toggleEncryptNote(self2, file) {
-  if (!file)
-    return;
   const content = await self2.app.vault.read(file);
   const editorViewLine = $(".markdown-source-view .cm-content");
   const previewViewLine = $('.markdown-preview-view p[dir="auto"]');
@@ -9365,7 +9361,7 @@ async function decryptPopUp(self2, file) {
 }
 async function encryptionNote(self2, file, pass, convert = true) {
   var _a2, _b;
-  if (!file || !self2.settings.encryption || !pass)
+  if (!self2.settings.encryption || !pass)
     return;
   let content = await self2.app.vault.read(file);
   if (!content)
@@ -10341,13 +10337,15 @@ async function searchForWord(self2, editor) {
       let content2 = html3 ? (0, import_obsidian26.htmlToMarkdown)(html3) : "";
       content2 = content2.replace(/\[\d+\]/g, "");
       folder = self2.settings.cardSaveFolder;
+      console.log("\u{1F680} ~ newPanelSearchForWord ~ folder:", self2.settings);
     }
-    self2.app.vault.getMarkdownFiles().find((file2) => hasRootFolder(file2, folder) && file2.basename === word);
+    file = self2.app.vault.getMarkdownFiles().find((file2) => hasRootFolder(file2, folder) && file2.basename === word);
     if (file) {
       new import_obsidian26.Notice(type === "words" ? "\u8BCD\u8BED\u5DF2\u5B58\u5728" : "\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
     } else {
       const filepath = `${folder}/${word}.md`;
-      file = await self2.app.vault.create(filepath, chatContent || content);
+      console.log("\u{1F680} ~ newPanelSearchForWord ~ filepath:", filepath);
+      file = await self2.app.vault.create(filepath, chatContent || content || "");
     }
     editor.replaceSelection(`[[${word}]]`);
     self2.app.workspace.getLeaf(true).openFile(file);
@@ -10661,8 +10659,8 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
           })
         );
         new import_obsidian29.Setting(containerEl).setName("\u5361\u7247\u7B14\u8BB0\u653E\u5728\u54EA\u4E2A\u6587\u4EF6\u5939\uFF1F").addText(
-          (cd) => cd.setValue("" + this.plugin.settings.characterRelationshipsFolder).onChange(async (value) => {
-            this.plugin.settings.characterRelationshipsFolder = value;
+          (cd) => cd.setValue("" + this.plugin.settings.cardSaveFolder).onChange(async (value) => {
+            this.plugin.settings.cardSaveFolder = value;
             await this.plugin.saveSettings();
           })
         );
