@@ -1,8 +1,8 @@
 import { Notice, TFile } from 'obsidian';
 import { hasRootFolder } from 'src/helpers';
 import Toolbox from 'src/main';
-import inPrompts from './AIChatInPrompt';
-import Chat from './Chat';
+import inPrompts from '../Commands/AIChatInPrompt';
+import Chat from '../Commands/chat';
 const chat = new Chat(null);
 
 export default async function summarizeAndRenameNote(self: Toolbox, file: TFile) {

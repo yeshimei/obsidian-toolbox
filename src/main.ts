@@ -5,7 +5,6 @@ import adjustReadingPageStyle from './Commands/adjustReadingPageStyle';
 import chatCommand from './Commands/AIChat';
 import Block from './Commands/Block';
 import blockReferenceCommand from './Commands/blockReference';
-import clipboardFormatCommand from './Commands/clipboardFormat';
 import completionCommand, { completion } from './Commands/completion';
 import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
 import dialogueCommand from './Commands/dialogue';
@@ -19,16 +18,15 @@ import polysemy from './Commands/polysemy';
 import poster from './Commands/poster';
 import readingDataTracking from './Commands/readingDataTracking';
 import renumberFootnoteCommand from './Commands/renumberFootnote';
-import repositionBilibiliAISummary from './Commands/repositionBilibiliAISummary';
-import repositionImage from './Commands/repositionImage';
-import repositionVideo from './Commands/repositionVideo';
-import resourcesToCommand, { resourceTo } from './Commands/resourceTo';
 import reviewOfReadingNote from './Commands/reviewOfReadingNote';
-import searchForPlantCommand from './Commands/searchForPlant';
 import searchForWordCommand from './Commands/searchForWord';
-import summarizeAndRenameNote from './Commands/summarizeAndRenameNote';
-import switchLibrary from './Commands/switchLibrary';
 import asyncNoteCommand from './Commands/syncNote';
+import repositionBilibiliAISummary from './CustomizedCommands/repositionBilibiliAISummary';
+import repositionVideo from './CustomizedCommands/repositionVideo';
+import resourcesToCommand, { resourceTo } from './CustomizedCommands/resourceTo';
+import searchForPlantCommand from './CustomizedCommands/searchForPlant';
+import summarizeAndRenameNote from './CustomizedCommands/summarizeAndRenameNote';
+import switchLibrary from './CustomizedCommands/switchLibrary';
 import { $, debounce, hasRootFolder, SOURCE_VIEW_CLASS } from './helpers';
 import { DEFAULT_SETTINGS, ToolboxSettings, ToolboxSettingTab } from './settings';
 
@@ -68,8 +66,6 @@ export default class Toolbox extends Plugin {
     decryptPopUpCommand(this);
     // 密码创建器
     passwordCreatorCommand(this);
-    // 剪切板文本格式化
-    clipboardFormatCommand(this);
     // 脚注重编号
     renumberFootnoteCommand(this);
     // 块引用
@@ -128,8 +124,6 @@ export default class Toolbox extends Plugin {
         resourceTo(this, file, null);
         // 当笔记插入视频时重排版
         repositionVideo(this, file);
-        // 当笔记插入图片时重排版
-        repositionImage(this, file);
         // 为哔哩哔哩AI视频总结笔记加入时间转跳
         repositionBilibiliAISummary(this, file);
       })
@@ -142,12 +136,12 @@ export default class Toolbox extends Plugin {
       })
     );
 
-    this.addCommand({
-      id: '单元测试',
-      name: '单元测试',
-      icon: 'clipboard-check',
-      callback: () => this.test()
-    });
+    // this.addCommand({
+    //   id: '单元测试',
+    //   name: '单元测试',
+    //   icon: 'clipboard-check',
+    //   callback: () => this.test()
+    // });
   }
 
   async updateFrontmatter(file: TFile, key: string, value: string | number) {

@@ -4,7 +4,7 @@ import Toolbox from 'src/main';
 import FuzzySuggest from 'src/Modals/FuzzySuggest';
 import actions from './AIChatAction';
 import inPrompts from './AIChatInPrompt';
-import Chat, { MESSAGE_TYEP } from './Chat';
+import Chat, { MESSAGE_TYEP } from './chat';
 
 export default function chatCommand(self: Toolbox) {
   self.settings.chat &&

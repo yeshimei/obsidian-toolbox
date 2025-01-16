@@ -1,7 +1,7 @@
 import { TFile } from 'obsidian';
 import { sanitizeFileName } from 'src/helpers';
 import Toolbox from 'src/main';
-import Chat from './Chat';
+import Chat from './chat';
 
 interface InPrompt {
   title: string;

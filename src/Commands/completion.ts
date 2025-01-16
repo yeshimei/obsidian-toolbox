@@ -1,7 +1,7 @@
 import { Editor, MarkdownView } from 'obsidian';
 import { escapeStringForRegex } from 'src/helpers';
 import Toolbox from 'src/main';
-import Chat from './Chat';
+import Chat from './chat';
 
 const chat = new Chat(null);
 let lastPrefix: string;

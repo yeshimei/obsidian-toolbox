@@ -80,17 +80,11 @@ export interface ToolboxSettings {
 
   poster: boolean;
 
-  miscellaneous: string;
-  cleanClipboardContent: boolean;
   resourceTo: boolean;
   searchForPlants: boolean;
   searchForPlantsFolder: string;
   videoLinkFormat: boolean;
-  videoLinkFormatFolder: string;
   switchLibrary: boolean;
-  savePass: boolean;
-  savePassPath: string;
-  imageLinkFormat: boolean;
   bilibiliAISummaryFormat: boolean;
   bilibiliAISummaryFormatFolder: string;
   summarizeAndRenameNote: boolean;
@@ -166,17 +160,11 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   poster: true,
 
-  miscellaneous: '剪切板内容格式化',
   resourceTo: false,
-  cleanClipboardContent: false,
   searchForPlants: false,
   searchForPlantsFolder: '卡片盒/归档',
   videoLinkFormat: false,
-  videoLinkFormatFolder: '',
   switchLibrary: false,
-  savePass: false,
-  savePassPath: '我的/其他/账号管理',
-  imageLinkFormat: false,
   bilibiliAISummaryFormat: false,
   bilibiliAISummaryFormatFolder: '归档/BILIBILI AI 视频总结',
   summarizeAndRenameNote: false,
@@ -662,164 +650,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
             this.display();
           })
         );
-    }
-
-    new Setting(containerEl)
-      .setName('🏅 杂项')
-      .setDesc('定制化功能')
-      .addDropdown(cd =>
-        cd
-          .addOption('剪切板内容格式化', '剪切板内容格式化')
-          .addOption('为笔记生成标题和摘要', '为笔记生成标题和摘要')
-          .addOption('当笔记插入视频时重排版', '当笔记插入视频时重排版')
-          .addOption('当笔记插入图片时重排版', '当笔记插入图片时重排版')
-          .addOption('为哔哩哔哩AI视频总结笔记加入时间转跳', '为哔哩哔哩AI视频总结笔记加入时间转跳')
-          .addOption('移动笔记中的资源至指定文件夹', '移动笔记中的资源至指定文件夹')
-          .addOption('查植物', '查植物')
-          .addOption('书库', '书库')
-          .addOption('保存密码', '保存密码')
-          .setValue(this.plugin.settings.miscellaneous)
-          .onChange(async value => {
-            this.plugin.settings.miscellaneous = value as any;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-      );
-
-    if (this.plugin.settings.miscellaneous === '为笔记生成标题和摘要') {
-      new Setting(containerEl).setName('为笔记生成标题和摘要').addToggle(cd =>
-        cd.setValue(this.plugin.settings.summarizeAndRenameNote).onChange(async value => {
-          this.plugin.settings.summarizeAndRenameNote = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-      if (this.plugin.settings.searchForPlants) {
-        new Setting(containerEl).setName('跟踪哪些文件夹，使用,分隔').addText(cd =>
-          cd.setValue('' + this.plugin.settings.summarizeAndRenameNoteFolder).onChange(async value => {
-            this.plugin.settings.summarizeAndRenameNoteFolder = value;
-            await this.plugin.saveSettings();
-          })
-        );
-      }
-    }
-
-    if (this.plugin.settings.miscellaneous === '剪切板内容格式化') {
-      new Setting(containerEl)
-        .setName('剪切板内容格式化')
-        .setDesc('删除换行，空格和其他空白字符，英文单词以及英文和中文之间保留一个空格')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.cleanClipboardContent).onChange(async value => {
-            this.plugin.settings.cleanClipboardContent = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-    }
-    if (this.plugin.settings.miscellaneous === '移动笔记中的资源至指定文件夹') {
-      new Setting(containerEl)
-        .setName('移动笔记中的资源至指定文件夹')
-        .setDesc('resourceTo: "[[folder]]"')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.resourceTo).onChange(async value => {
-            this.plugin.settings.resourceTo = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-    }
-
-    if (this.plugin.settings.miscellaneous === '查植物') {
-      new Setting(containerEl).setName('查植物').addToggle(cd =>
-        cd.setValue(this.plugin.settings.searchForPlants).onChange(async value => {
-          this.plugin.settings.searchForPlants = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-      if (this.plugin.settings.searchForPlants) {
-        new Setting(containerEl).setName('放至哪个文件夹').addText(cd =>
-          cd.setValue('' + this.plugin.settings.searchForPlantsFolder).onChange(async value => {
-            this.plugin.settings.searchForPlantsFolder = value;
-            await this.plugin.saveSettings();
-          })
-        );
-      }
-    }
-
-    if (this.plugin.settings.miscellaneous === '当笔记插入视频时重排版') {
-      new Setting(containerEl)
-        .setName('当笔记插入视频时重排版')
-        .setDesc('tags: "videoLinkFormat"')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.videoLinkFormat).onChange(async value => {
-            this.plugin.settings.videoLinkFormat = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-    }
-    if (this.plugin.settings.miscellaneous === '当笔记插入图片时重排版') {
-      new Setting(containerEl)
-        .setName('当笔记插入图片时重排版')
-        .setDesc('tags: "imageLinkFormat"')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.imageLinkFormat).onChange(async value => {
-            this.plugin.settings.imageLinkFormat = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-    }
-
-    if (this.plugin.settings.miscellaneous === '为哔哩哔哩AI视频总结笔记加入时间转跳') {
-      new Setting(containerEl).setName('为哔哩哔哩AI视频总结笔记加入时间转跳').addToggle(cd =>
-        cd.setValue(this.plugin.settings.bilibiliAISummaryFormat).onChange(async value => {
-          this.plugin.settings.bilibiliAISummaryFormat = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-      if (this.plugin.settings.bilibiliAISummaryFormat) {
-        new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
-          cd.setValue('' + this.plugin.settings.bilibiliAISummaryFormatFolder).onChange(async value => {
-            this.plugin.settings.bilibiliAISummaryFormatFolder = value;
-            await this.plugin.saveSettings();
-          })
-        );
-      }
-    }
-
-    if (this.plugin.settings.miscellaneous === '书库') {
-      new Setting(containerEl).setName('书库').addToggle(cd =>
-        cd.setValue(this.plugin.settings.switchLibrary).onChange(async value => {
-          this.plugin.settings.switchLibrary = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-    }
-
-    if (this.plugin.settings.miscellaneous === '保存密码') {
-      new Setting(containerEl).setName('保存密码').addToggle(cd =>
-        cd.setValue(this.plugin.settings.savePass).onChange(async value => {
-          this.plugin.settings.savePass = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-      if (this.plugin.settings.savePass) {
-        new Setting(containerEl).setName('保存至哪篇笔记').addText(cd =>
-          cd.setValue('' + this.plugin.settings.savePassPath).onChange(async value => {
-            this.plugin.settings.savePassPath = value;
-            await this.plugin.saveSettings();
-          })
-        );
-      }
     }
   }
 }

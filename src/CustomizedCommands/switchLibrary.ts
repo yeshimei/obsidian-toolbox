@@ -1,6 +1,6 @@
 import { countOccurrences } from 'src/helpers';
 import Toolbox from 'src/main';
-import Block from './Block';
+import Block from '../Commands/Block';
 
 export default function switchLibrary(self: Toolbox) {
   if (!self.settings.switchLibrary) return;
