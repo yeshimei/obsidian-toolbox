@@ -210,7 +210,7 @@ export default class Chat {
     const answer: MESSAGE_TYEP = { role: 'system', content: '', type: type === 'question' ? 'answer' : type };
     this.messages.push(answer);
     messages.push(answer);
-
+    console.log(messages);
     const openai = new OpenAI({
       baseURL: chatUrl,
       apiKey: chatKey,

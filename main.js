@@ -1079,7 +1079,7 @@ var inPrompts = {
   namingTitle: {
     title: "\u{1F3AF} \u8D77\u6807\u9898",
     description: "\u4E3A\u5F53\u524D\u7B14\u8BB0\u5FEB\u901F\u751F\u6210\u5438\u5F15\u4EBA\u7684\u6807\u9898\uFF0C\u5E76\u4FDD\u5B58\u5230\u7B14\u8BB0\u7684 frontmatter \u4E2D\u3002",
-    promptContent: '\u6839\u636E\u6587\u7AE0\u5185\u5BB9\u5FEB\u901F\u751F\u6210\u5438\u5F15\u4EBA\u7684\u6807\u9898\uFF0C\u7406\u89E3\u6587\u7AE0\u7684\u6838\u5FC3\u4E3B\u9898\u548C\u5173\u952E\u4FE1\u606F\uFF0C\u5C3D\u91CF\u4FDD\u6301\u7B80\u77ED\uFF0C\u4E0D\u8D85\u8FC715\u4E2A\u5B57\uFF0C\u4E0D\u5141\u8BB8\u51FA\u73B0\u4EE5\u4E0B\u7279\u6B8A\u7B26\u53F7 *\xA0"\xA0\xA0/\xA0<\xA0>\xA0:\xA0|\xA0?',
+    promptContent: '\u6839\u636E\u6587\u7AE0\u5185\u5BB9\u5FEB\u901F\u751F\u6210\u5438\u5F15\u4EBA\u7684\u6807\u9898\uFF0C\u7406\u89E3\u6587\u7AE0\u7684\u6838\u5FC3\u4E3B\u9898\u548C\u5173\u952E\u4FE1\u606F\uFF0C\u5C3D\u91CF\u4FDD\u6301\u7B80\u77ED\uFF0C\u7ED9\u6211\u4E00\u4E2A\u603B\u6807\u9898\uFF0C\u4E0D\u8D85\u8FC715\u4E2A\u5B57\uFF0C\u4E0D\u5141\u8BB8\u51FA\u73B0\u4EE5\u4E0B\u7279\u6B8A\u7B26\u53F7 *\xA0"\xA0\xA0/\xA0<\xA0>\xA0:\xA0|\xA0?',
     actionName: "notSaveChat",
     fn: namingTitle
   }
@@ -6489,6 +6489,7 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
     const answer = { role: "system", content: "", type: type === "question" ? "answer" : type };
     this.messages.push(answer);
     messages.push(answer);
+    console.log(messages);
     const openai = new openai_default({
       baseURL: chatUrl,
       apiKey: chatKey,

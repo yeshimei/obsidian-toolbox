@@ -22,7 +22,7 @@ const inPrompts: { [key: string]: InPrompt } = {
   namingTitle: {
     title: '🎯 起标题',
     description: '为当前笔记快速生成吸引人的标题，并保存到笔记的 frontmatter 中。',
-    promptContent: '根据文章内容快速生成吸引人的标题，理解文章的核心主题和关键信息，尽量保持简短，不超过15个字，不允许出现以下特殊符号 * "  / < > : | ?',
+    promptContent: '根据文章内容快速生成吸引人的标题，理解文章的核心主题和关键信息，尽量保持简短，给我一个总标题，不超过15个字，不允许出现以下特殊符号 * "  / < > : | ?',
     actionName: 'notSaveChat',
     fn: namingTitle
   }
