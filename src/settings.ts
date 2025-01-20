@@ -46,6 +46,7 @@ export interface ToolboxSettings {
   outLink: boolean;
   blockId: boolean;
   frontmatter: boolean;
+  syncDate: boolean;
 
   reviewOfReadingNotes: boolean;
 
@@ -127,6 +128,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   outLink: true,
   blockId: true,
   frontmatter: true,
+  syncDate: false,
 
   reviewOfReadingNotes: true,
 
@@ -184,7 +186,8 @@ export class ToolboxSettingTab extends PluginSettingTab {
     containerEl.empty();
     containerEl.createEl('h1', { text: this.plugin.manifest.name });
 
-    if (Platform.isMobile) {
+    if (true) {
+      // if (Platform.isMobile) {
       new Setting(containerEl)
         .setName('🕐 阅读数据跟踪')
         .setDesc('阅读进度、时长，未读以及读完')
@@ -355,6 +358,13 @@ export class ToolboxSettingTab extends PluginSettingTab {
         new Setting(containerEl).setName('添加块id').addToggle(cd =>
           cd.setValue(this.plugin.settings.blockId).onChange(async value => {
             this.plugin.settings.blockId = value;
+            await this.plugin.saveSettings();
+          })
+        );
+
+        new Setting(containerEl).setName('同步日期').addToggle(cd =>
+          cd.setValue(this.plugin.settings.syncDate).onChange(async value => {
+            this.plugin.settings.syncDate = value;
             await this.plugin.saveSettings();
           })
         );

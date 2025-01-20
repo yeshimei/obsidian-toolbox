@@ -1,5 +1,6 @@
 import { Notice, TFile } from 'obsidian';
 import OpenAI from 'openai';
+import { sanitizeFileName } from 'src/helpers';
 import Toolbox from 'src/main';
 import inPrompts from './AIChatInPrompt';
 
@@ -88,7 +89,7 @@ export default class Chat {
       else if (res.type === 'file') ret += `[[${res.content.split('\n')[0]}]]${arr[i + 1].type === 'file' ? '\n' : '\n\n'}`;
       return ret;
     }, '');
-    const sanitizedTitle = this.title.replace(/[\\\/<>\:\|\?]/g, '');
+    const sanitizedTitle = sanitizeFileName(this.title);
     if (this.saveChatFile) {
       await this.self.app.vault.modify(this.saveChatFile, text);
     } else {
@@ -210,7 +211,6 @@ export default class Chat {
     const answer: MESSAGE_TYEP = { role: 'system', content: '', type: type === 'question' ? 'answer' : type };
     this.messages.push(answer);
     messages.push(answer);
-    console.log(messages);
     const openai = new OpenAI({
       baseURL: chatUrl,
       apiKey: chatKey,

@@ -74,9 +74,9 @@ export async function syncNote(self: Toolbox, file: TFile) {
         const div = document.createElement('div');
         div.innerHTML = b;
         const el: any = div.firstChild;
-        const { comment, id, tagging } = el.dataset;
+        const { comment, id, tagging, date } = el.dataset;
         const text = el.textContent;
-        res.text = `> [!quote] [${text}${tagging ? '（' + tagging + '）' : ''}](${file.path}#^${id}) ${comment ? '\n💬 ' + comment : ''}${self.settings.blockId ? ' ^' + md5(text) : ''}`;
+        res.text = `> [!quote] [${text}${tagging ? '（' + tagging + '）' : ''}](${file.path}#^${id}) ${comment ? '\n💬 ' + comment + (self.settings.syncDate ? ' *' + date + '*' : '') : ''}${self.settings.blockId ? ' ^' + md5(text) : ''}`;
         highlights++;
         if (comment) thinks++;
       } else {
