@@ -46,6 +46,7 @@ export interface ToolboxSettings {
   outLink: boolean;
   blockId: boolean;
   frontmatter: boolean;
+  discuss: boolean;
   syncDate: boolean;
 
   reviewOfReadingNotes: boolean;
@@ -128,6 +129,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   outLink: true,
   blockId: true,
   frontmatter: true,
+  discuss: true,
   syncDate: false,
 
   reviewOfReadingNotes: true,
@@ -187,7 +189,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
     containerEl.createEl('h1', { text: this.plugin.manifest.name });
 
     if (true) {
-      // if (Platform.isMobile) {
       new Setting(containerEl)
         .setName('🕐 阅读数据跟踪')
         .setDesc('阅读进度、时长，未读以及读完')
@@ -345,6 +346,13 @@ export class ToolboxSettingTab extends PluginSettingTab {
           })
         );
 
+        new Setting(containerEl).setName('同步讨论').addToggle(cd =>
+          cd.setValue(this.plugin.settings.discuss).onChange(async value => {
+            this.plugin.settings.discuss = value;
+            await this.plugin.saveSettings();
+          })
+        );
+
         new Setting(containerEl)
           .setName('同步元字段')
           .setDesc('添加划线，想法和出链数量元字段')
@@ -355,16 +363,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
             })
           );
 
-        new Setting(containerEl).setName('添加块id').addToggle(cd =>
-          cd.setValue(this.plugin.settings.blockId).onChange(async value => {
-            this.plugin.settings.blockId = value;
+        new Setting(containerEl).setName('同步日期').addToggle(cd =>
+          cd.setValue(this.plugin.settings.syncDate).onChange(async value => {
+            this.plugin.settings.syncDate = value;
             await this.plugin.saveSettings();
           })
         );
 
-        new Setting(containerEl).setName('同步日期').addToggle(cd =>
-          cd.setValue(this.plugin.settings.syncDate).onChange(async value => {
-            this.plugin.settings.syncDate = value;
+        new Setting(containerEl).setName('添加块id').addToggle(cd =>
+          cd.setValue(this.plugin.settings.blockId).onChange(async value => {
+            this.plugin.settings.blockId = value;
             await this.plugin.saveSettings();
           })
         );

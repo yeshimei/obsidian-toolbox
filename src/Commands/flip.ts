@@ -1,4 +1,4 @@
-import { Notice, TFile } from 'obsidian';
+import { MarkdownView, Notice, Platform, TFile } from 'obsidian';
 import { $, COMMENT_CLASS, createElement, editorBlur, getBasename, MASK_CLASS, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelExhibition } from 'src/Modals/PanelExhibition';
@@ -22,25 +22,38 @@ export function flip(self: Toolbox, file: TFile, over = false) {
 
 export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
   if (!self.settings.flip) return;
-  let timer: number, timer2: number, xStart: number, xEnd: number;
+  let timer: number, timer2: number, timer3: number, xStart: number, xEnd: number;
   const t = $(MOBILE_HEADER_CLASS);
   const b = $(MOBILE_NAVBAR_CLASS);
   let th: number, bh: number;
-  let mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
+  let mask: HTMLElement;
+  let viewr = document.querySelector('.view-content') as HTMLElement;
   if (self.hasReadingPage(file)) {
     if (self.settings.fullScreenMode) {
       h();
     }
-    th = t.offsetHeight || 0;
-    bh = b.offsetHeight || 0;
-    mask.style.position = 'fixed';
-    mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
-    mask.style.left = '0';
-    mask.style.width = '100%';
-    mask.style.height = el.clientHeight - th - bh + 'px';
-    // mask.style.backgroundColor = 'rgba(255,0,0,0.5)';
-    mask.style.backgroundColor = 'transparent';
-    mask.style.zIndex = '1'; // 最小值，使侧边栏等保持正确层级
+
+    if (Platform.isMobile) {
+      mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
+      th = t.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
+      mask.style.position = 'fixed';
+      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
+      mask.style.left = '0';
+      mask.style.width = '100%';
+      mask.style.height = el.clientHeight - th - bh + 'px';
+      mask.style.backgroundColor = 'transparent';
+      mask.style.zIndex = '1'; // 最小值，使侧边栏等保持正确层级
+    } else if (Platform.isDesktop) {
+      mask = $(MASK_CLASS) || viewr.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
+      mask.style.position = 'absolute';
+      mask.style.top = '0';
+      mask.style.left = '0';
+      mask.style.width = '100%';
+      mask.style.height = '100%';
+      mask.style.backgroundColor = 'transparent';
+    }
+
     mask.show();
     // 长按 2.5s 打开或关闭全屏模式
     mask.ontouchstart = e => {
@@ -69,9 +82,46 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
         flip(self, file);
       }
     };
+    if (Platform.isDesktop) {
+      let lok = false;
+      let lol = false;
+      mask.onmousedown = e => {
+        timer = window.setTimeout(() => {
+          mask.hide();
+          lol = false;
+          window.clearTimeout(timer2);
+          timer2 = window.setTimeout(() => {
+            lol = true;
+          }, 500);
+        }, 500);
+      };
+
+      mask.onmouseup = e => {
+        window.clearTimeout(timer);
+      };
+
+      viewr.onmousedown = e => {
+        lok = false;
+        timer3 = window.setTimeout(() => (lok = true), 500);
+      };
+
+      viewr.onmouseup = e => {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        const editor = activeView.editor;
+        const selection = editor.getSelection();
+
+        if (lok && selection.length == 0 && lol) {
+          mask.show();
+        }
+        window.clearInterval(timer3);
+      };
+    }
+
     mask.onclick = async e => {
       const x = e.clientX;
       const y = e.clientY;
+      const clickY = e.clientY;
+      const windowHeight = window.innerHeight;
       mask.hide();
       const target = document.elementFromPoint(x, y) as HTMLElement;
       mask.show();
@@ -99,7 +149,11 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
         const text = new RegExp(`\\[\\^${footnote}\\]: (.*)`).exec(context);
         new PanelExhibition(self.app, '脚注', text ? text[1] : '空空如也').open();
       } else {
-        flip(self, file);
+        if (clickY < windowHeight / 2) {
+          flip(self, file, true);
+        } else {
+          flip(self, file);
+        }
       }
     };
     // 移动端软键盘收起时，隐藏遮罩层，反之亦然
@@ -113,26 +167,33 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
       }
     };
   } else {
+    mask = $(MASK_CLASS);
     mask.hide();
-    mask.onclick = mask.ontouchstart = mask.ontouchend = window.onresize = null;
-    s();
+    mask.onclick = mask.ontouchstart = mask.ontouchend = mask.onmousedown = mask.onmouseup = viewr.onmousedown = viewr.onmouseup = window.onresize = null;
+    if (Platform.isMobile) {
+      s();
+    }
   }
 
   function h() {
-    t.hide();
-    b.hide();
-    th = t.offsetHeight || 0;
-    bh = b.offsetHeight || 0;
-    mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
-    mask.style.height = el.clientHeight - th - bh + 'px';
+    if (Platform.isMobile) {
+      t.hide();
+      b.hide();
+      th = t.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
+      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
+      mask.style.height = el.clientHeight - th - bh + 'px';
+    }
   }
 
   function s() {
-    t.show();
-    b.show();
-    th = t.offsetHeight || 0;
-    bh = b.offsetHeight || 0;
-    mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
-    mask.style.height = el.clientHeight - th - bh + 'px';
+    if (Platform.isMobile) {
+      t.show();
+      b.show();
+      th = t.offsetHeight || 0;
+      bh = b.offsetHeight || 0;
+      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
+      mask.style.height = el.clientHeight - th - bh + 'px';
+    }
   }
 }

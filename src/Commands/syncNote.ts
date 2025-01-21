@@ -44,24 +44,26 @@ export async function syncNote(self: Toolbox, file: TFile) {
   bookReview && (content += `\n\n# 书评 \n\n > [!tip] ${bookReview}${self.settings.blockId ? ' ^' + md5(bookReview) : ''}`);
 
   // 讨论
-  const d = (markdown.match(/==dialogue==[\s\S]*?==dialogue==/g) || [])
-    .reverse()
-    .map(t => t.replace(/==dialogue==/g, ''))
-    .map(t => {
-      const c = t.split('\n');
-      const [title, id] = c[2].split('^');
-      c[2] = `## [${title}](${file.path}#^${id})`;
-      return c.slice(0, -2).join('\n');
-    });
+  if (self.settings.discuss) {
+    const d = (markdown.match(/==dialogue==[\s\S]*?==dialogue==/g) || [])
+      .reverse()
+      .map(t => t.replace(/==dialogue==/g, ''))
+      .map(t => {
+        const c = t.split('\n');
+        const [title, id] = c[2].split('^');
+        c[2] = `## [${title}](${file.path}#^${id})`;
+        return c.slice(0, -2).join('\n');
+      });
 
-  if (d.length) {
-    dialogue = d.length;
-    content +=
-      '\n\n# 讨论' +
-      d.reduce((res, ret) => {
-        ret += res;
-        return ret;
-      }, '');
+    if (d.length) {
+      dialogue = d.length;
+      content +=
+        '\n\n# 讨论' +
+        d.reduce((res, ret) => {
+          ret += res;
+          return ret;
+        }, '');
+    }
   }
 
   // 划线

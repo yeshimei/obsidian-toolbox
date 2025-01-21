@@ -12,7 +12,6 @@ import { clearNotePass, decryptPopUpCommand, encOrDecPopUp, encryptPopUpCommand,
 import flipCommand, { readingPageMask } from './Commands/flip';
 import gallery from './Commands/gallery';
 import highlightCommand from './Commands/highlight';
-import init from './Commands/init';
 import passwordCreatorCommand from './Commands/passwordCreator';
 import polysemy from './Commands/polysemy';
 import poster from './Commands/poster';
@@ -40,8 +39,6 @@ export default class Toolbox extends Plugin {
     await this.loadSettings();
     this.debounceReadDataTracking = debounce(readingDataTracking, this.settings.readDataTrackingDelayTime);
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
-    // 阅读功能仅允许在移动端使用
-    init(this);
     // 画廊
     gallery(this);
     // 读书笔记回顾
