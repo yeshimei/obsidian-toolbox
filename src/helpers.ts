@@ -36,7 +36,6 @@ export function createChatArea() {
   return chatArea;
 }
 
-
 export function escapeStringForRegex(str: string) {
   return str.replace(/[-\/\\^$.*+?()[\]{}|]/g, '\\$&');
 }

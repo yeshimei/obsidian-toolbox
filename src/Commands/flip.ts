@@ -2,6 +2,7 @@ import { MarkdownView, Notice, Platform, TFile } from 'obsidian';
 import { $, COMMENT_CLASS, createElement, editorBlur, getBasename, MASK_CLASS, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelExhibition } from 'src/Modals/PanelExhibition';
+import { PanelExhibitionHlight } from 'src/Modals/PanelExhibitionHlight';
 
 export default function flipCommand(self: Toolbox) {
   self.settings.flip &&
@@ -29,10 +30,6 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
   let mask: HTMLElement;
   let viewr = document.querySelector('.view-content') as HTMLElement;
   if (self.hasReadingPage(file)) {
-    if (self.settings.fullScreenMode) {
-      h();
-    }
-
     if (Platform.isMobile) {
       mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
       th = t.offsetHeight || 0;
@@ -55,6 +52,9 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
     }
 
     mask.show();
+    if (self.settings.fullScreenMode) {
+      h();
+    }
     // 长按 2.5s 打开或关闭全屏模式
     mask.ontouchstart = e => {
       timer = window.setTimeout(() => mask.hide(), 500);
@@ -127,10 +127,10 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
       mask.show();
       // 点击划线，显示其评论
       if (target.hasClass(COMMENT_CLASS.slice(1))) {
-        let { comment, date, tagging } = target.dataset;
+        let { comment, date, tagging, id } = target.dataset;
         tagging && (tagging = `（${tagging}）`);
         date && (date = `*${date}*`);
-        new PanelExhibition(self.app, '评论', comment ? `${comment}${tagging}\n${date}` : '空空如也').open();
+        new PanelExhibitionHlight(self.app, '评论', comment ? `${comment}${tagging}\n${date}` : '空空如也', async () => await deleteTheUnderlinedLine(self, target, file, id, comment)).open();
       }
       // 点击双链，显示其内容
       else if (target.hasClass(OUT_LINK_CLASS.slice(1))) {
@@ -196,4 +196,14 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
       mask.style.height = el.clientHeight - th - bh + 'px';
     }
   }
+}
+
+async function deleteTheUnderlinedLine(self: Toolbox, target: HTMLElement, file: TFile, id: string, comment: string) {
+  const text = target.textContent;
+  let content = await self.app.vault.read(file);
+  let exp = new RegExp(`<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${comment}" data-id="${id}".*?>${text}</span>`);
+  content = content.replace(exp, text);
+  // 如果当前段落没其他划线，则删掉段落尾部的 id
+  // content = content.replace(new RegExp(`\\^${id}`), '')
+  await self.app.vault.modify(file, content);
 }
