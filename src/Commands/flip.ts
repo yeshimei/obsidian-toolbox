@@ -29,28 +29,29 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
   let th: number, bh: number;
   let mask: HTMLElement;
   let viewr = document.querySelector('.view-content') as HTMLElement;
-  if (self.hasReadingPage(file)) {
-    if (Platform.isMobile) {
-      mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
-      th = t.offsetHeight || 0;
-      bh = b.offsetHeight || 0;
-      mask.style.position = 'fixed';
-      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
-      mask.style.left = '0';
-      mask.style.width = '100%';
-      mask.style.height = el.clientHeight - th - bh + 'px';
-      mask.style.backgroundColor = 'transparent';
-      mask.style.zIndex = '1'; // 最小值，使侧边栏等保持正确层级
-    } else if (Platform.isDesktop) {
-      mask = $(MASK_CLASS) || viewr.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
-      mask.style.position = 'absolute';
-      mask.style.top = '0';
-      mask.style.left = '0';
-      mask.style.width = '100%';
-      mask.style.height = '100%';
-      mask.style.backgroundColor = 'transparent';
-    }
 
+  if (Platform.isMobile) {
+    mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
+    th = t.offsetHeight || 0;
+    bh = b.offsetHeight || 0;
+    mask.style.position = 'fixed';
+    mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
+    mask.style.left = '0';
+    mask.style.width = '100%';
+    mask.style.height = el.clientHeight - th - bh + 'px';
+    mask.style.backgroundColor = 'transparent';
+    mask.style.zIndex = '1'; // 最小值，使侧边栏等保持正确层级
+  } else if (Platform.isDesktop) {
+    mask = $(MASK_CLASS) || viewr.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
+    mask.style.position = 'absolute';
+    mask.style.top = '0';
+    mask.style.left = '0';
+    mask.style.width = '100%';
+    mask.style.height = '100%';
+    mask.style.backgroundColor = 'transparent';
+  }
+
+  if (self.hasReadingPage(file)) {
     mask.show();
     if (self.settings.fullScreenMode) {
       h();

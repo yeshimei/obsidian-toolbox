@@ -6942,7 +6942,7 @@ async function switchCharacterRelationship(self2, file) {
     return;
   document.onclick = (evt) => {
     const target = evt.target;
-    if (target.hasClass("__character-relationship")) {
+    if (target.hasClass("__character-relationship__")) {
       const { id, path, title, progress: progress2 } = target.dataset;
       characterRelationship(self2, file, title, path, id, Number(progress2));
     }
@@ -7030,7 +7030,7 @@ flowchart LR
 tags: \u4EBA\u7269\u5173\u7CFB
 ---
 
-${els.map((el) => `- [${el.title}](${el.path}#^${el.id}) - <span class="__character-relationship__ ${el.state === "open" ? "cm-highlight" : ""}" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</span>`).join("\n")}
+${els.map((el) => `- [${el.title}](${el.path}#^${el.id}) - <${el.state === "open" ? "mark" : "span"} class="__character-relationship__ ${el.state === "open" ? "cm-highlight" : ""}" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</${el.state === "open" ? "mark" : "span"}>`).join("\n")}
 
 ${mermaid}`;
   }
@@ -9693,27 +9693,27 @@ function readingPageMask(self2, el, file) {
   let th, bh;
   let mask;
   let viewr = document.querySelector(".view-content");
+  if (import_obsidian17.Platform.isMobile) {
+    mask = $(MASK_CLASS) || document.body.appendChild(createElement("div", "", MASK_CLASS.slice(1)));
+    th = t2.offsetHeight || 0;
+    bh = b.offsetHeight || 0;
+    mask.style.position = "fixed";
+    mask.style.bottom = bh + 10 + "px";
+    mask.style.left = "0";
+    mask.style.width = "100%";
+    mask.style.height = el.clientHeight - th - bh + "px";
+    mask.style.backgroundColor = "transparent";
+    mask.style.zIndex = "1";
+  } else if (import_obsidian17.Platform.isDesktop) {
+    mask = $(MASK_CLASS) || viewr.appendChild(createElement("div", "", MASK_CLASS.slice(1)));
+    mask.style.position = "absolute";
+    mask.style.top = "0";
+    mask.style.left = "0";
+    mask.style.width = "100%";
+    mask.style.height = "100%";
+    mask.style.backgroundColor = "transparent";
+  }
   if (self2.hasReadingPage(file)) {
-    if (import_obsidian17.Platform.isMobile) {
-      mask = $(MASK_CLASS) || document.body.appendChild(createElement("div", "", MASK_CLASS.slice(1)));
-      th = t2.offsetHeight || 0;
-      bh = b.offsetHeight || 0;
-      mask.style.position = "fixed";
-      mask.style.bottom = bh + 10 + "px";
-      mask.style.left = "0";
-      mask.style.width = "100%";
-      mask.style.height = el.clientHeight - th - bh + "px";
-      mask.style.backgroundColor = "transparent";
-      mask.style.zIndex = "1";
-    } else if (import_obsidian17.Platform.isDesktop) {
-      mask = $(MASK_CLASS) || viewr.appendChild(createElement("div", "", MASK_CLASS.slice(1)));
-      mask.style.position = "absolute";
-      mask.style.top = "0";
-      mask.style.left = "0";
-      mask.style.width = "100%";
-      mask.style.height = "100%";
-      mask.style.backgroundColor = "transparent";
-    }
     mask.show();
     if (self2.settings.fullScreenMode) {
       h();
@@ -10697,8 +10697,8 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       );
       if (this.plugin.settings.characterRelationships) {
         new import_obsidian29.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
-          (cd) => cd.setValue("" + this.plugin.settings.cardSaveFolder).onChange(async (value) => {
-            this.plugin.settings.cardSaveFolder = value;
+          (cd) => cd.setValue("" + this.plugin.settings.characterRelationshipsFolder).onChange(async (value) => {
+            this.plugin.settings.characterRelationshipsFolder = value;
             await this.plugin.saveSettings();
           })
         );

@@ -16,7 +16,7 @@ export async function switchCharacterRelationship(self: Toolbox, file: TFile) {
   if (!hasRootFolder(file, self.settings.characterRelationshipsFolder)) return;
   document.onclick = evt => {
     const target = evt.target as HTMLElement;
-    if (target.hasClass('__character-relationship')) {
+    if (target.hasClass('__character-relationship__')) {
       const { id, path, title, progress } = target.dataset;
       characterRelationship(self, file, title, path, id, Number(progress));
     }
@@ -96,7 +96,7 @@ async function characterRelationship(self: Toolbox, file: TFile, title: string, 
     }
 
     mermaid = mermaid.replace(/\\n/g, '\n');
-    content = `---\ntags: 人物关系\n---\n\n${els.map((el: any) => `- [${el.title}](${el.path}#^${el.id}) - <span class="__character-relationship__ ${el.state === 'open' ? 'cm-highlight' : ''}" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</span>`).join('\n')}\n\n${mermaid}`;
+    content = `---\ntags: 人物关系\n---\n\n${els.map((el: any) => `- [${el.title}](${el.path}#^${el.id}) - <${el.state === 'open' ? 'mark' : 'span'} class="__character-relationship__ ${el.state === 'open' ? 'cm-highlight' : ''}" data-id="${el.id}" data-path="${el.path}" data-title="${el.title}" data-progress="${el.progress}" data-content=${JSON.stringify(el.content)} data-state="${el.state}">${el.progress}%</${el.state === 'open' ? 'mark' : 'span'}>`).join('\n')}\n\n${mermaid}`;
   }
 
   self.app.vault.modify(file, content);

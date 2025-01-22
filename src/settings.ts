@@ -316,8 +316,8 @@ export class ToolboxSettingTab extends PluginSettingTab {
 
       if (this.plugin.settings.characterRelationships) {
         new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
-          cd.setValue('' + this.plugin.settings.cardSaveFolder).onChange(async value => {
-            this.plugin.settings.cardSaveFolder = value;
+          cd.setValue('' + this.plugin.settings.characterRelationshipsFolder).onChange(async value => {
+            this.plugin.settings.characterRelationshipsFolder = value;
             await this.plugin.saveSettings();
           })
         );
