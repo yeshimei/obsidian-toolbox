@@ -9821,12 +9821,9 @@ ${date}` : "\u7A7A\u7A7A\u5982\u4E5F", async () => await deleteTheUnderlinedLine
       }
     };
   } else {
-    mask = $(MASK_CLASS);
     mask.hide();
     mask.onclick = mask.ontouchstart = mask.ontouchend = mask.onmousedown = mask.onmouseup = viewr.onmousedown = viewr.onmouseup = window.onresize = null;
-    if (import_obsidian17.Platform.isMobile) {
-      s2();
-    }
+    s2();
   }
   function h() {
     if (import_obsidian17.Platform.isMobile) {
@@ -10154,17 +10151,15 @@ async function searchForWord(self2, editor) {
       folder = self2.settings.wordsSaveFolder;
     } else if (type === "card") {
       const html3 = JSummary == null ? void 0 : JSummary.textContent;
-      let content2 = html3 ? (0, import_obsidian23.htmlToMarkdown)(html3) : "";
-      content2 = content2.replace(/\[\d+\]/g, "");
+      content = html3 ? (0, import_obsidian23.htmlToMarkdown)(html3) : "";
+      content = content.replace(/\[\d+\]/g, "");
       folder = self2.settings.cardSaveFolder;
-      console.log("\u{1F680} ~ newPanelSearchForWord ~ folder:", self2.settings);
     }
     file = self2.app.vault.getMarkdownFiles().find((file2) => hasRootFolder(file2, folder) && file2.basename === word);
     if (file) {
       new import_obsidian23.Notice(type === "words" ? "\u8BCD\u8BED\u5DF2\u5B58\u5728" : "\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
     } else {
       const filepath = `${folder}/${word}.md`;
-      console.log("\u{1F680} ~ newPanelSearchForWord ~ filepath:", filepath);
       file = await self2.app.vault.create(filepath, chatContent || content || "");
     }
     editor.replaceSelection(`[[${word}]]`);

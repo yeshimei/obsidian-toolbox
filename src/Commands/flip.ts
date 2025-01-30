@@ -168,12 +168,9 @@ export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
       }
     };
   } else {
-    mask = $(MASK_CLASS);
     mask.hide();
     mask.onclick = mask.ontouchstart = mask.ontouchend = mask.onmousedown = mask.onmouseup = viewr.onmousedown = viewr.onmouseup = window.onresize = null;
-    if (Platform.isMobile) {
-      s();
-    }
+    s();
   }
 
   function h() {
