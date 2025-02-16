@@ -10513,7 +10513,7 @@ function dataviewJsContent(field, name) {
   return `\`\`\`dataview
 table without id
 	embed(link(cover)) as "\u5C01\u9762" ,
-	choice(top, "\u{1F525}", "") + choice(completionDate, "\u{1F3C6}", "") + "\u300A[" + file.name + "](" + file.path + ")\u300B" + author,
+	choice(top, "\u{1F525}", "") + choice(completionDate, "\u{1F3C6}", "") + "\u300A[" + file.name + "](" + file.path + ")\u300B" + author + " - " + round(file.size / 1024 / 1024, 2) + "MB",
 	 "[\u7B14\u8BB0](\u6211\u7684/\u8BFB\u4E66\u7B14\u8BB0/" + file.name +")" + choice(relationshipDiagram, " / [\u4EBA\u7269\u5173\u7CFB](\u4E66\u5E93/\u4EBA\u7269\u5173\u7CFB/" + title +")", ""),
 	choice(completionDate, "\u8FDB\u5EA6 100% <br>", choice(readingDate,choice(readingProgress, "\u8FDB\u5EA6 " + readingProgress + "% <br>", ""), "\u8FDB\u5EA6 \u672A\u8BFB<br>")) + choice(readingTimeFormat, "\u65F6\u957F "+ durationformat(dur(readingTimeFormat), "h'h'm'm's's'")+"<br>", "") + "\u8BA8\u8BBA " + dialogue + "<br>\u5212\u7EBF " + highlights + "<br>\u60F3\u6CD5 "  + thinks + "<br>\u51FA\u94FE " + outlinks ,
 	bookReview
