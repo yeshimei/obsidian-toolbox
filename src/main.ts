@@ -16,6 +16,7 @@ import passwordCreatorCommand from './Commands/passwordCreator';
 import polysemy from './Commands/polysemy';
 import poster from './Commands/poster';
 import readingDataTracking from './Commands/readingDataTracking';
+import relationshipDiagramCommand from './Commands/relationshipDiagram';
 import renumberFootnoteCommand from './Commands/renumberFootnote';
 import reviewOfReadingNote from './Commands/reviewOfReadingNote';
 import searchForWordCommand from './Commands/searchForWord';
@@ -77,6 +78,8 @@ export default class Toolbox extends Plugin {
     chatCommand(this);
     // 自动补全
     completionCommand(this);
+    // 打开关系图
+    relationshipDiagramCommand(this);
 
     this.registerEvent(
       this.app.workspace.on('file-open', async file => {
