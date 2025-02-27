@@ -7,7 +7,7 @@ export default function relationshipDiagramCommand(self: Toolbox) {
     self.addCommand({
       id: '打开关系图',
       name: '打开关系图',
-      icon: 'brush',
+      icon: 'git-compare-arrows',
       editorCallback: (editor, view) => relationshipDiagram(self, editor, view.file)
     });
 }
@@ -145,6 +145,7 @@ async function createTempRelationGraph(self: Toolbox, title: string, content: st
 class TempRelationView extends ItemView {
   private title: string;
   private content: string;
+  private zoom: ZoomDrag
   constructor(leaf: WorkspaceLeaf, app: App, title: string, content: string) {
     super(leaf);
     this.title = title;
@@ -163,10 +164,233 @@ class TempRelationView extends ItemView {
     const container = this.containerEl.children[1];
     container.empty();
     const contentEl = container.createDiv('temp-relation-content');
-    render(this.app, this.content, contentEl);
+    contentEl.style.overflow = 'hidden'
+    await render(this.app, this.content, contentEl);
+    this.zoom = new ZoomDrag('.mermaid')
   }
 
   async onClose() {
     this.containerEl.children[1].empty();
+    this.zoom.destroy()
+  }
+}
+
+
+interface ZoomDragState {
+  scale: number;
+  x: number;
+  y: number;
+  isDragging: boolean;
+  startX: number;
+  startY: number;
+  lastTouchDistance: number | null;
+}
+
+interface HTMLElementWithZoomDragState extends HTMLElement {
+  zoomDragState?: ZoomDragState;
+}
+
+type EventHandlerEntry = {
+  type: string;
+  handler: EventListener;
+  options?: boolean | AddEventListenerOptions;
+};
+
+class ZoomDrag {
+  private elements: NodeListOf<HTMLElement>;
+  private elementEventHandlers = new WeakMap<HTMLElement, EventHandlerEntry[]>();
+
+  constructor(className: string) {
+      this.elements = document.querySelectorAll<HTMLElement>(className);
+      this.initEvents();
+  }
+
+  private initEvents(): void {
+      this.elements.forEach(element => {
+          // 初始化变换状态
+          (element as HTMLElementWithZoomDragState).zoomDragState = {
+              scale: 1,
+              x: 0,
+              y: 0,
+              isDragging: false,
+              startX: 0,
+              startY: 0,
+              lastTouchDistance: null
+          };
+
+          const eventHandlers: EventHandlerEntry[] = [];
+
+          // 桌面端事件
+          const wheelHandler = this.handleWheel.bind(this);
+          element.addEventListener('wheel', wheelHandler);
+          eventHandlers.push({ type: 'wheel', handler: wheelHandler });
+
+          const mouseDownHandler = this.handleMouseDown.bind(this);
+          element.addEventListener('mousedown', mouseDownHandler);
+          eventHandlers.push({ type: 'mousedown', handler: mouseDownHandler });
+
+          const contextMenuHandler = (e: Event) => e.preventDefault();
+          element.addEventListener('contextmenu', contextMenuHandler);
+          eventHandlers.push({ type: 'contextmenu', handler: contextMenuHandler });
+
+          // 移动端事件
+          const touchStartHandler = this.handleTouchStart.bind(this);
+          element.addEventListener('touchstart', touchStartHandler);
+          eventHandlers.push({ type: 'touchstart', handler: touchStartHandler });
+
+          const touchMoveHandler = this.handleTouchMove.bind(this);
+          element.addEventListener('touchmove', touchMoveHandler, { passive: false });
+          eventHandlers.push({ type: 'touchmove', handler: touchMoveHandler, options: { passive: false } });
+
+          const touchEndHandler = this.handleTouchEnd.bind(this);
+          element.addEventListener('touchend', touchEndHandler);
+          eventHandlers.push({ type: 'touchend', handler: touchEndHandler });
+
+          this.elementEventHandlers.set(element, eventHandlers);
+      });
+  }
+
+  private handleWheel(e: WheelEvent): void {
+      e.preventDefault();
+      const element = e.currentTarget as HTMLElementWithZoomDragState;
+      const state = element.zoomDragState!;
+      const rect = element.getBoundingClientRect();
+      
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const newScale = state.scale * delta;
+      
+      if (newScale < 0.1 || newScale > 5) return;
+      
+      state.x = mouseX - (mouseX - state.x) * delta;
+      state.y = mouseY - (mouseY - state.y) * delta;
+      state.scale = newScale;
+      
+      this.applyTransform(element);
+  }
+
+  private handleMouseDown(e: MouseEvent): void {
+      if (e.button === 2 || (e.button === 0 && e.code === 'Space')) {
+          const element = e.currentTarget as HTMLElementWithZoomDragState;
+          const state = element.zoomDragState!;
+          
+          state.isDragging = true;
+          state.startX = e.clientX - state.x;
+          state.startY = e.clientY - state.y;
+          
+          document.addEventListener('mousemove', this.handleMouseMove);
+          document.addEventListener('mouseup', this.handleMouseUp);
+      }
+  }
+
+  private handleMouseMove = (e: MouseEvent): void => {
+      this.elements.forEach(element => {
+          const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
+          if (state.isDragging) {
+              state.x = e.clientX - state.startX;
+              state.y = e.clientY - state.startY;
+              this.applyTransform(element);
+          }
+      });
+  }
+
+  private handleMouseUp = (): void => {
+      this.elements.forEach(element => {
+          (element as HTMLElementWithZoomDragState).zoomDragState!.isDragging = false;
+      });
+      document.removeEventListener('mousemove', this.handleMouseMove);
+      document.removeEventListener('mouseup', this.handleMouseUp);
+  }
+
+  private handleTouchStart(e: TouchEvent): void {
+      const element = e.currentTarget as HTMLElementWithZoomDragState;
+      const state = element.zoomDragState!;
+      const touches = e.touches;
+      
+      if (touches.length === 1) {
+          state.isDragging = true;
+          state.startX = touches[0].clientX - state.x;
+          state.startY = touches[0].clientY - state.y;
+      } else if (touches.length === 2) {
+          state.lastTouchDistance = this.getTouchDistance(touches);
+          const center = this.getTouchCenter(touches);
+          state.startX = center.x - state.x;
+          state.startY = center.y - state.y;
+      }
+  }
+
+  private handleTouchMove(e: TouchEvent): void {
+      e.preventDefault();
+      const element = e.currentTarget as HTMLElementWithZoomDragState;
+      const state = element.zoomDragState!;
+      const touches = e.touches;
+
+      if (touches.length === 1 && state.isDragging) {
+          state.x = touches[0].clientX - state.startX;
+          state.y = touches[0].clientY - state.startY;
+          this.applyTransform(element);
+      } else if (touches.length === 2) {
+          const currentDistance = this.getTouchDistance(touches);
+          const delta = currentDistance / state.lastTouchDistance!;
+          
+          const center = this.getTouchCenter(touches);
+          
+          const newScale = state.scale * delta;
+          if (newScale < 0.1 || newScale > 5) return;
+          
+          state.x = center.x - (center.x - state.x) * delta;
+          state.y = center.y - (center.y - state.y) * delta;
+          state.scale = newScale;
+          state.lastTouchDistance = currentDistance;
+          
+          this.applyTransform(element);
+      }
+  }
+
+  private handleTouchEnd(): void {
+      this.elements.forEach(element => {
+          const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
+          state.isDragging = false;
+          state.lastTouchDistance = null;
+      });
+  }
+
+  private applyTransform(element: HTMLElement): void {
+      const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
+      element.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+      element.style.transformOrigin = '50% 50%'
+  }
+
+  private getTouchDistance(touches: TouchList): number {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  private getTouchCenter(touches: TouchList): { x: number; y: number } {
+      return {
+          x: (touches[0].clientX + touches[1].clientX) / 2,
+          y: (touches[0].clientY + touches[1].clientY) / 2
+      };
+  }
+
+  public destroy(): void {
+      this.elements.forEach(element => {
+          const handlers = this.elementEventHandlers.get(element);
+          if (handlers) {
+              handlers.forEach(({ type, handler, options }) => {
+                  element.removeEventListener(type, handler, options);
+              });
+          }
+          
+          // 清理扩展属性
+          delete (element as HTMLElementWithZoomDragState).zoomDragState;
+      });
+
+      // 清理文档级事件
+      document.removeEventListener('mousemove', this.handleMouseMove);
+      document.removeEventListener('mouseup', this.handleMouseUp);
   }
 }

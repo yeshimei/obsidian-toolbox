@@ -19,12 +19,12 @@ export function sanitizeFileName(fileName: string): string {
   return fileName.replace(invalidChars, '');
 }
 
-export function render(app: App, text: string, el: HTMLElement) {
+export async function render(app: App, text: string, el: HTMLElement) {
   const component = new Component();
   const sourcePath = app.workspace.getActiveFile()?.path;
 
   'markdown-preview-view markdown-rendered node-insert-event is-readable-line-width allow-fold-headings show-indentation-guide allow-fold-lists'.split(' ').forEach(className => el.classList.add(className));
-  MarkdownRenderer.render(app, text, el, sourcePath, component);
+  await MarkdownRenderer.render(app, text, el, sourcePath, component);
 }
 
 export function createChatArea() {
