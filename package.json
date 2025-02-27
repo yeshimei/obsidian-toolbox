@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
+    "cz-conventional-changelog": "^3.3.0",
     "js-md5": "^0.8.3",
     "openai": "^4.63.0"
   },

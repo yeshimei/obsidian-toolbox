@@ -17,11 +17,11 @@ async function relationshipDiagram(self: Toolbox, editor: Editor, file: TFile) {
   const filename = file.basename;
   const lineText = getCursorText(editor);
   const { name } = parseLine(lineText);
-  const text = generateGitgraphFromList(filename, content, name);
+  const text = await generateGitgraphFromList(self, filename, content, name);
   createTempRelationGraph(self, name || filename, text);
 }
 
-function generateGitgraphFromList(filename: string, listStr: string, name?: string) {
+async function generateGitgraphFromList(self: Toolbox, filename: string, listStr: string, name?: string) {
   let root = parseListToTree(listStr);
   root = {
     children: [
@@ -33,7 +33,35 @@ function generateGitgraphFromList(filename: string, listStr: string, name?: stri
     ]
   };
 
-  root = name ? { children: [filterRootByName(root.children, name)] } : root;
+  root = name ? { children: [filterRoot(root.children, name)] } : root;
+
+
+
+  async function a (node: any) {
+    for (let child of node.children) {
+      if(child.type === '==') {
+          const [filename, id] = child.link.split('#^')
+          const file = self.getFileByShort(filename)
+          if (file) {
+            const content = await self.app.vault.read(file);
+            const r = parseListToTree(content)
+            const d = filterRoot(r.children, id, 'id')
+            if (d) {
+               child.children = d.children
+            }
+          }
+      }
+  
+      if (child.children.length > 0) {
+        await a(child)
+      }
+    }
+  }
+
+
+  await a(root)
+
+  
   const commands = [
     `\`\`\`mermaid
 ---
@@ -44,65 +72,66 @@ gitGraph TB:`
   ];
 
   for (const mainNode of root.children) {
-    console.log(mainNode);
     if (mainNode.children.length > 0) {
       processBranch(mainNode, commands);
     }
   }
   return commands.slice(0, -1).join('\n') + '\n```';
-
-  function processBranch(node: any, cmds: any) {
-    const branchName = node.children[0].branchName;
-    cmds.push(`  branch "${branchName}"`);
-    for (const child of node.children) {
-      cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''}`);
-      if (child.children.length > 0) {
-        const childBranch = child.children[0].branchName;
-        cmds.push(`  branch "${childBranch}"`);
-        processChildren(child, cmds);
-      }
-    }
-    cmds.push(`  checkout "${node.branchName}"`);
-  }
-
-  function processChildren(node: any, cmds: any) {
-    for (const child of node.children) {
-      cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''}`);
-      if (child.children.length > 0) {
-        const childBranch = child.children[0].branchName;
-        cmds.push(`  branch "${childBranch}"`);
-        processChildren(child, cmds);
-        cmds.push(`  checkout "${child.branchName}"`);
-      }
-    }
-    cmds.push(`  checkout "${node.branchName}"`);
-  }
-
-  function parseListToTree(str: string) {
-    const lines = str.split('\n').filter(l => l.trim());
-    const root: any = { children: [] };
-    const stack = [{ node: root, level: -1 }];
-    for (const line of lines) {
-      const { level, name } = parseLine(line);
-      while (stack.length > 1 && stack[stack.length - 1].level >= level) {
-        stack.pop();
-      }
-      const parent = stack[stack.length - 1].node;
-      const newNode: any = { name, children: [], branchName: parent?.name || filename };
-      parent.children.push(newNode);
-      stack.push({ node: newNode, level });
-    }
-    return root;
-  }
 }
 
-function filterRootByName(originalRoot: any, targetName: string) {
+function processBranch(node: any, cmds: any) {
+  const branchName = node.children[0].branchName;
+  cmds.push(`  branch "${branchName}"`);
+  for (const child of node.children) {
+    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''}`);
+    if (child.children.length > 0) {
+      const childBranch = child.children[0].branchName;
+      cmds.push(`  branch "${childBranch}"`);
+      processChildren(child, cmds);
+    }
+  }
+  cmds.push(`  checkout "${node.branchName}"`);
+}
+
+function processChildren(node: any, cmds: any) {
+  for (const child of node.children) {
+    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''}`);
+    if (child.children.length > 0) {
+      const childBranch = child.children[0].branchName;
+      cmds.push(`  branch "${childBranch}"`);
+      processChildren(child, cmds);
+      cmds.push(`  checkout "${child.branchName}"`);
+    }
+  }
+  cmds.push(`  checkout "${node.branchName}"`);
+}
+
+function parseListToTree(str: string) {
+  const lines = str.split('\n').filter(l => l.trim());
+  const root: any = { children: [] };
+  const stack = [{ node: root, level: -1 }];
+  for (const line of lines) {
+    let { level, name, type, link, id } = parseLine(line);
+    if (!name) continue
+    
+    while (stack.length > 1 && stack[stack.length - 1].level >= level) {
+      stack.pop();
+    }
+    const parent = stack[stack.length - 1].node;
+    const newNode: any = { id, name, level, type, link, children: [], branchName: parent?.name || '默认', parent};
+    parent.children.push(newNode);
+    stack.push({ node: newNode, level });
+  }
+  return root;
+}
+
+function filterRoot(originalRoot: any, targetName: string, key = 'name') {
   for (const child of originalRoot) {
-    if (child.name === targetName) {
+    if (child[key] === targetName) {
       return child;
     }
     if (child.children.length > 0) {
-      const found: any = filterRootByName(child.children, targetName);
+      const found: any = filterRoot(child.children, targetName, key);
       if (found) return found;
     }
   }
@@ -117,17 +146,23 @@ function getCursorText(editor: Editor): string {
 
 function parseLine(line: string) {
   const level = line.match(/^(\t*)/)[0].length;
-  const content = line.replace(/^[\t]*-[\t]*/, '');
-  const linkMatch = content.match(/\[\[(.*?)(\|(.*?))?\]\]/);
-
+  const content = line.replace(/^[\t]*-[\t]*/, '').trim();
+  const regex = /^(=*)\[\[([^|#]+(?:#[^|]*)?)(?:\|([^\]]+))?\]\]\1(?:\s*\^([^\s=]+))?$|^([^[\]]+)$/
+  const match = content.match(regex);
+  if (!match) return {type: 'plain', level, name: content};
+  if (match[5]) return {type: 'plain', level, name: match[5]};
+  const [ , type, link, name, id ] = match;
   return {
+    id,
+    type: type || 'link', 
     level,
-    name: linkMatch ? linkMatch[3] || linkMatch[1].split('/').pop().split('#')[0] : content.trim()
+    link,
+    name: name || link,
   };
 }
 
 async function createTempRelationGraph(self: Toolbox, title: string, content: string) {
-  const tempViewType = title;
+  const tempViewType = String(Date.now());
 
   self.app.workspace.detachLeavesOfType(tempViewType);
 
