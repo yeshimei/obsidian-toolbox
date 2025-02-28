@@ -2,6 +2,8 @@ import { App, Editor, ItemView, TFile, WorkspaceLeaf } from 'obsidian';
 import { render } from 'src/helpers';
 import Toolbox from 'src/main';
 
+let nodeList: any
+
 export default function relationshipDiagramCommand(self: Toolbox) {
   self.settings.highlight &&
     self.addCommand({
@@ -34,34 +36,8 @@ async function generateGitgraphFromList(self: Toolbox, filename: string, listStr
   };
 
   root = name ? { children: [filterRoot(root.children, name)] } : root;
-
-
-
-  async function a (node: any) {
-    for (let child of node.children) {
-      if(child.type === '==') {
-          const [filename, id] = child.link.split('#^')
-          const file = self.getFileByShort(filename)
-          if (file) {
-            const content = await self.app.vault.read(file);
-            const r = parseListToTree(content)
-            const d = filterRoot(r.children, id, 'id')
-            if (d) {
-               child.children = d.children
-            }
-          }
-      }
-  
-      if (child.children.length > 0) {
-        await a(child)
-      }
-    }
-  }
-
-
-  await a(root)
-
-  
+  await joinIndex(self, root)
+  nodeList = root
   const commands = [
     `\`\`\`mermaid
 ---
@@ -77,6 +53,27 @@ gitGraph TB:`
     }
   }
   return commands.slice(0, -1).join('\n') + '\n```';
+}
+
+async function joinIndex (self: Toolbox, node: any) {
+  for (let child of node.children) {
+    if(child.type === '==') {
+        const [filename, id] = child.link.split('#^')
+        const file = self.getFileByShort(filename)
+        if (file) {
+          const content = await self.app.vault.read(file);
+          const r = parseListToTree(content)
+          const d = filterRoot(r.children, id, 'id')
+          if (d) {
+             child.children = d.children
+          }
+        }
+    }
+
+    if (child.children.length > 0) {
+      await joinIndex(self, child)
+    }
+  }
 }
 
 function processBranch(node: any, cmds: any) {
@@ -181,10 +178,12 @@ class TempRelationView extends ItemView {
   private title: string;
   private content: string;
   private zoom: ZoomDrag
+  app: App
   constructor(leaf: WorkspaceLeaf, app: App, title: string, content: string) {
     super(leaf);
     this.title = title;
     this.content = content;
+    this.app = app
   }
 
   getViewType(): string {
@@ -200,6 +199,9 @@ class TempRelationView extends ItemView {
     container.empty();
     const contentEl = container.createDiv('temp-relation-content');
     contentEl.style.overflow = 'hidden'
+    contentEl.addEventListener('click', this.openLink.bind(this))
+    container.addEventListener('mouseover', this.previewLink.bind(this))
+    container.addEventListener('mouseout', this.onmouseout.bind(this))
     await render(this.app, this.content, contentEl);
     this.zoom = new ZoomDrag('.mermaid')
   }
@@ -208,6 +210,47 @@ class TempRelationView extends ItemView {
     this.containerEl.children[1].empty();
     this.zoom.destroy()
   }
+
+  private openLink(e: Event) {
+    const target = e.target as HTMLElement
+    if (!target.hasClass('commit-label')) return
+    const name = target.textContent
+    if (!name || !nodeList) return
+    const link = this.getLink(nodeList, name)?.link
+    const currentFile = this.app.workspace.getActiveFile();
+      if (currentFile && link) {
+      this.app.workspace.openLinkText(link, currentFile.path, false);
+    }
+  }
+
+  private previewLink(e: Event) {
+    const target = e.target as HTMLElement
+    if (!target.hasClass('commit-label')) return
+    const name = target.textContent
+    if (!name || !nodeList) return
+    const link = this.getLink(nodeList, name)?.link
+    if (!link) return 
+    target.style.textDecorationLine = "underline"
+    target.style.cursor = "pointer"
+  }
+
+  private onmouseout(e: Event) {
+    const target = e.target as HTMLElement
+    if (!target.hasClass('commit-label')) return
+    target.style.textDecorationLine = "none"
+  }
+
+  private getLink(nodes: any, name: string): any {
+    for (const node of nodes.children) {
+      if (node.name === name) return node;
+      if (node.children.length > 0) {
+        const found = this.getLink(node, name); 
+        if (found) return found;
+      }
+    }
+  }
+
+  
 }
 
 
