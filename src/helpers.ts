@@ -242,45 +242,33 @@ export function uniqueBy<T, U>(arr: T[], key: (item: T) => U): T[] {
   });
 }
 
-export function getBlock(app: App, editor: Editor, file: TFile) {
-  const cursor = editor.getCursor('to');
-  const fileCache = app.metadataCache.getFileCache(file);
-  let block: any = ((fileCache === null || fileCache === void 0 ? void 0 : fileCache.sections) || []).find((section: { position: { start: { line: number }; end: { line: number } } }) => {
-    return section.position.start.line <= cursor.line && section.position.end.line >= cursor.line;
-  });
-  if ((block === null || block === void 0 ? void 0 : block.type) === 'list') {
-    block = ((fileCache === null || fileCache === void 0 ? void 0 : fileCache.listItems) || []).find((item: { position: { start: { line: number }; end: { line: number } } }) => {
-      return item.position.start.line <= cursor.line && item.position.end.line >= cursor.line;
-    });
-  } else if ((block === null || block === void 0 ? void 0 : block.type) === 'heading') {
-    block = fileCache.headings.find((heading: { position: { start: { line: any } } }) => {
-      return heading.position.start.line === block.position.start.line;
-    });
+export function getBlock(editor: Editor, strictMode = false) {
+  const cursor = editor.getCursor();
+  const lineNumber = cursor.line
+  const lineContent = editor.getLine(lineNumber);
+  const blockId = generateId();
+  const blockIdMatch = lineContent.match(/\s*\^([\w-]+)\s*$/);
+  if (strictMode && /^#{1,6}\s/.test(lineContent)) {
+    return [lineContent.replace(/^#{1,6}\s/, '')]
   }
+  if (blockIdMatch) {
+    return blockIdMatch[1];
+  }
+ 
+  const newLineContent = `${lineContent} ^${blockId}`;
+  
+  editor.replaceRange(
+    newLineContent,
+    { line: lineNumber, ch: 0 },
+    { line: lineNumber, ch: lineContent.length }
+  );
 
-  let blockId = block.id;
-  if (!blockId) {
-    const sectionEnd = block.position.end;
-    const end = {
-      ch: sectionEnd.col,
-      line: sectionEnd.line
-    };
-    const id = generateId();
-    const spacer = shouldInsertAfter(block) ? '\n\n' : ' ';
-    editor.replaceRange(`${spacer}^${id}`, end);
-    blockId = id;
-  }
-  return blockId;
+  return blockId
 }
+
 
 export function generateId() {
   return Math.random().toString(36).substr(2, 6);
-}
-
-function shouldInsertAfter(block: any) {
-  if (block.type) {
-    return ['blockquote', 'code', 'table', 'comment', 'footnoteDefinition'].includes(block.type);
-  }
 }
 
 // 检查给定的字符串是否为加密笔记

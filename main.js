@@ -914,42 +914,28 @@ function uniqueBy(arr, key) {
     return seen.has(keyValue) ? false : seen.add(keyValue);
   });
 }
-function getBlock(app, editor, file) {
-  const cursor = editor.getCursor("to");
-  const fileCache = app.metadataCache.getFileCache(file);
-  let block = ((fileCache === null || fileCache === void 0 ? void 0 : fileCache.sections) || []).find((section) => {
-    return section.position.start.line <= cursor.line && section.position.end.line >= cursor.line;
-  });
-  if ((block === null || block === void 0 ? void 0 : block.type) === "list") {
-    block = ((fileCache === null || fileCache === void 0 ? void 0 : fileCache.listItems) || []).find((item) => {
-      return item.position.start.line <= cursor.line && item.position.end.line >= cursor.line;
-    });
-  } else if ((block === null || block === void 0 ? void 0 : block.type) === "heading") {
-    block = fileCache.headings.find((heading) => {
-      return heading.position.start.line === block.position.start.line;
-    });
+function getBlock(editor, strictMode = false) {
+  const cursor = editor.getCursor();
+  const lineNumber = cursor.line;
+  const lineContent = editor.getLine(lineNumber);
+  const blockId = generateId();
+  const blockIdMatch = lineContent.match(/\s*\^([\w-]+)\s*$/);
+  if (strictMode && /^#{1,6}\s/.test(lineContent)) {
+    return [lineContent.replace(/^#{1,6}\s/, "")];
   }
-  let blockId = block.id;
-  if (!blockId) {
-    const sectionEnd = block.position.end;
-    const end = {
-      ch: sectionEnd.col,
-      line: sectionEnd.line
-    };
-    const id = generateId();
-    const spacer = shouldInsertAfter(block) ? "\n\n" : " ";
-    editor.replaceRange(`${spacer}^${id}`, end);
-    blockId = id;
+  if (blockIdMatch) {
+    return blockIdMatch[1];
   }
+  const newLineContent = `${lineContent} ^${blockId}`;
+  editor.replaceRange(
+    newLineContent,
+    { line: lineNumber, ch: 0 },
+    { line: lineNumber, ch: lineContent.length }
+  );
   return blockId;
 }
 function generateId() {
   return Math.random().toString(36).substr(2, 6);
-}
-function shouldInsertAfter(block) {
-  if (block.type) {
-    return ["blockquote", "code", "table", "comment", "footnoteDefinition"].includes(block.type);
-  }
 }
 function isNoteEncrypt(str2) {
   return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str2);
@@ -6918,8 +6904,10 @@ function blockReferenceCommand(self2) {
 function blockReference(self2, editor, file) {
   if (!self2.settings.blockReference)
     return;
-  let blockId = getBlock(self2.app, editor, file);
-  window.navigator.clipboard.writeText(`[[${file.path.replace("." + file.extension, "")}#^${blockId}|${file.basename}]]`);
+  let blockId = getBlock(editor, true);
+  let id = Array.isArray(blockId) ? blockId[0] : "^" + blockId;
+  let name = Array.isArray(blockId) ? blockId[0] : file.basename;
+  window.navigator.clipboard.writeText(`[[${file.path.replace("." + file.extension, "")}#${id}|${name}]]`);
   new import_obsidian8.Notice("\u5757\u5F15\u7528\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
 }
 
@@ -7055,7 +7043,7 @@ async function createCharacterRelationship(self2, editor, file) {
   const position = editor.getCursor();
   const hierarchy = getHeadingHierarchy(headings, position.line);
   const headingText = hierarchy.reduce((res, ret) => res += ret.heading + "/", "").slice(0, -1);
-  let blockId = getBlock(self2.app, editor, file);
+  let blockId = getBlock(editor);
   const progress2 = computerReadingProgress($(SOURCE_VIEW_CLASS));
   await characterRelationship(self2, targetFile, headingText, file.path, blockId, progress2);
   await self2.app.workspace.getLeaf(true).openFile(targetFile);
@@ -10005,7 +9993,7 @@ function highlightCommand(self2) {
 }
 function highlight(self2, editor, file) {
   const onSubmit = (res, tagging) => {
-    let blockId = getBlock(self2.app, editor, file);
+    let blockId = getBlock(editor);
     res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ""}" data-id="${blockId}" data-tagging="${tagging || ""}" data-date="${today(true)}">${text}</span>`;
     editor.replaceSelection(res);
   };
@@ -10249,7 +10237,9 @@ function getCursorText(editor) {
 }
 function parseLine(line) {
   const level = line.match(/^(\t*)/)[0].length;
-  const content = line.replace(/^[\t]*-[\t]*/, "").trim();
+  const content = line.replace(/^[\t]*-[\t]*/, "").trim().replace(/^\s*(?:.*?)(\[\[.*?\]\])\s*(?:.*?)(\^[0-9a-z]{6})?\s*$/, (match2, p1, p2) => {
+    return p2 ? `${p1} ${p2}` : p1;
+  });
   const regex = /^(=*)\[\[([^|#]+(?:#[^|]*)?)(?:\|([^\]]+))?\]\]\1(?:\s*\^([^\s=]+))?$|^([^[\]]+)$/;
   const match = content.match(regex);
   if (!match)
@@ -10294,19 +10284,19 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     const container = this.containerEl.children[1];
     container.empty();
     const contentEl = container.createDiv("temp-relation-content");
-    contentEl.style.overflow = "hidden";
-    contentEl.addEventListener("click", this.openLink.bind(this));
-    container.addEventListener("mouseover", this.previewLink.bind(this));
+    contentEl.style.overflow = "visible";
+    contentEl.addEventListener("click", this.onclick.bind(this));
+    container.addEventListener("mouseover", this.onmouseover.bind(this));
     container.addEventListener("mouseout", this.onmouseout.bind(this));
     await render(this.self.app, this.content, contentEl);
-    this.zoom = new ZoomDrag(".view-content");
+    this.zoom = new ZoomDrag(".temp-relation-content");
   }
   async onClose() {
-    this.detachMarkdownLeaves();
+    this.splitLeaf.detach();
     this.containerEl.children[1].empty();
     this.zoom.destroy();
   }
-  async openLink(e2) {
+  async onclick(e2) {
     var _a2;
     const target = e2.target;
     if (!target.hasClass("commit-label"))
@@ -10317,21 +10307,15 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     const link = (_a2 = this.getLink(nodeList, name)) == null ? void 0 : _a2.link;
     const currentFile = this.self.app.workspace.getActiveFile();
     if (currentFile && link) {
-      this.detachMarkdownLeaves();
-      const newLeaf = this.app.workspace.getLeaf("split");
-      await this.self.app.workspace.openLinkText(link, currentFile.path, true, {
+      const newLeaf = this.splitLeaf || this.app.workspace.getLeaf("split");
+      await this.self.app.workspace.openLinkText(link, currentFile.path, false, {
         group: newLeaf,
         active: true
       });
       this.splitLeaf = newLeaf;
     }
   }
-  detachMarkdownLeaves() {
-    if (this.splitLeaf) {
-      this.splitLeaf.detach();
-    }
-  }
-  previewLink(e2) {
+  onmouseover(e2) {
     var _a2;
     const target = e2.target;
     if (!target.hasClass("commit-label"))
