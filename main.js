@@ -10273,15 +10273,16 @@ async function createTempRelationGraph(self2, title, content) {
     type: tempViewType,
     active: true
   });
-  self2.registerView(tempViewType, (leaf2) => new TempRelationView(leaf2, self2.app, title, content));
+  self2.registerView(tempViewType, (leaf2) => new TempRelationView(leaf2, self2, title, content));
   self2.app.workspace.revealLeaf(leaf);
 }
 var TempRelationView = class extends import_obsidian22.ItemView {
-  constructor(leaf, app, title, content) {
+  constructor(leaf, self2, title, content) {
     super(leaf);
+    this.splitLeaf = null;
     this.title = title;
     this.content = content;
-    this.app = app;
+    this.self = self2;
   }
   getViewType() {
     return this.title;
@@ -10297,14 +10298,15 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     contentEl.addEventListener("click", this.openLink.bind(this));
     container.addEventListener("mouseover", this.previewLink.bind(this));
     container.addEventListener("mouseout", this.onmouseout.bind(this));
-    await render(this.app, this.content, contentEl);
-    this.zoom = new ZoomDrag(".mermaid");
+    await render(this.self.app, this.content, contentEl);
+    this.zoom = new ZoomDrag(".view-content");
   }
   async onClose() {
+    this.detachMarkdownLeaves();
     this.containerEl.children[1].empty();
     this.zoom.destroy();
   }
-  openLink(e2) {
+  async openLink(e2) {
     var _a2;
     const target = e2.target;
     if (!target.hasClass("commit-label"))
@@ -10313,9 +10315,20 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     if (!name || !nodeList)
       return;
     const link = (_a2 = this.getLink(nodeList, name)) == null ? void 0 : _a2.link;
-    const currentFile = this.app.workspace.getActiveFile();
+    const currentFile = this.self.app.workspace.getActiveFile();
     if (currentFile && link) {
-      this.app.workspace.openLinkText(link, currentFile.path, false);
+      this.detachMarkdownLeaves();
+      const newLeaf = this.app.workspace.getLeaf("split");
+      await this.self.app.workspace.openLinkText(link, currentFile.path, true, {
+        group: newLeaf,
+        active: true
+      });
+      this.splitLeaf = newLeaf;
+    }
+  }
+  detachMarkdownLeaves() {
+    if (this.splitLeaf) {
+      this.splitLeaf.detach();
     }
   }
   previewLink(e2) {
@@ -10415,7 +10428,7 @@ var ZoomDrag = class {
     const mouseY = e2.clientY - rect.top;
     const delta = e2.deltaY > 0 ? 0.9 : 1.1;
     const newScale = state.scale * delta;
-    if (newScale < 0.1 || newScale > 5)
+    if (newScale < 0.1 || newScale > 100)
       return;
     state.x = mouseX - (mouseX - state.x) * delta;
     state.y = mouseY - (mouseY - state.y) * delta;
@@ -10434,6 +10447,7 @@ var ZoomDrag = class {
     }
   }
   handleTouchStart(e2) {
+    e2.stopImmediatePropagation();
     const element = e2.currentTarget;
     const state = element.zoomDragState;
     const touches = e2.touches;
@@ -10449,7 +10463,7 @@ var ZoomDrag = class {
     }
   }
   handleTouchMove(e2) {
-    e2.preventDefault();
+    e2.stopImmediatePropagation();
     const element = e2.currentTarget;
     const state = element.zoomDragState;
     const touches = e2.touches;
@@ -10480,8 +10494,8 @@ var ZoomDrag = class {
   }
   applyTransform(element) {
     const state = element.zoomDragState;
-    element.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
     element.style.transformOrigin = "50% 50%";
+    element.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
   }
   getTouchDistance(touches) {
     const dx = touches[0].clientX - touches[1].clientX;

@@ -40,6 +40,7 @@ export default class Toolbox extends Plugin {
     await this.loadSettings();
     this.debounceReadDataTracking = debounce(readingDataTracking, this.settings.readDataTrackingDelayTime);
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
+
     // 画廊
     gallery(this);
     // 读书笔记回顾

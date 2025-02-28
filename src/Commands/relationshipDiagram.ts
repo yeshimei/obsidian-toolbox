@@ -1,4 +1,4 @@
-import { App, Editor, ItemView, TFile, WorkspaceLeaf } from 'obsidian';
+import { App, Editor, HoverPopover, ItemView, TFile, WorkspaceLeaf } from 'obsidian';
 import { render } from 'src/helpers';
 import Toolbox from 'src/main';
 
@@ -169,8 +169,7 @@ async function createTempRelationGraph(self: Toolbox, title: string, content: st
     active: true
   });
 
-  self.registerView(tempViewType, (leaf: WorkspaceLeaf) => new TempRelationView(leaf, self.app, title, content) as any);
-
+  self.registerView(tempViewType, (leaf: WorkspaceLeaf) => new TempRelationView(leaf, self, title, content) as any);
   self.app.workspace.revealLeaf(leaf);
 }
 
@@ -178,12 +177,13 @@ class TempRelationView extends ItemView {
   private title: string;
   private content: string;
   private zoom: ZoomDrag
-  app: App
-  constructor(leaf: WorkspaceLeaf, app: App, title: string, content: string) {
+  self: Toolbox
+  private splitLeaf: WorkspaceLeaf | null = null;
+  constructor(leaf: WorkspaceLeaf, self: Toolbox, title: string, content: string) {
     super(leaf);
     this.title = title;
     this.content = content;
-    this.app = app
+    this.self = self
   }
 
   getViewType(): string {
@@ -202,28 +202,41 @@ class TempRelationView extends ItemView {
     contentEl.addEventListener('click', this.openLink.bind(this))
     container.addEventListener('mouseover', this.previewLink.bind(this))
     container.addEventListener('mouseout', this.onmouseout.bind(this))
-    await render(this.app, this.content, contentEl);
-    this.zoom = new ZoomDrag('.mermaid')
+    await render(this.self.app, this.content, contentEl);
+    this.zoom = new ZoomDrag('.view-content')
   }
 
   async onClose() {
+    this.detachMarkdownLeaves()
     this.containerEl.children[1].empty();
     this.zoom.destroy()
   }
 
-  private openLink(e: Event) {
+  private async openLink(e: Event) {
     const target = e.target as HTMLElement
     if (!target.hasClass('commit-label')) return
     const name = target.textContent
     if (!name || !nodeList) return
     const link = this.getLink(nodeList, name)?.link
-    const currentFile = this.app.workspace.getActiveFile();
+    const currentFile = this.self.app.workspace.getActiveFile();
       if (currentFile && link) {
-      this.app.workspace.openLinkText(link, currentFile.path, false);
+        this.detachMarkdownLeaves()
+        const newLeaf = this.app.workspace.getLeaf('split');
+        await this.self.app.workspace.openLinkText(link, currentFile.path, true, {
+          group: newLeaf,
+          active: true,
+        });
+        this.splitLeaf = newLeaf;
     }
   }
 
-  private previewLink(e: Event) {
+  private detachMarkdownLeaves () {
+    if (this.splitLeaf) {
+      this.splitLeaf.detach();
+    }
+  }
+
+  private previewLink(e: MouseEvent) {
     const target = e.target as HTMLElement
     if (!target.hasClass('commit-label')) return
     const name = target.textContent
@@ -232,6 +245,8 @@ class TempRelationView extends ItemView {
     if (!link) return 
     target.style.textDecorationLine = "underline"
     target.style.cursor = "pointer"
+    // this.self.registerHoverLinkSource("native-preview")
+    // new HoverPopover
   }
 
   private onmouseout(e: Event) {
@@ -249,8 +264,6 @@ class TempRelationView extends ItemView {
       }
     }
   }
-
-  
 }
 
 
@@ -340,7 +353,7 @@ class ZoomDrag {
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       const newScale = state.scale * delta;
       
-      if (newScale < 0.1 || newScale > 5) return;
+      if (newScale < 0.1 || newScale > 100) return;
       
       state.x = mouseX - (mouseX - state.x) * delta;
       state.y = mouseY - (mouseY - state.y) * delta;
@@ -383,6 +396,7 @@ class ZoomDrag {
   }
 
   private handleTouchStart(e: TouchEvent): void {
+      e.stopImmediatePropagation()
       const element = e.currentTarget as HTMLElementWithZoomDragState;
       const state = element.zoomDragState!;
       const touches = e.touches;
@@ -400,7 +414,7 @@ class ZoomDrag {
   }
 
   private handleTouchMove(e: TouchEvent): void {
-      e.preventDefault();
+      e.stopImmediatePropagation()
       const element = e.currentTarget as HTMLElementWithZoomDragState;
       const state = element.zoomDragState!;
       const touches = e.touches;
@@ -437,8 +451,8 @@ class ZoomDrag {
 
   private applyTransform(element: HTMLElement): void {
       const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
-      element.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
       element.style.transformOrigin = '50% 50%'
+      element.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
   }
 
   private getTouchDistance(touches: TouchList): number {
