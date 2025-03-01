@@ -10253,28 +10253,17 @@ function findTree(originalRoot, targetName, key = "name") {
   return null;
 }
 function getFlattenedPath(tree, targetName) {
-  function findPath(node, currentPath) {
-    const newPath = [...currentPath, node];
-    if (node.name === targetName) {
-      return newPath;
-    }
-    for (const child of node.children) {
-      const result = findPath(child, newPath);
-      if (result)
-        return result;
-    }
-    return null;
+  const paths = [];
+  const target = findTree(gitChartData, targetName);
+  let node = target;
+  while (node.parent.name) {
+    paths.push(node.parent);
+    node = node.parent;
   }
-  for (const child of tree.children) {
-    const path = findPath(child, []);
-    if (path) {
-      return path.map((tree2) => ({
-        ...tree2,
-        children: []
-      }));
-    }
-  }
-  return null;
+  paths.unshift(target);
+  paths.forEach((node2) => node2.children = []);
+  paths.reverse();
+  return paths;
 }
 function getCursorText(editor) {
   const cursor = editor.getCursor();
@@ -10400,6 +10389,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
   }
   logicalChain(name) {
     let tree = getFlattenedPath(gitChartData, name);
+    console.log(tree);
     if (!tree)
       return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name));

@@ -137,29 +137,44 @@ function findTree(originalRoot: any, targetName: string, key = 'name'): any {
   return null;
 }
 
-function getFlattenedPath(tree: any, targetName: string): any {
-  function findPath(node: any, currentPath: any[]) {
-    const newPath = [...currentPath, node];
-    if (node.name === targetName) {
-      return newPath;
-    }
-    for (const child of node.children) {
-      const result = findPath(child, newPath) as any;
-      if (result) return result;
-    }
-    return null;
+function getFlattenedPath (tree: any, targetName: string) {
+  const paths = []
+  const target = findTree(gitChartData, targetName)
+  let node = target
+  while(node.parent.name) {
+    paths.push(node.parent)
+    node = node.parent
   }
-  for (const child of tree.children) {
-    const path = findPath(child, []);
-    if (path) {
-      return path.map((tree: any) => ({
-        ...tree,
-        children: []
-      }));
-    }
-  }
-  return null;
+  paths.unshift(target)
+  paths.forEach(node => node.children = [])
+  paths.reverse()
+  return paths  
 }
+
+// function getFlattenedPath(tree: any, targetName: string): any {
+//   function findPath(node: any, currentPath: any[]) {
+//     // const newPath = [...currentPath, node];
+//     // if (node.name === targetName) {
+//     //   return newPath;
+//     // }
+//     // for (const child of node.children) {
+//     //   const result = findPath(child, newPath) as any;
+//     //   if (result) return result;
+//     // }
+//     // return null;
+
+//   }
+//   for (const child of tree.children) {
+//     const path = findPath(child, []);
+//     if (path) {
+//       return path.map((tree: any) => ({
+//         ...tree,
+//         children: []
+//       }));
+//     }
+//   }
+//   return null;
+// }
 
 function getCursorText(editor: Editor): string {
   const cursor = editor.getCursor();
@@ -293,6 +308,7 @@ class TempRelationView extends ItemView {
 
   logicalChain(name: string) {
     let tree = getFlattenedPath(gitChartData, name);
+    console.log(tree)
     if (!tree) return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name));
   }
