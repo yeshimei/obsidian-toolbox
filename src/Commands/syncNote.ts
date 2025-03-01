@@ -26,7 +26,6 @@ export async function syncNote(self: Toolbox, file: TFile) {
   let dialogue = 0;
 
   let { links, frontmatter } = self.app.metadataCache.getFileCache(file);
-  console.log('🚀 ~ syncNote ~ links:', links);
   let content = '---\ntags: 读书笔记\n---';
   // 出链
 

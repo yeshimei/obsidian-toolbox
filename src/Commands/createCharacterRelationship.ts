@@ -46,7 +46,7 @@ async function createCharacterRelationship(self: Toolbox, editor: Editor, file: 
   const headingText = hierarchy.reduce((res, ret) => (res += ret.heading + '/'), '').slice(0, -1);
 
   // 人物关系笔记的内容
-  let blockId = getBlock(editor) as string;
+  let blockId = getBlock(self.app, editor, file) as string;
   const progress = computerReadingProgress($(SOURCE_VIEW_CLASS));
   await characterRelationship(self, targetFile, headingText, file.path, blockId, progress);
   await self.app.workspace.getLeaf(true).openFile(targetFile);

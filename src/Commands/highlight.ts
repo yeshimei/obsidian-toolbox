@@ -15,7 +15,7 @@ export default function highlightCommand(self: Toolbox) {
 
 function highlight(self: Toolbox, editor: Editor, file: TFile) {
   const onSubmit = (res: string, tagging: string) => {
-    let blockId = getBlock(editor);
+    let blockId = getBlock(self.app, editor, file);
     res = `<span class="__comment cm-highlight" style="white-space: pre-wrap;" data-comment="${res || ''}" data-id="${blockId}" data-tagging="${tagging || ''}" data-date="${today(true)}">${text}</span>`;
     editor.replaceSelection(res);
   };
