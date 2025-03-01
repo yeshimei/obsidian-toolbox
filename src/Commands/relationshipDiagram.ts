@@ -40,9 +40,6 @@ function generateGitgraphFromList(tree: any, title: string) {
 
   const commands = [
     `\`\`\`mermaid
----
-title: ${tree.children[0].name}
----
 %%%{init: {'gitGraph': {'rotateCommitLabel': false}} }%%%
 gitGraph TB:`
   ];
@@ -80,7 +77,7 @@ function processBranch(node: any, cmds: any) {
   const branchName = node.children[0].branchName;
   cmds.push(`  branch "${branchName}"`);
   for (const child of node.children) {
-    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''}`);
+    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`);
     if (child.children.length > 0) {
       const childBranch = child.children[0].branchName;
       cmds.push(`  branch "${childBranch}"`);
@@ -92,7 +89,7 @@ function processBranch(node: any, cmds: any) {
 
 function processChildren(node: any, cmds: any) {
   for (const child of node.children) {
-    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''}`);
+    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`);
     if (child.children.length > 0) {
       const childBranch = child.children[0].branchName;
       cmds.push(`  branch "${childBranch}"`);
@@ -105,9 +102,8 @@ function processChildren(node: any, cmds: any) {
 
 async function processTree(listStr: string, name?: string) {
   let tree = parseListToTree(listStr);
-  tree = name ? findTree(tree, name) : tree;
+  tree = name ? { children: [findTree(tree, name)] } : tree;
   await joinTree(tree);
-  console.log(tree);
   return tree;
 }
 
@@ -116,14 +112,14 @@ function parseListToTree(str: string) {
   const root: any = { children: [] };
   const stack = [{ node: root, level: -1 }];
   for (const line of lines) {
-    let { level, name, type, link, id } = parseLine(line);
+    let { level, name, type, link, id, tag } = parseLine(line);
     if (!name) continue;
 
     while (stack.length > 1 && stack[stack.length - 1].level >= level) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode: any = { id, name, level, type, link, children: [], branchName: parent?.name || '默认', parent };
+    const newNode: any = { id, name, tag, level, type, link, children: [], branchName: parent?.name || '默认', parent };
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
@@ -173,21 +169,23 @@ function getCursorText(editor: Editor): string {
 
 function parseLine(line: string) {
   const level = line.match(/^(\t*)/)[0].length;
-
   let content = line.replace(/^[\t]*-[\t]*/, '').trim();
   const isMark = /==.*?\[\[.*?#\^\w{6}(?:|.*?)\]\].*?==/.test(content);
+  const tag = content.match(/ #(\S+)/)?.[1]
+  if (tag) content = content.replace(` #${tag}`, '')
   content = content.replace(/^\s*(?:.*?)(\[\[.*?\]\])\s*(?:.*?)(\^[0-9a-z]{6})?\s*$/, (match, p1, p2) => {
     p1 = isMark ? `==${p1}==` : p1;
     return p2 ? `${p1} ${p2}` : p1;
-  });
+  })
 
   const regex = /^(=*)\[\[([^|#]+(?:#[^|]*)?)(?:\|([^\]]+))?\]\]\1(?:\s*\^([^\s=]+))?$|^([^[\]]+)$/;
   const match = content.match(regex);
-  if (!match) return { type: 'plain', level, name: content };
-  if (match[5]) return { type: 'plain', level, name: match[5] };
+  if (!match) return { type: 'plain', level, name: content, tag };
+  if (match[5]) return { type: 'plain', level, name: match[5], tag };
   const [, type, link, name, id] = match;
   return {
     id,
+    tag,
     type: type || 'link',
     level,
     link,
