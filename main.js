@@ -10129,7 +10129,6 @@ function readingDataTracking(self3, el, file) {
 
 // src/Commands/relationshipDiagram.ts
 var import_obsidian22 = require("obsidian");
-var gitChartData;
 var self2;
 function relationshipDiagramCommand(f2) {
   self2 = f2;
@@ -10146,9 +10145,8 @@ async function relationshipDiagram(editor, file) {
   const lineText = getCursorText(editor);
   const { name } = parseLine(lineText);
   const tree = await processTree(content, name);
-  gitChartData = tree;
   const text = generateGitgraphFromList(tree, filename);
-  await createTempRelationGraph(name || filename, text);
+  await createTempRelationGraph(name || filename, text, tree);
 }
 function generateGitgraphFromList(tree, title) {
   tree = {
@@ -10240,7 +10238,7 @@ function parseListToTree(str2) {
   }
   return root2;
 }
-function addHideAttribute(tree, hideBranchNames) {
+function updateTreeCollapseState(tree, hideBranchNames) {
   function traverse(node) {
     if (hideBranchNames.includes(node.name)) {
       node._children = node._children || node.children;
@@ -10270,7 +10268,7 @@ function findTree(originalRoot, targetName, key = "name") {
 }
 function getFlattenedPath(tree, targetName) {
   const paths = [];
-  const target = findTree(gitChartData, targetName);
+  const target = findTree(tree, targetName);
   let node = target;
   while (node.parent) {
     paths.push(node.parent);
@@ -10314,7 +10312,7 @@ function parseLine(line) {
     name: name || link
   };
 }
-async function createTempRelationGraph(title, content) {
+async function createTempRelationGraph(title, content, gitChartData) {
   const tempViewType = String(Date.now());
   self2.app.workspace.detachLeavesOfType(tempViewType);
   const leaf = self2.app.workspace.getLeaf("tab");
@@ -10322,16 +10320,17 @@ async function createTempRelationGraph(title, content) {
     type: tempViewType,
     active: true
   });
-  self2.registerView(tempViewType, (leaf2) => new TempRelationView(leaf2, title, content));
+  self2.registerView(tempViewType, (leaf2) => new TempRelationView(leaf2, title, content, gitChartData));
   self2.app.workspace.revealLeaf(leaf);
 }
 var TempRelationView = class extends import_obsidian22.ItemView {
-  constructor(leaf, title, content) {
+  constructor(leaf, title, content, gitChart) {
     super(leaf);
     this.splitLeaf = null;
     this.hideBranchNames = [];
     this.title = title;
     this.content = content;
+    this.gitChart = gitChart;
   }
   getViewType() {
     return this.title;
@@ -10376,11 +10375,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
       const name = target2.classList[target2.classList.length - 2];
       if (!name)
         return;
-      this.hideBranchNames = this.hideBranchNames.includes(name) ? this.hideBranchNames.filter((n) => n !== name) : [...this.hideBranchNames, name];
-      addHideAttribute(gitChartData, this.hideBranchNames);
-      const content = generateGitgraphFromList(gitChartData, this.title);
-      this.viewEl.empty();
-      await render(self2.app, content, this.viewEl);
+      this.exhibitionBranch(name);
     }
   }
   onmouseover(e2) {
@@ -10390,7 +10385,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     const name = target.textContent;
     if (!name)
       return;
-    const link = this.getLink(gitChartData, name);
+    const link = this.getLink(this.gitChart, name);
     if (!link)
       return;
     target.style.textDecorationLine = "underline";
@@ -10404,7 +10399,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
   }
   async openLink(name) {
     var _a2;
-    const link = this.getLink(gitChartData, name);
+    const link = this.getLink(this.gitChart, name);
     const currentFile = self2.app.workspace.getActiveFile();
     if (currentFile && link) {
       if (!this.app.workspace.getLeafById((_a2 = this.splitLeaf) == null ? void 0 : _a2.id)) {
@@ -10418,17 +10413,28 @@ var TempRelationView = class extends import_obsidian22.ItemView {
       this.splitLeaf = leaf;
     }
   }
+  async exhibitionBranch(name) {
+    this.hideBranchNames = this.hideBranchNames.includes(name) ? this.hideBranchNames.filter((n) => n !== name) : [...this.hideBranchNames, name];
+    updateTreeCollapseState(this.gitChart, this.hideBranchNames);
+    const content = generateGitgraphFromList(this.gitChart, this.title);
+    this.viewEl.empty();
+    await render(self2.app, content, this.viewEl);
+    this.multicolorLabel();
+  }
   logicalChain(name) {
-    let tree = getFlattenedPath(gitChartData, name);
+    let tree = getFlattenedPath(deepClone(this.gitChart), name);
     if (!tree)
       return;
-    createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name));
+    createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree);
+    console.log(this.gitChart);
   }
   truncation(name) {
-    let tree = findTree(gitChartData, name);
+    const copy = deepClone(this.gitChart);
+    updateTreeCollapseState(copy, []);
+    let tree = findTree(copy, name);
     if (!tree)
       return;
-    createTempRelationGraph(name, generateGitgraphFromList(tree, name));
+    createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree);
   }
   getLink(nodes, name) {
     var _a2;
@@ -10608,6 +10614,50 @@ var ZoomDrag = class {
     document.removeEventListener("mouseup", this.handleMouseUp);
   }
 };
+function deepClone(obj, map = /* @__PURE__ */ new WeakMap()) {
+  if (typeof obj !== "object" || obj === null) {
+    return obj;
+  }
+  if (map.has(obj)) {
+    return map.get(obj);
+  }
+  const objType = Object.prototype.toString.call(obj);
+  switch (objType) {
+    case "[object Date]":
+      const date = obj;
+      return new Date(date);
+    case "[object RegExp]": {
+      const regexp = obj;
+      const newRegExp = new RegExp(regexp.source, regexp.flags);
+      newRegExp.lastIndex = regexp.lastIndex;
+      return newRegExp;
+    }
+    case "[object Map]": {
+      const mapObj = obj;
+      const cloneMap = /* @__PURE__ */ new Map();
+      map.set(obj, cloneMap);
+      mapObj.forEach((value, key) => {
+        cloneMap.set(deepClone(key, map), deepClone(value, map));
+      });
+      return cloneMap;
+    }
+    case "[object Set]": {
+      const setObj = obj;
+      const cloneSet = /* @__PURE__ */ new Set();
+      map.set(obj, cloneSet);
+      setObj.forEach((value) => {
+        cloneSet.add(deepClone(value, map));
+      });
+      return cloneSet;
+    }
+  }
+  const clone = Array.isArray(obj) ? [] : {};
+  map.set(obj, clone);
+  Reflect.ownKeys(obj).forEach((key) => {
+    clone[key] = deepClone(obj[key], map);
+  });
+  return clone;
+}
 
 // src/Commands/reviewOfReadingNote.ts
 function reviewOfReadingNote(self3) {

@@ -2,7 +2,6 @@ import { Editor, ItemView, TFile, WorkspaceLeaf } from 'obsidian';
 import { render } from 'src/helpers';
 import Toolbox from 'src/main';
 
-let gitChartData: any;
 let self: Toolbox;
 
 export default function relationshipDiagramCommand(f: Toolbox) {
@@ -22,9 +21,8 @@ async function relationshipDiagram(editor: Editor, file: TFile) {
   const lineText = getCursorText(editor);
   const { name } = parseLine(lineText);
   const tree = await processTree(content, name);
-  gitChartData = tree;
   const text = generateGitgraphFromList(tree, filename);
-  await createTempRelationGraph(name || filename, text);
+  await createTempRelationGraph(name || filename, text, tree);
 }
 
 function generateGitgraphFromList(tree: any, title: string) {
@@ -126,7 +124,7 @@ function parseListToTree(str: string) {
   return root;
 }
 
-function addHideAttribute(tree: any, hideBranchNames: string[]) {
+function updateTreeCollapseState(tree: any, hideBranchNames: string[]) {
   function traverse(node: any) {
     
     if (hideBranchNames.includes(node.name)) {
@@ -159,7 +157,7 @@ function findTree(originalRoot: any, targetName: string, key = 'name'): any {
 
 function getFlattenedPath (tree: any, targetName: string) {
   const paths = []
-  const target = findTree(gitChartData, targetName)
+  const target = findTree(tree, targetName)
   let node = target
   while(node.parent) {
     paths.push(node.parent)
@@ -203,7 +201,7 @@ function parseLine(line: string) {
   };
 }
 
-async function createTempRelationGraph(title: string, content: string) {
+async function createTempRelationGraph(title: string, content: string, gitChartData: any) {
   const tempViewType = String(Date.now());
 
   self.app.workspace.detachLeavesOfType(tempViewType);
@@ -214,7 +212,7 @@ async function createTempRelationGraph(title: string, content: string) {
     active: true
   });
 
-  self.registerView(tempViewType, (leaf: WorkspaceLeaf) => new TempRelationView(leaf, title, content) as any);
+  self.registerView(tempViewType, (leaf: WorkspaceLeaf) => new TempRelationView(leaf, title, content, gitChartData) as any);
   self.app.workspace.revealLeaf(leaf);
 }
 
@@ -226,11 +224,13 @@ class TempRelationView extends ItemView {
   viewEl: HTMLElement;
   zoom: ZoomDrag;
   splitLeaf: WorkspaceLeaf | null = null;
+  gitChart: any;
   hideBranchNames: string[] = [];
-  constructor(leaf: WorkspaceLeaf, title: string, content: string) {
+  constructor(leaf: WorkspaceLeaf, title: string, content: string, gitChart: any) {
     super(leaf);
     this.title = title;
     this.content = content;
+    this.gitChart = gitChart;
   }
 
   getViewType(): string {
@@ -273,11 +273,7 @@ class TempRelationView extends ItemView {
       const target = e.target as HTMLElement;
       const name = target.classList[target.classList.length - 2];
       if (!name) return;
-      this.hideBranchNames = this.hideBranchNames.includes(name) ? this.hideBranchNames.filter(n => n!== name) : [...this.hideBranchNames, name];
-      addHideAttribute(gitChartData, this.hideBranchNames)
-      const content = generateGitgraphFromList(gitChartData, this.title)
-      this.viewEl.empty()
-      await render(self.app, content, this.viewEl);
+      this.exhibitionBranch(name);
     }
   }
 
@@ -286,7 +282,7 @@ class TempRelationView extends ItemView {
     if (!target.hasClass('commit-label')) return;
     const name = target.textContent;
     if (!name) return;
-    const link = this.getLink(gitChartData, name);
+    const link = this.getLink(this.gitChart, name);
     if (!link) return;
     target.style.textDecorationLine = 'underline';
     target.style.cursor = 'pointer';
@@ -299,7 +295,7 @@ class TempRelationView extends ItemView {
   }
 
   async openLink(name: string) {
-    const link = this.getLink(gitChartData, name);
+    const link = this.getLink(this.gitChart, name);
     const currentFile = self.app.workspace.getActiveFile();
     if (currentFile && link) {
       if (!this.app.workspace.getLeafById(this.splitLeaf?.id)) {
@@ -314,16 +310,28 @@ class TempRelationView extends ItemView {
     }
   }
 
+  async exhibitionBranch (name: string) {
+    this.hideBranchNames = this.hideBranchNames.includes(name) ? this.hideBranchNames.filter(n => n!== name) : [...this.hideBranchNames, name];
+    updateTreeCollapseState(this.gitChart, this.hideBranchNames)
+    const content = generateGitgraphFromList(this.gitChart, this.title)
+    this.viewEl.empty()
+    await render(self.app, content, this.viewEl);
+    this.multicolorLabel()
+  }
+
   logicalChain(name: string) {
-    let tree = getFlattenedPath(gitChartData, name);
+    let tree = getFlattenedPath(deepClone(this.gitChart), name);
     if (!tree) return;
-    createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name));
+    createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree);
+    console.log(this.gitChart)
   }
 
   truncation(name: string) {
-    let tree = findTree(gitChartData, name);
+    const copy = deepClone(this.gitChart)
+    updateTreeCollapseState(copy, [])
+    let tree = findTree(copy, name);
     if (!tree) return;
-    createTempRelationGraph(name, generateGitgraphFromList(tree, name));
+    createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree);
   }
 
   getLink(nodes: any, name: string): string {
@@ -563,4 +571,63 @@ class ZoomDrag {
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
   }
+}
+
+
+function deepClone<T>(obj: T, map = new WeakMap()): T {
+  // 处理非对象或null的情况
+  if (typeof obj !== 'object' || obj === null) {
+      return obj;
+  }
+
+  // 处理循环引用
+  if (map.has(obj)) {
+      return map.get(obj);
+  }
+
+  // 处理特殊对象类型
+  const objType = Object.prototype.toString.call(obj);
+  switch (objType) {
+      case '[object Date]':
+          const date = obj as unknown as Date;
+          return new Date(date) as unknown as T;
+          
+      case '[object RegExp]': {
+          const regexp = obj as unknown as RegExp;
+          const newRegExp = new RegExp(regexp.source, regexp.flags);
+          newRegExp.lastIndex = regexp.lastIndex;
+          return newRegExp as unknown as T;
+      }
+          
+      case '[object Map]': {
+          const mapObj = obj as unknown as Map<any, any>;
+          const cloneMap = new Map();
+          map.set(obj, cloneMap);
+          mapObj.forEach((value, key) => {
+              cloneMap.set(deepClone(key, map), deepClone(value, map));
+          });
+          return cloneMap as unknown as T;
+      }
+          
+      case '[object Set]': {
+          const setObj = obj as unknown as Set<any>;
+          const cloneSet = new Set();
+          map.set(obj, cloneSet);
+          setObj.forEach(value => {
+              cloneSet.add(deepClone(value, map));
+          });
+          return cloneSet as unknown as T;
+      }
+  }
+
+  // 处理数组和普通对象
+  const clone: any = Array.isArray(obj) ? [] : {};
+  map.set(obj, clone);
+
+  // 使用Reflect.ownKeys获取所有自有属性（包括Symbol）
+  Reflect.ownKeys(obj).forEach(key => {
+      clone[key] = deepClone((obj as any)[key], map);
+  });
+
+  return clone;
 }
