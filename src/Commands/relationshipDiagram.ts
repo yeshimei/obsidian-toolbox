@@ -7,7 +7,7 @@ let self: Toolbox;
 
 export default function relationshipDiagramCommand(f: Toolbox) {
   self = f;
-  self.settings.highlight &&
+  self.settings.gitChart &&
     self.addCommand({
       id: '打开关系图',
       name: '打开关系图',
@@ -151,31 +151,6 @@ function getFlattenedPath (tree: any, targetName: string) {
   return paths  
 }
 
-// function getFlattenedPath(tree: any, targetName: string): any {
-//   function findPath(node: any, currentPath: any[]) {
-//     // const newPath = [...currentPath, node];
-//     // if (node.name === targetName) {
-//     //   return newPath;
-//     // }
-//     // for (const child of node.children) {
-//     //   const result = findPath(child, newPath) as any;
-//     //   if (result) return result;
-//     // }
-//     // return null;
-
-//   }
-//   for (const child of tree.children) {
-//     const path = findPath(child, []);
-//     if (path) {
-//       return path.map((tree: any) => ({
-//         ...tree,
-//         children: []
-//       }));
-//     }
-//   }
-//   return null;
-// }
-
 function getCursorText(editor: Editor): string {
   const cursor = editor.getCursor();
   const lineText = editor.getLine(cursor.line);
@@ -234,6 +209,7 @@ class TempRelationView extends ItemView {
     super(leaf);
     this.title = title;
     this.content = content;
+    
   }
 
   getViewType(): string {
@@ -255,6 +231,7 @@ class TempRelationView extends ItemView {
 
     await render(self.app, this.content, contentEl);
     this.zoom = new ZoomDrag(contentEl);
+    this.multicolorLabel()
   }
 
   async onClose() {
@@ -308,7 +285,6 @@ class TempRelationView extends ItemView {
 
   logicalChain(name: string) {
     let tree = getFlattenedPath(gitChartData, name);
-    console.log(tree)
     if (!tree) return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name));
   }
@@ -331,6 +307,18 @@ class TempRelationView extends ItemView {
         fn(el);
       }
     });
+  }
+
+  multicolorLabel () {
+    if (!self.settings.gitChartMultiColorLabel) return
+    const labels = document.querySelectorAll('.commit-label')
+    labels.forEach(label => {
+      const name = label.textContent
+      const commit = document.querySelector(`.${name}`)
+      if (!commit) return
+      const color = getComputedStyle(commit).fill
+      if (color) label.style.fill = color
+    })
   }
 }
 

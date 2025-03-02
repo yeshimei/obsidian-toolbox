@@ -10133,7 +10133,7 @@ var gitChartData;
 var self2;
 function relationshipDiagramCommand(f2) {
   self2 = f2;
-  self2.settings.highlight && self2.addCommand({
+  self2.settings.gitChart && self2.addCommand({
     id: "\u6253\u5F00\u5173\u7CFB\u56FE",
     name: "\u6253\u5F00\u5173\u7CFB\u56FE",
     icon: "git-compare-arrows",
@@ -10332,6 +10332,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     contentEl.addEventListener("mouseout", this.onmouseout.bind(this));
     await render(self2.app, this.content, contentEl);
     this.zoom = new ZoomDrag(contentEl);
+    this.multicolorLabel();
   }
   async onClose() {
     this.splitLeaf.detach();
@@ -10389,7 +10390,6 @@ var TempRelationView = class extends import_obsidian22.ItemView {
   }
   logicalChain(name) {
     let tree = getFlattenedPath(gitChartData, name);
-    console.log(tree);
     if (!tree)
       return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name));
@@ -10411,6 +10411,20 @@ var TempRelationView = class extends import_obsidian22.ItemView {
       if (names.includes(name)) {
         fn(el);
       }
+    });
+  }
+  multicolorLabel() {
+    if (!self2.settings.gitChartMultiColorLabel)
+      return;
+    const labels = document.querySelectorAll(".commit-label");
+    labels.forEach((label) => {
+      const name = label.textContent;
+      const commit = document.querySelector(`.${name}`);
+      if (!commit)
+        return;
+      const color = getComputedStyle(commit).fill;
+      if (color)
+        label.style.fill = color;
     });
   }
 };
@@ -11121,6 +11135,8 @@ var DEFAULT_SETTINGS = {
   encryptionRememberPassMode: "notSave",
   gallery: true,
   poster: true,
+  gitChart: true,
+  gitChartMultiColorLabel: false,
   resourceTo: false,
   searchForPlants: false,
   searchForPlantsFolder: "\u5361\u7247\u76D2/\u5F52\u6863",
@@ -11509,6 +11525,22 @@ var ToolboxSettingTab = class extends import_obsidian30.PluginSettingTab {
       new import_obsidian30.Setting(containerEl).setName("\u{1F3DE}\uFE0F \u6D77\u62A5").setDesc("\u5C06\u89C6\u9891\u7B2C\u4E00\u5E27\u4F5C\u4E3A\u6D77\u62A5").addToggle(
         (cd) => cd.setValue(this.plugin.settings.poster).onChange(async (value) => {
           this.plugin.settings.poster = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+    }
+    new import_obsidian30.Setting(containerEl).setName("\u{1F9E9} Mermaid GitGraph").setDesc("\u5C06\u65E0\u5E8F\u5217\u8868\u751F\u6210 Mermaid GitGraph").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.gitChart).onChange(async (value) => {
+        this.plugin.settings.gitChart = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+    if (this.plugin.settings.gitChart) {
+      new import_obsidian30.Setting(containerEl).setName("\u591A\u8272\u5F69\u6807\u7B7E").setDesc("\u6807\u7B7E\u989C\u8272\u8DDF\u968F\u5206\u652F\u989C\u8272").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.gitChartMultiColorLabel).onChange(async (value) => {
+          this.plugin.settings.gitChartMultiColorLabel = value;
           await this.plugin.saveSettings();
           this.display();
         })

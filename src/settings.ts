@@ -82,6 +82,10 @@ export interface ToolboxSettings {
 
   poster: boolean;
 
+  gitChart: boolean,
+  gitChartMultiColorLabel: boolean;
+
+
   resourceTo: boolean;
   searchForPlants: boolean;
   searchForPlantsFolder: string;
@@ -163,6 +167,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   gallery: true,
 
   poster: true,
+
+  gitChart: true,
+  gitChartMultiColorLabel: false,
 
   resourceTo: false,
   searchForPlants: false,
@@ -668,6 +675,24 @@ export class ToolboxSettingTab extends PluginSettingTab {
             this.display();
           })
         );
+    }
+
+    new Setting(containerEl).setName('🧩 Mermaid GitGraph').setDesc('将无序列表生成 Mermaid GitGraph').addToggle(cd =>
+      cd.setValue(this.plugin.settings.gitChart).onChange(async value => {
+        this.plugin.settings.gitChart = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    if (this.plugin.settings.gitChart) {
+      new Setting(containerEl).setName('多色彩标签').setDesc('标签颜色跟随分支颜色').addToggle(cd =>
+        cd.setValue(this.plugin.settings.gitChartMultiColorLabel).onChange(async value => {
+          this.plugin.settings.gitChartMultiColorLabel = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
     }
   }
 }
