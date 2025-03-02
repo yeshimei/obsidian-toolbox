@@ -10234,11 +10234,27 @@ function parseListToTree(str2) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode = { id, name, tag, level, type, link, children: [], branchName: (parent == null ? void 0 : parent.name) || "\u9ED8\u8BA4", parent };
+    const newNode = { id, name, tag, level, type, link, children: [], branchName: (parent == null ? void 0 : parent.name) || "\u9ED8\u8BA4", parent: level === 0 ? null : parent };
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
   return root2;
+}
+function addHideAttribute(tree, hideBranchNames) {
+  function traverse(node) {
+    if (hideBranchNames.includes(node.name)) {
+      node._children = node._children || node.children;
+      node.children = [];
+    } else if (node._children) {
+      node.children = node._children;
+      delete node._children;
+    }
+    const childrenToTraverse = node._children || node.children;
+    for (const child of childrenToTraverse) {
+      traverse(child);
+    }
+  }
+  traverse(tree);
 }
 function findTree(originalRoot, targetName, key = "name") {
   for (const child of originalRoot.children) {
@@ -10256,7 +10272,7 @@ function getFlattenedPath(tree, targetName) {
   const paths = [];
   const target = findTree(gitChartData, targetName);
   let node = target;
-  while (node.parent.name) {
+  while (node.parent) {
     paths.push(node.parent);
     node = node.parent;
   }
@@ -10313,6 +10329,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
   constructor(leaf, title, content) {
     super(leaf);
     this.splitLeaf = null;
+    this.hideBranchNames = [];
     this.title = title;
     this.content = content;
   }
@@ -10330,28 +10347,41 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     contentEl.addEventListener("click", this.onclick.bind(this));
     contentEl.addEventListener("mouseover", this.onmouseover.bind(this));
     contentEl.addEventListener("mouseout", this.onmouseout.bind(this));
+    this.viewEl = contentEl;
     await render(self2.app, this.content, contentEl);
     this.zoom = new ZoomDrag(contentEl);
     this.multicolorLabel();
   }
   async onClose() {
-    this.splitLeaf.detach();
+    var _a2;
+    (_a2 = this.splitLeaf) == null ? void 0 : _a2.detach();
     this.containerEl.children[1].empty();
     this.zoom.destroy();
   }
   async onclick(e2) {
     const target = e2.target;
-    if (!target.hasClass("commit-label"))
-      return;
-    const name = target.textContent;
-    if (!name)
-      return;
-    if (e2.ctrlKey)
-      this.truncation(name);
-    else if (e2.altKey)
-      this.logicalChain(name);
-    else
-      this.openLink(name);
+    if (target.hasClass("commit-label")) {
+      const name = target.textContent;
+      if (!name)
+        return;
+      if (e2.ctrlKey)
+        this.truncation(name);
+      else if (e2.altKey)
+        this.logicalChain(name);
+      else
+        this.openLink(name);
+    }
+    if (target.hasClass("commit")) {
+      const target2 = e2.target;
+      const name = target2.classList[target2.classList.length - 2];
+      if (!name)
+        return;
+      this.hideBranchNames = this.hideBranchNames.includes(name) ? this.hideBranchNames.filter((n) => n !== name) : [...this.hideBranchNames, name];
+      addHideAttribute(gitChartData, this.hideBranchNames);
+      const content = generateGitgraphFromList(gitChartData, this.title);
+      this.viewEl.empty();
+      await render(self2.app, content, this.viewEl);
+    }
   }
   onmouseover(e2) {
     const target = e2.target;
@@ -10403,15 +10433,6 @@ var TempRelationView = class extends import_obsidian22.ItemView {
   getLink(nodes, name) {
     var _a2;
     return (_a2 = findTree(nodes, name)) == null ? void 0 : _a2.link;
-  }
-  traverseDom(root2, fn, className = "commit-label") {
-    const names = root2.children.map((child) => child.name);
-    document.querySelectorAll(`.${className}`).forEach((el) => {
-      const name = el.textContent;
-      if (names.includes(name)) {
-        fn(el);
-      }
-    });
   }
   multicolorLabel() {
     if (!self2.settings.gitChartMultiColorLabel)

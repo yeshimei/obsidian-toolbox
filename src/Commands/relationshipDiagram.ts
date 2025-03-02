@@ -119,12 +119,32 @@ function parseListToTree(str: string) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode: any = { id, name, tag, level, type, link, children: [], branchName: parent?.name || '默认', parent };
+    const newNode: any = { id, name, tag, level, type, link, children: [], branchName: parent?.name || '默认', parent: level === 0 ? null : parent};
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
   return root;
 }
+
+function addHideAttribute(tree: any, hideBranchNames: string[]) {
+  function traverse(node: any) {
+    
+    if (hideBranchNames.includes(node.name)) {
+      node._children = node._children || node.children;
+      node.children = [];
+    } else if (node._children) {
+      node.children = node._children;
+      delete node._children;
+    }
+
+    const childrenToTraverse = node._children || node.children;
+    for (const child of childrenToTraverse) {
+      traverse(child);
+    }
+  }
+  traverse(tree);
+}
+
 
 function findTree(originalRoot: any, targetName: string, key = 'name'): any {
   for (const child of originalRoot.children) {
@@ -141,7 +161,7 @@ function getFlattenedPath (tree: any, targetName: string) {
   const paths = []
   const target = findTree(gitChartData, targetName)
   let node = target
-  while(node.parent.name) {
+  while(node.parent) {
     paths.push(node.parent)
     node = node.parent
   }
@@ -203,13 +223,14 @@ async function createTempRelationGraph(title: string, content: string) {
 class TempRelationView extends ItemView {
   title: string;
   content: string;
+  viewEl: HTMLElement;
   zoom: ZoomDrag;
   splitLeaf: WorkspaceLeaf | null = null;
+  hideBranchNames: string[] = [];
   constructor(leaf: WorkspaceLeaf, title: string, content: string) {
     super(leaf);
     this.title = title;
     this.content = content;
-    
   }
 
   getViewType(): string {
@@ -220,7 +241,7 @@ class TempRelationView extends ItemView {
     return `关系图: ${this.title}`;
   }
 
-  async onOpen() {
+  async onOpen() { 
     const container = this.containerEl.children[1];
     container.empty();
     const contentEl = container.createDiv('temp-relation-content');
@@ -228,26 +249,36 @@ class TempRelationView extends ItemView {
     contentEl.addEventListener('click', this.onclick.bind(this));
     contentEl.addEventListener('mouseover', this.onmouseover.bind(this));
     contentEl.addEventListener('mouseout', this.onmouseout.bind(this));
-
+    this.viewEl = contentEl;
     await render(self.app, this.content, contentEl);
     this.zoom = new ZoomDrag(contentEl);
     this.multicolorLabel()
   }
 
   async onClose() {
-    this.splitLeaf.detach();
+    this.splitLeaf?.detach();
     this.containerEl.children[1].empty();
     this.zoom.destroy();
   }
 
   async onclick(e: MouseEvent) {
     const target = e.target as HTMLElement;
-    if (!target.hasClass('commit-label')) return;
-    const name = target.textContent;
-    if (!name) return;
-    if (e.ctrlKey) this.truncation(name);
-    else if (e.altKey) this.logicalChain(name);
-    else this.openLink(name);
+    if (target.hasClass('commit-label')) {
+      const name = target.textContent;
+      if (!name) return;
+      if (e.ctrlKey) this.truncation(name);
+      else if (e.altKey) this.logicalChain(name);
+      else this.openLink(name);
+    } if (target.hasClass('commit')) {
+      const target = e.target as HTMLElement;
+      const name = target.classList[target.classList.length - 2];
+      if (!name) return;
+      this.hideBranchNames = this.hideBranchNames.includes(name) ? this.hideBranchNames.filter(n => n!== name) : [...this.hideBranchNames, name];
+      addHideAttribute(gitChartData, this.hideBranchNames)
+      const content = generateGitgraphFromList(gitChartData, this.title)
+      this.viewEl.empty()
+      await render(self.app, content, this.viewEl);
+    }
   }
 
   onmouseover(e: MouseEvent) {
@@ -299,20 +330,10 @@ class TempRelationView extends ItemView {
     return findTree(nodes, name)?.link;
   }
 
-  traverseDom(root: any, fn: (el: HTMLElement) => void, className = 'commit-label') {
-    const names = root.children.map((child: any) => child.name);
-    document.querySelectorAll(`.${className}`).forEach((el: HTMLElement) => {
-      const name = el.textContent;
-      if (names.includes(name)) {
-        fn(el);
-      }
-    });
-  }
-
   multicolorLabel () {
     if (!self.settings.gitChartMultiColorLabel) return
     const labels = document.querySelectorAll('.commit-label')
-    labels.forEach(label => {
+    labels.forEach((label: HTMLElement) => {
       const name = label.textContent
       const commit = document.querySelector(`.${name}`)
       if (!commit) return
