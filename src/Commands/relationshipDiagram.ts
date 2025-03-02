@@ -343,7 +343,8 @@ class TempRelationView extends ItemView {
     const labels = document.querySelectorAll('.commit-label')
     labels.forEach((label: HTMLElement) => {
       const name = label.textContent
-      const commit = document.querySelector(`.${name}`)
+      const validSelector = `.${CSS.escape(name.split(' ').pop())}`;
+      const commit = document.querySelector(validSelector)
       if (!commit) return
       const color = getComputedStyle(commit).fill
       if (color) label.style.fill = color

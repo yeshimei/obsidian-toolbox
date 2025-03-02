@@ -10446,7 +10446,8 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     const labels = document.querySelectorAll(".commit-label");
     labels.forEach((label) => {
       const name = label.textContent;
-      const commit = document.querySelector(`.${name}`);
+      const validSelector = `.${CSS.escape(name.split(" ").pop())}`;
+      const commit = document.querySelector(validSelector);
       if (!commit)
         return;
       const color = getComputedStyle(commit).fill;
