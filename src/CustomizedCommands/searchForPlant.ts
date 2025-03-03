@@ -46,7 +46,7 @@ async function searchForPlant(self: Toolbox) {
     const content = `---\n中文名: ${name}\n拉丁学名: ${latinName}\n别名: ${alias}\n${classsys}\n识别特征: \n---\n${lifestyleForm}`;
 
     const filepath = '卡片盒/归档/' + name + '.md';
-    let file = self.app.vault.getFileByPath(filepath) || self.app.vault.getFileByPath('卡片盒/' + name + '.md');
+    let file = self.app.vault.getFiles().find(f => f.path === filepath) || self.app.vault.getFiles().find(f => f.path === '卡片盒/' + name + '.md');
     if (file) {
       new Notice('查询的植物笔记已存在');
     } else {

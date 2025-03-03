@@ -34,7 +34,7 @@ async function createCharacterRelationship(self: Toolbox, editor: Editor, file: 
 
   // 创建人物关系笔记
   const targetPath = `${self.settings.characterRelationshipsFolder}/${title}.md`;
-  let targetFile = self.app.vault.getFileByPath(targetPath);
+  let targetFile = self.app.vault.getFiles().find(f => f.path === targetPath);
   if (!targetFile) {
     targetFile = await self.app.vault.create(targetPath, '');
   }

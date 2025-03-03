@@ -59,7 +59,7 @@ export default class Chat {
    */
   async specifyPrompt(name: string): Promise<void> {
     const path = this.self.settings.chatPromptFolder + '/' + name + '.md';
-    const file = this.self.app.vault.getFileByPath(path);
+    const file = this.self.app.vault.getFiles().find(f => f.path === path);
     if (!file) {
       this.data = { ...defaultOpenAioptions };
       return;
@@ -106,7 +106,7 @@ export default class Chat {
    * @returns {Promise<MESSAGE_TYEP[]>} 返回聊天记录
    */
   async loadHistoryChat(path: string): Promise<MESSAGE_TYEP[]> {
-    const file = this.self.app.vault.getFileByPath(path);
+    const file = this.self.app.vault.getFiles().find(f => f.path === path);
     if (file) {
       const content = await this.self.app.vault.cachedRead(file);
       const messages: MESSAGE_TYEP[] = [];

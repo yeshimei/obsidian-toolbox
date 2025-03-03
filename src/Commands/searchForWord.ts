@@ -15,30 +15,36 @@ export default function searchForWordCommand(self: Toolbox) {
 
 async function searchForWord(self: Toolbox, editor: Editor) {
   if (!self.settings.searchForWords) return;
+  let pinyin: string; 
+  let div = document.createElement('div');
   let word = editor.getSelection();
-  const notice = new Notice('正在查询汉典和百度百科，请稍等');
-  const hanDianUrl = 'https://www.zdic.net/hans/' + word;
-  const html = await requestUrlToHTML(hanDianUrl);
-  const jnr = html.querySelector('.jnr');
-  const pinyin =
-    html.querySelector('.ciif .dicpy')?.textContent ||
-    Array.from(html.querySelectorAll('.z_py .z_d.song'))
-      .map(el => el.textContent)
-      .join('|') ||
-    '';
+  let jnr: HTMLElement;
+  let JSummary: HTMLElement;
   const baiduUrl = 'https://baike.baidu.com/item/' + word;
-  const html2 = await requestUrlToHTML(baiduUrl);
-  const JSummary = html2.querySelector('.J-summary');
-  const div = document.createElement('div');
-  const h1 = createElement('h1', '汉典');
-  h1.innerHTML = `<a href="${hanDianUrl}" target="_blank">汉典</a>`;
-  div.appendChild(h1);
-  div.appendChild(jnr || createElement('p', '空空如也'));
   const h11 = createElement('h1', '汉典');
   h11.innerHTML = `<a href="${baiduUrl}" target="_blank">百度百科</a>`;
-  div.appendChild(h11);
-  div.appendChild(JSummary || createElement('p', '空空如也'));
-  notice.hide();
+  const h1 = createElement('h1', '汉典');
+  const hanDianUrl = 'https://www.zdic.net/hans/' + word;
+    h1.innerHTML = `<a href="${hanDianUrl}" target="_blank">汉典</a>`;
+  const notice = new Notice('正在查询汉典和百度百科，请稍等');
+  try {
+    const html = await requestUrlToHTML(hanDianUrl);
+    jnr = html.querySelector('.jnr');
+    pinyin =
+      html.querySelector('.ciif .dicpy')?.textContent ||
+      Array.from(html.querySelectorAll('.z_py .z_d.song'))
+        .map(el => el.textContent)
+        .join('|') ||
+      '';
+    const html2 = await requestUrlToHTML(baiduUrl);
+    JSummary = html2.querySelector('.J-summary');
+  } catch (error) {}
+    div.appendChild(h1);
+    div.appendChild(jnr || createElement('p', '空空如也'));
+    div.appendChild(h11);
+    div.appendChild(JSummary || createElement('p', '空空如也'));
+    notice.hide();
+ 
   new PanelSearchForWord(self, `${word} ${pinyin}`, div || '空空如也', async (type, chatContent) => {
     let file, content, folder: string;
     if (type === 'words') {

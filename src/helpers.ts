@@ -1,13 +1,13 @@
 import { App, Component, Editor, MarkdownRenderer, MarkdownView, TFile, moment, requestUrl } from 'obsidian';
 
 export const SOURCE_VIEW_CLASS = '.cm-scroller';
-export const MASK_CLASS = '.__mask';
 export const MOBILE_HEADER_CLASS = '.view-header';
 export const MOBILE_NAVBAR_CLASS = '.mobile-navbar-actions';
 export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
+export const FOOTNOTE_CLASS = '.cm-footref';
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp'];
-export const vidoeSuffix = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
+export const videoSuffix = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
 
 /**
  * 清理文件名，移除无效字符
@@ -134,7 +134,7 @@ export function insertString(original: string, index: number, insert: string) {
 }
 
 export async function createFile(app: App, path: string, cover = false) {
-  let file = app.vault.getFileByPath(path);
+  let file = app.vault.getFiles().find(f => f.path === path);
   file ? cover && (await app.vault.modify(file, '')) : (file = await app.vault.create(path, ''));
   return file;
 }

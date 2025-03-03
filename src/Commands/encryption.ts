@@ -29,6 +29,7 @@ export function decryptPopUpCommand(self: Toolbox) {
 }
 
 export async function encOrDecPopUp(self: Toolbox, file: TFile) {
+  if (!file) return;
   const type = self.settings.encryptionRememberPassMode;
   const tempPass = self.encryptionTempData[file.path];
   const encrypted = isNoteEncrypt(await self.app.vault.cachedRead(file));
@@ -46,6 +47,7 @@ export async function encOrDecPopUp(self: Toolbox, file: TFile) {
 }
 
 export async function toggleEncryptNote(self: Toolbox, file: TFile) {
+  if (!file) return;
   const content = await self.app.vault.read(file);
   const editorViewLine = $('.markdown-source-view .cm-content');
   const previewViewLine = $('.markdown-preview-view p[dir="auto"]');
@@ -62,7 +64,7 @@ export async function toggleEncryptNote(self: Toolbox, file: TFile) {
 export function clearNotePass(self: Toolbox) {
   // 清空已经删除笔记的本地记录
   for (let key in self.settings.plugins.encryption) {
-    if (!self.app.vault.getFileByPath(key)) delete self.settings.plugins.encryption[key];
+    if (!self.app.vault.getFiles().find(f => f.path === key)) delete self.settings.plugins.encryption[key];
     self.saveSettings();
   }
   // 非永久记住密码，都清空本地密码
@@ -77,6 +79,7 @@ export function clearNotePass(self: Toolbox) {
 }
 
 export async function encryptPopUp(self: Toolbox, file: TFile) {
+  if (!file) return;
   if (!self.settings.encryption) return;
   const onSubmit = (pass: string) => {
     new Confirm(self.app, {
@@ -99,6 +102,7 @@ export async function encryptPopUp(self: Toolbox, file: TFile) {
 }
 
 export async function decryptPopUp(self: Toolbox, file: TFile) {
+  if (!file) return;
   if (!self.settings.encryption) return;
   new InputBox(self.app, {
     title: '解密笔记',
@@ -108,6 +112,7 @@ export async function decryptPopUp(self: Toolbox, file: TFile) {
 }
 
 export async function encryptionNote(self: Toolbox, file: TFile, pass: string, convert = true) {
+  if (!file) return;
   if (!self.settings.encryption || !pass) return;
   let content = await self.app.vault.read(file);
   if (!content) return;
@@ -153,8 +158,8 @@ async function imageToBase64(self: Toolbox, links: string[], pass: string, conve
   let isN = true;
   try {
     for (let link of links) {
-      let file = self.app.vault.getFileByPath(link);
-      const suffixFile = self.app.vault.getFileByPath(insertString(file.path, -file.extension.length - 1, '__backup__'));
+      let file = self.app.vault.getFiles().find(f => f.path === link);
+      const suffixFile = self.app.vault.getFiles().find(f => f.path === insertString(file.path, -file.extension.length - 1, '__backup__'));
       if (!self.settings.encryptionImageCompress && isImagePath(link) && suffixFile) {
         await self.app.vault.delete(file);
         await self.app.vault.rename(suffixFile, link);
@@ -192,7 +197,7 @@ async function imageToBase64(self: Toolbox, links: string[], pass: string, conve
           self.settings.encryptionImageCompress = true;
           await self.app.vault.adapter.writeBinary(link, compressArrayBuffer);
           arrayBuffer = compressArrayBuffer;
-          file = self.app.vault.getFileByPath(link);
+          file = self.app.vault.getFiles().find(f => f.path === link);;
           fileSize = file.stat.size;
         }
         while (offset < fileSize) {

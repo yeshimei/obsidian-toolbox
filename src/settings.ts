@@ -18,8 +18,6 @@ export interface ToolboxSettings {
 
   polysemy: boolean;
 
-  footnoteRenumbering: boolean;
-
   searchForWords: boolean;
   wordsSaveFolder: string;
   cardSaveFolder: string;
@@ -85,6 +83,8 @@ export interface ToolboxSettings {
   gitChart: boolean,
   gitChartMultiColorLabel: boolean;
 
+  sandbox: boolean;
+  sandboxFolder: string;
 
   resourceTo: boolean;
   searchForPlants: boolean;
@@ -106,7 +106,6 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   passwordCreatorMixedContent: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@$%^&*()_+',
   passwordCreatorLength: 16,
   polysemy: true,
-  footnoteRenumbering: true,
   searchForWords: true,
   wordsSaveFolder: '',
   cardSaveFolder: '',
@@ -170,6 +169,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   gitChart: true,
   gitChartMultiColorLabel: false,
+
+  sandbox: false,
+  sandboxFolder: '',
 
   resourceTo: false,
   searchForPlants: false,
@@ -637,14 +639,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
-    new Setting(containerEl).setName('🏷️ 脚注重编号').addToggle(cd =>
-      cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async value => {
-        this.plugin.settings.footnoteRenumbering = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-
     new Setting(containerEl)
       .setName('📌 块引用')
       .setDesc('获取光标所在行（块）的双链，方便复制到地方使用')
@@ -677,7 +671,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
     }
 
-    new Setting(containerEl).setName('🧩 Mermaid GitGraph').setDesc('将无序列表生成 Mermaid GitGraph').addToggle(cd =>
+    new Setting(containerEl).setName('🧮 Mermaid GitGraph').setDesc('将无序列表生成 Mermaid GitGraph').addToggle(cd =>
       cd.setValue(this.plugin.settings.gitChart).onChange(async value => {
         this.plugin.settings.gitChart = value;
         await this.plugin.saveSettings();
@@ -686,11 +680,30 @@ export class ToolboxSettingTab extends PluginSettingTab {
     );
 
     if (this.plugin.settings.gitChart) {
-      new Setting(containerEl).setName('多色彩标签').setDesc('标签颜色跟随分支颜色').addToggle(cd =>
+      new Setting(containerEl).setName('彩色文本').setDesc('标签颜色跟随分支颜色').addToggle(cd =>
         cd.setValue(this.plugin.settings.gitChartMultiColorLabel).onChange(async value => {
           this.plugin.settings.gitChartMultiColorLabel = value;
           await this.plugin.saveSettings();
           this.display();
+        })
+      );
+    }
+
+
+    new Setting(containerEl).setName('📦 沙箱（Beta）').setDesc('外部脚本注入，可实现更丰富的功能').addToggle(cd =>
+      cd.setValue(this.plugin.settings.sandbox).onChange(async value => {
+        this.plugin.settings.sandbox = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    if (this.plugin.settings.sandbox) {
+      new Setting(containerEl).setName('脚本所在文件夹').addText(cd =>
+        cd.setValue('' + this.plugin.settings.sandboxFolder).onChange(async value => {
+          this.plugin.settings.sandboxFolder = value;
+          this.plugin.settings.passwordCreatorMixedContent = value;
+          await this.plugin.saveSettings();
         })
       );
     }

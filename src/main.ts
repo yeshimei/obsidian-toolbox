@@ -9,7 +9,7 @@ import completionCommand, { completion } from './Commands/completion';
 import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
 import dialogueCommand from './Commands/dialogue';
 import { clearNotePass, decryptPopUpCommand, encOrDecPopUp, encryptPopUpCommand, toggleEncryptNote } from './Commands/encryption';
-import flipCommand, { readingPageMask } from './Commands/flip';
+import { flipEvent } from './Commands/flip';
 import gallery from './Commands/gallery';
 import highlightCommand from './Commands/highlight';
 import passwordCreatorCommand from './Commands/passwordCreator';
@@ -17,7 +17,6 @@ import polysemy from './Commands/polysemy';
 import poster from './Commands/poster';
 import readingDataTracking from './Commands/readingDataTracking';
 import relationshipDiagramCommand from './Commands/relationshipDiagram';
-import renumberFootnoteCommand from './Commands/renumberFootnote';
 import reviewOfReadingNote from './Commands/reviewOfReadingNote';
 import searchForWordCommand from './Commands/searchForWord';
 import asyncNoteCommand from './Commands/syncNote';
@@ -27,8 +26,9 @@ import resourcesToCommand, { resourceTo } from './CustomizedCommands/resourceTo'
 import searchForPlantCommand from './CustomizedCommands/searchForPlant';
 import summarizeAndRenameNote from './CustomizedCommands/summarizeAndRenameNote';
 import switchLibrary from './CustomizedCommands/switchLibrary';
-import { $, debounce, hasRootFolder, SOURCE_VIEW_CLASS } from './helpers';
+import { debounce, hasRootFolder } from './helpers';
 import { DEFAULT_SETTINGS, ToolboxSettings, ToolboxSettingTab } from './settings';
+import { sandbox } from './Commands/sandbox';
 
 export default class Toolbox extends Plugin {
   encryptionTempData: any;
@@ -40,15 +40,12 @@ export default class Toolbox extends Plugin {
     await this.loadSettings();
     this.debounceReadDataTracking = debounce(readingDataTracking, this.settings.readDataTrackingDelayTime);
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
-
     // 画廊
     gallery(this);
     // 读书笔记回顾
     reviewOfReadingNote(this);
     // 将视频第一帧作为海报
     poster(this, document.body);
-    // 翻页
-    flipCommand(this);
     // 划线
     highlightCommand(this);
     // 讨论
@@ -65,8 +62,6 @@ export default class Toolbox extends Plugin {
     decryptPopUpCommand(this);
     // 密码创建器
     passwordCreatorCommand(this);
-    // 脚注重编号
-    renumberFootnoteCommand(this);
     // 块引用
     blockReferenceCommand(this);
     // 移动当前笔记中的资源至指定文件夹
@@ -81,20 +76,20 @@ export default class Toolbox extends Plugin {
     completionCommand(this);
     // 打开关系图
     relationshipDiagramCommand(this);
+    // 沙箱
+    // sandbox(this);
 
     this.registerEvent(
       this.app.workspace.on('file-open', async file => {
-        // document.body.onclick = evt => new Notice((evt.target as HTMLLIElement).className);
         this.startTime = Date.now();
-        const sourceView = $(SOURCE_VIEW_CLASS);
         // Block
         Block.exec(this, file);
         // 多义笔记转跳
         polysemy(this, file);
         // 阅读页面
-        adjustReadingPageStyle(this, sourceView, file);
-        // 阅读页面遮罩层
-        readingPageMask(this, sourceView, file);
+        adjustReadingPageStyle(this, file);
+        // 翻页
+        flipEvent(this, file);
         // 自动弹出解密或解密输入框
         encOrDecPopUp(this, file);
         // 加密笔记后隐藏其内容，防止意外改动
@@ -110,11 +105,9 @@ export default class Toolbox extends Plugin {
 
     this.registerEvent(
       this.app.workspace.on('layout-change', () => {
-        const sourceView = $(SOURCE_VIEW_CLASS);
         const file = this.getView()?.file;
         if (!file) return;
-        adjustReadingPageStyle(this, sourceView, file);
-        readingPageMask(this, sourceView, file);
+        adjustReadingPageStyle(this, file);
         toggleEncryptNote(this, file);
       })
     );

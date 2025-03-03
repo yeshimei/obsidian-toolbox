@@ -1,199 +1,96 @@
-import { MarkdownView, Notice, Platform, TFile } from 'obsidian';
-import { $, COMMENT_CLASS, createElement, editorBlur, getBasename, MASK_CLASS, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS } from 'src/helpers';
+import { Platform, TFile } from 'obsidian';
+import { $, COMMENT_CLASS, editorBlur, FOOTNOTE_CLASS, getBasename, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelExhibition } from 'src/Modals/PanelExhibition';
 import { PanelExhibitionHlight } from 'src/Modals/PanelExhibitionHlight';
 
-export default function flipCommand(self: Toolbox) {
-  self.settings.flip &&
-    self.addCommand({
-      id: '翻页',
-      name: '翻页',
-      icon: 'chevron-down',
-      editorCallback: (editor, view) => flip(self, view.file)
-    });
-}
+let self: Toolbox;
+let pageTurner: PageTurner;
 
-export function flip(self: Toolbox, file: TFile, over = false) {
+export function flipEvent(f: Toolbox, file: TFile) {
+  self = f;
+  inspectFullScreen();
+  pageTurner && pageTurner.destroy();
   if (!self.settings.flip || !self.hasReadingPage(file)) return;
-  const el = $(SOURCE_VIEW_CLASS);
-  el.scrollTop = over ? el.scrollTop - el.clientHeight - self.settings.fileCorrect : el.scrollTop + el.clientHeight + self.settings.fileCorrect;
-  self.debounceReadDataTracking(self, el, file);
+  const el = document.querySelector(SOURCE_VIEW_CLASS) as HTMLElement;
+  pageTurner = new PageTurner(el, {
+    onTurnUp: event => flip(event, el, file),
+    onTurnDown: event => flip(event, el, file, false),
+    onLongPressA: pageTurnerLongPress,
+    onLongPressB: fullScreen
+  });
 }
 
-export function readingPageMask(self: Toolbox, el: HTMLElement, file: TFile) {
-  if (!self.settings.flip) return;
-  let timer: number, timer2: number, timer3: number, xStart: number, xEnd: number;
+function flip(event: MouseEvent | TouchEvent, el: HTMLElement, file: TFile, direction = true) {
+  const target = event.target as HTMLElement;
+  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || Platform.isDesktop
+  // 点击划线，显示其评论
+  if (target.hasClass(COMMENT_CLASS.slice(1))) should && handleCommentClick(target, file);
+  // 点击双链，显示其内容
+  else if (target.hasClass(OUT_LINK_CLASS.slice(1))) should && handleOutLinkClick(target, file);
+  // 点击脚注，显示其内容
+  else if (target.hasClass(FOOTNOTE_CLASS.slice(1))) should && handleFootnoteClick(target, file);
+  // 点击其他内容，翻页
+  else {
+    el.scrollTop = direction ? el.scrollTop - el.clientHeight - self.settings.fileCorrect : el.scrollTop + el.clientHeight + self.settings.fileCorrect;
+    self.debounceReadDataTracking(self, file)
+  }
+}
+
+function fullScreen() {
+  if (!Platform.isMobile) return;
+  if (pageTurner.keyboardWatcher.isKeyboardVisible) return;
   const t = $(MOBILE_HEADER_CLASS);
   const b = $(MOBILE_NAVBAR_CLASS);
-  let th: number, bh: number;
-  let mask: HTMLElement;
-  let viewr = document.querySelector('.view-content') as HTMLElement;
+
+  if (self.settings.fullScreenMode) {
+    t?.show();
+    b?.show();
+    self.settings.fullScreenMode = false;
+  } else {
+    b?.hide();
+    t?.hide();
+    self.settings.fullScreenMode = true;
+  }
+
+  pageTurner.destroyed = false;
+  self.saveSettings();
+}
+
+function inspectFullScreen() {
+  if (Platform.isMobile && self.settings.fullScreenMode) {
+    const t = $(MOBILE_HEADER_CLASS);
+    const b = $(MOBILE_NAVBAR_CLASS);
+    t?.hide();
+    b?.hide();
+  }
+}
+
+
+
+function pageTurnerLongPress () {
+  const editor = self.getEditor();
+  const selection = editor.getSelection();
+  if (Platform.isDesktop) {
+    if (selection.length === 0) {
+      pageTurner.destroyed = !pageTurner.destroyed;
+      if (pageTurner.destroyed) editorBlur(self.app);
+    }
+  }
 
   if (Platform.isMobile) {
-    mask = $(MASK_CLASS) || document.body.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
-    th = t.offsetHeight || 0;
-    bh = b.offsetHeight || 0;
-    mask.style.position = 'fixed';
-    mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
-    mask.style.left = '0';
-    mask.style.width = '100%';
-    mask.style.height = el.clientHeight - th - bh + 'px';
-    mask.style.backgroundColor = 'transparent';
-    mask.style.zIndex = '1'; // 最小值，使侧边栏等保持正确层级
-  } else if (Platform.isDesktop) {
-    mask = $(MASK_CLASS) || viewr.appendChild(createElement('div', '', MASK_CLASS.slice(1)));
-    mask.style.position = 'absolute';
-    mask.style.top = '0';
-    mask.style.left = '0';
-    mask.style.width = '100%';
-    mask.style.height = '100%';
-    mask.style.backgroundColor = 'transparent';
+    if (pageTurner.lock) pageTurner.destroyed = pageTurner.keyboardWatcher.isKeyboardVisible;
+    else pageTurner.destroyed = true
   }
+} 
 
-  if (self.hasReadingPage(file)) {
-    mask.show();
-    if (self.settings.fullScreenMode) {
-      h();
-    }
-    // 长按 2.5s 打开或关闭全屏模式
-    mask.ontouchstart = e => {
-      timer = window.setTimeout(() => mask.hide(), 500);
-      timer2 = window.setTimeout(() => {
-        if (self.settings.fullScreenMode) {
-          s();
-          new Notice('已关闭全屏模式');
-        } else {
-          h();
-          new Notice('已开启全屏模式');
-        }
-        self.settings.fullScreenMode = !self.settings.fullScreenMode;
-        self.saveSettings();
-        mask.show();
-      }, 2500);
-      xStart = e.touches[0].pageX;
-    };
-    mask.ontouchend = e => {
-      window.clearTimeout(timer);
-      window.clearTimeout(timer2);
-      xEnd = e.changedTouches[0].pageX;
-      if (xEnd - xStart > 10) {
-        flip(self, file, true);
-      } else if (xEnd - xStart < -10) {
-        flip(self, file);
-      }
-    };
-    if (Platform.isDesktop) {
-      let lok = false;
-      let lol = false;
-      mask.onmousedown = e => {
-        timer = window.setTimeout(() => {
-          mask.hide();
-          lol = false;
-          window.clearTimeout(timer2);
-          timer2 = window.setTimeout(() => {
-            lol = true;
-          }, 500);
-        }, 500);
-      };
+function handleCommentClick(target: HTMLElement, file: any) {
+  const { comment, date, tagging, id } = target.dataset;
+  const formattedTagging = tagging ? `（${tagging}）` : '';
+  const formattedDate = date ? `*${date}*` : '';
+  const content = comment ? `${comment}${formattedTagging}\n${formattedDate}` : '空空如也';
 
-      mask.onmouseup = e => {
-        window.clearTimeout(timer);
-      };
-
-      viewr.onmousedown = e => {
-        lok = false;
-        timer3 = window.setTimeout(() => (lok = true), 500);
-      };
-
-      viewr.onmouseup = e => {
-        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        const editor = activeView.editor;
-        const selection = editor.getSelection();
-
-        if (lok && selection.length == 0 && lol) {
-          mask.show();
-        }
-        window.clearInterval(timer3);
-      };
-    }
-
-    mask.onclick = async e => {
-      const x = e.clientX;
-      const y = e.clientY;
-      const clickY = e.clientY;
-      const windowHeight = window.innerHeight;
-      mask.hide();
-      const target = document.elementFromPoint(x, y) as HTMLElement;
-      mask.show();
-      // 点击划线，显示其评论
-      if (target.hasClass(COMMENT_CLASS.slice(1))) {
-        let { comment, date, tagging, id } = target.dataset;
-        tagging && (tagging = `（${tagging}）`);
-        date && (date = `*${date}*`);
-        new PanelExhibitionHlight(self.app, '评论', comment ? `${comment}${tagging}\n${date}` : '空空如也', async () => await deleteTheUnderlinedLine(self, target, file, id, comment)).open();
-      }
-      // 点击双链，显示其内容
-      else if (target.hasClass(OUT_LINK_CLASS.slice(1))) {
-        target.click();
-        const text = target.textContent.split('|').shift();
-        let links = self.app.metadataCache.getFileCache(file)?.links;
-        const link = links.find((link: any) => link.displayText === text)?.link;
-        if (link) {
-          let file = self.getFileByShort(link);
-          new PanelExhibition(self.app, getBasename(link), file ? await self.app.vault.read(file) : '空空如也', file && (() => self.app.workspace.getLeaf(true).openFile(file))).open();
-        }
-        // 点击脚注，显示其内容
-      } else if (target.className === 'cm-footref cm-hmd-barelink') {
-        const footnote = target.textContent;
-        const context = await self.app.vault.cachedRead(file);
-        const text = new RegExp(`\\[\\^${footnote}\\]: (.*)`).exec(context);
-        new PanelExhibition(self.app, '脚注', text ? text[1] : '空空如也').open();
-      } else {
-        if (clickY < windowHeight / 2) {
-          flip(self, file, true);
-        } else {
-          flip(self, file);
-        }
-      }
-    };
-    // 移动端软键盘收起时，隐藏遮罩层，反之亦然
-    const originalHeight = window.innerHeight;
-    window.onresize = () => {
-      if (window.innerHeight === originalHeight) {
-        mask.show();
-        editorBlur(self.app);
-      } else {
-        mask.hide();
-      }
-    };
-  } else {
-    mask.hide();
-    mask.onclick = mask.ontouchstart = mask.ontouchend = mask.onmousedown = mask.onmouseup = viewr.onmousedown = viewr.onmouseup = window.onresize = null;
-    s();
-  }
-
-  function h() {
-    if (Platform.isMobile) {
-      t.hide();
-      b.hide();
-      th = t.offsetHeight || 0;
-      bh = b.offsetHeight || 0;
-      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
-      mask.style.height = el.clientHeight - th - bh + 'px';
-    }
-  }
-
-  function s() {
-    if (Platform.isMobile) {
-      t.show();
-      b.show();
-      th = t.offsetHeight || 0;
-      bh = b.offsetHeight || 0;
-      mask.style.bottom = bh + 10 /* 使其对齐 */ + 'px';
-      mask.style.height = el.clientHeight - th - bh + 'px';
-    }
-  }
+  new PanelExhibitionHlight(self.app, '评论', content, async () => await deleteTheUnderlinedLine(self, target, file, id, comment)).open();
 }
 
 async function deleteTheUnderlinedLine(self: Toolbox, target: HTMLElement, file: TFile, id: string, comment: string) {
@@ -204,4 +101,290 @@ async function deleteTheUnderlinedLine(self: Toolbox, target: HTMLElement, file:
   // 如果当前段落没其他划线，则删掉段落尾部的 id
   // content = content.replace(new RegExp(`\\^${id}`), '')
   await self.app.vault.modify(file, content);
+}
+
+async function handleOutLinkClick(target: HTMLElement, file: TFile) {
+  const text = target.textContent.split('|').shift();
+  let links = self.app.metadataCache.getFileCache(file)?.links;
+  const link = links.find((link: any) => link.displayText === text)?.link;
+
+  if (link) {
+    let targetFile = self.getFileByShort(link);
+    new PanelExhibition(self.app, getBasename(link), targetFile ? await self.app.vault.read(targetFile) : '空空如也', targetFile && (() => self.app.workspace.getLeaf(true).openFile(targetFile))).open();
+  }
+}
+
+async function handleFootnoteClick(target: HTMLElement, file: TFile) {
+  const footnote = target.textContent;
+  const context = await self.app.vault.cachedRead(file);
+  const text = new RegExp(`\\[\\^${footnote}\\]: (.*)`).exec(context);
+  new PanelExhibition(self.app, '脚注', text ? text[1] : '空空如也').open();
+}
+
+type PageTurnerOptions = {
+  onTurnUp: (event: MouseEvent | TouchEvent) => void;
+  onTurnDown: (event: MouseEvent | TouchEvent) => void;
+  onLongPressB: (event: MouseEvent | TouchEvent) => void;
+  onLongPressA: (event: MouseEvent | TouchEvent) => void;
+};
+
+export class PageTurner {
+  element: HTMLElement;
+  destroyed: boolean;
+  keyboardWatcher: KeyboardObserver;
+  isTouchMoving = false;
+  lock: boolean
+  private options: PageTurnerOptions;
+  private touchStartX = 0;
+  private touchStartY = 0;
+  private isLongPress = false;
+  private readonly eventOptions = { capture: true, passive: false };
+  private timerA: number 
+  private timerB: number
+
+  constructor(element: HTMLElement, options: PageTurnerOptions) {
+    this.element = element;
+    this.options = options;
+    this.destroyed = false;
+    this.initializeEvents();
+  }
+
+  initializeEvents() {
+    this.destroyed = false;
+    // 移动端软键盘事件
+    this.keyboardWatcher = new KeyboardObserver(
+      () => {
+        this.destroyed = true
+        this.lock = true;
+      },
+      () => {
+        this.destroyed = false;
+        this.lock = false;  
+        editorBlur(self.app);
+      }
+    );
+
+    
+    // Touch events
+    this.element.addEventListener('touchstart', this.handleTouchStart, this.eventOptions);
+    this.element.addEventListener('touchmove', this.handleTouchMove, this.eventOptions);
+    this.element.addEventListener('touchend', this.handleTouchEnd, this.eventOptions);
+
+    // Wheel events
+    this.element.addEventListener('wheel', this.handleWheel, this.eventOptions);
+    this.element.addEventListener('click', this.handleClick, this.eventOptions);
+
+    // Mouse events
+    this.element.addEventListener('mousedown', this.handleMouseDown, this.eventOptions);
+    this.element.addEventListener('mouseup', this.handleMouseUp, this.eventOptions);
+    this.element.addEventListener('mouseleave', this.handleMouseLeave, this.eventOptions);
+  }
+
+  private handleEvent = (event: Event) => {
+    if (this.destroyed) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  };
+
+  private handleTouchStart = (event: TouchEvent) => {
+    this.handleEvent(event);
+    this.setupLongPressTimers(event)
+    const touch = event.touches[0];
+    this.touchStartX = touch.clientX;
+    this.touchStartY = touch.clientY;
+    this.isTouchMoving = false;
+  };
+
+  private handleTouchMove = (event: TouchEvent) => {
+    if (!this.isTouchMoving) {
+      const touch = event.touches[0];
+      const deltaX = Math.abs(touch.clientX - this.touchStartX);
+      const deltaY = Math.abs(touch.clientY - this.touchStartY);
+      if (deltaX > 10 || deltaY > 10) {
+        this.isTouchMoving = true;
+      }
+    }
+  };
+
+  private handleTouchEnd = (event: TouchEvent) => {
+    this.handleEvent(event);
+    this.clearLongPressTimers();
+    const touch = event.changedTouches[0];
+    if (this.isTouchMoving) {
+      const deltaX = touch.clientX - this.touchStartX;
+      if (this.destroyed) return;
+      if (Math.abs(deltaX) > 30) {
+        deltaX > 0 ? this.options.onTurnUp(event) : this.options.onTurnDown(event);
+      }
+      this.isTouchMoving = false;
+    } else if (!this.isLongPress) {
+      this.handlePageTurn(event);
+    }
+  };
+
+  private handleWheel = (event: WheelEvent) => {
+    this.handleEvent(event);
+    if (this.destroyed) return;
+    event.deltaY < 0 ? this.options.onTurnUp(event) : this.options.onTurnDown(event);
+  };
+
+  private handleClick = (event: MouseEvent) => {
+    this.handleEvent(event);
+  };
+
+  private handleMouseDown = (event: MouseEvent) => {
+    this.handleEvent(event);
+    this.setupLongPressTimers(event);
+  };
+
+  private handleMouseUp = (event: MouseEvent) => {
+    this.handleEvent(event);
+    this.clearLongPressTimers();
+    if (!this.isLongPress) {
+      this.handlePageTurn(event);
+    }
+  };
+
+  private handleMouseLeave = (event: MouseEvent) => {
+    this.handleEvent(event);
+    this.clearLongPressTimers();
+  };
+
+  private setupLongPressTimers (event: MouseEvent | TouchEvent) {
+    this.clearLongPressTimers();
+    this.isLongPress = false;
+    this.timerA = window.setTimeout(() => {
+      this.options.onLongPressA?.(event);
+      this.isLongPress = true;
+    }, 500);
+
+    this.timerB = window.setTimeout(() => {
+      this.options.onLongPressB?.(event);
+      this.isLongPress = true;
+    }, 2500);
+  }
+
+  private clearLongPressTimers () {
+    clearTimeout(this.timerA);
+    clearTimeout(this.timerB);
+  }
+
+  private handlePageTurn(event: MouseEvent | TouchEvent) {
+    let clientY: number;
+    if ('touches' in event) {
+      const touchEvent = event as TouchEvent;
+      const touch = touchEvent.touches[0] || touchEvent.changedTouches[0];
+      if (!touch) return;
+      clientY = touch.clientY;
+    } else {
+      clientY = event.clientY;
+    }
+
+    const rect = this.element.getBoundingClientRect();
+    const position = clientY - rect.top;
+    if (this.destroyed || !rect.height) return;
+
+    const callback = position < rect.height * 0.45 ? this.options.onTurnUp : this.options.onTurnDown;
+    callback(event);
+  }
+
+  public destroy() {
+    const events = [
+      ['touchstart', this.handleTouchStart],
+      ['touchmove', this.handleTouchMove],
+      ['touchend', this.handleTouchEnd],
+      ['wheel', this.handleWheel],
+      ['click', this.handleClick],
+      ['mousedown', this.handleMouseDown],
+      ['mouseup', this.handleMouseUp],
+      ['mouseleave', this.handleMouseLeave]
+    ] as const
+    
+
+    events.forEach(([type, handler]) => {
+      this.element.removeEventListener(type, handler, this.eventOptions);
+    });
+    this.keyboardWatcher.destroy();
+  }
+}
+
+class KeyboardObserver {
+  isKeyboardVisible = false;
+  private visualViewport: VisualViewport | null;
+  private lastViewportHeight = 0;
+  private readonly heightThreshold = 100;
+
+  constructor(public onShow: () => void, public onHide: () => void) {
+    this.visualViewport = window.visualViewport || null;
+    this.initialize();
+  }
+
+  private initialize() {
+    this.lastViewportHeight = window.innerHeight;
+
+    if (this.visualViewport) {
+      this.visualViewport.addEventListener('resize', this.handleViewportResize);
+    } else {
+      window.addEventListener('resize', this.handleWindowResize);
+      document.addEventListener('focusin', this.handleFocus);
+      document.addEventListener('focusout', this.handleBlur);
+    }
+  }
+
+  private handleViewportResize = () => {
+    if (!this.visualViewport) return;
+
+    const newHeight = this.visualViewport.height;
+    const heightDiff = this.lastViewportHeight - newHeight;
+
+    if (heightDiff > this.heightThreshold && !this.isKeyboardVisible) {
+      this.isKeyboardVisible = true;
+      this.onShow();
+    } else if (heightDiff <= this.heightThreshold && this.isKeyboardVisible) {
+      this.isKeyboardVisible = false;
+      this.onHide();
+    }
+
+    this.lastViewportHeight = newHeight;
+  };
+
+  private handleWindowResize = () => {
+    const newHeight = window.innerHeight;
+    const heightDiff = this.lastViewportHeight - newHeight;
+
+    if (heightDiff > this.heightThreshold && !this.isKeyboardVisible) {
+      this.isKeyboardVisible = true;
+      this.onShow();
+    } else if (heightDiff <= this.heightThreshold && this.isKeyboardVisible) {
+      this.isKeyboardVisible = false;
+      this.onHide();
+    }
+
+    this.lastViewportHeight = newHeight;
+  };
+
+  private handleFocus = () => {
+    if (!this.isKeyboardVisible) {
+      this.isKeyboardVisible = true;
+      this.onShow();
+    }
+  };
+
+  private handleBlur = () => {
+    if (this.isKeyboardVisible) {
+      this.isKeyboardVisible = false;
+      this.onHide();
+    }
+  };
+
+  public destroy() {
+    if (this.visualViewport) {
+      this.visualViewport.removeEventListener('resize', this.handleViewportResize);
+    } else {
+      window.removeEventListener('resize', this.handleWindowResize);
+      document.removeEventListener('focusin', this.handleFocus);
+      document.removeEventListener('focusout', this.handleBlur);
+    }
+  }
 }

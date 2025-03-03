@@ -26,7 +26,7 @@ export async function resourceTo(self: Toolbox, file: TFile, targetFolder: strin
   const paths = Object.keys(self.app.metadataCache.resolvedLinks[file.path])
     .filter(path => path.indexOf(targetFolder) === -1)
     .map(path => {
-      const targetPath = targetFolder + '/' + self.app.vault.getFileByPath(path).name;
+      const targetPath = targetFolder + '/' + self.app.vault.getFiles().find(f => f.path === path).name;
       content = content.replace(path, targetPath);
       self.app.vault.adapter.rename(path, targetPath);
     });

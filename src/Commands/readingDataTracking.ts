@@ -1,10 +1,11 @@
 import { TFile } from 'obsidian';
-import { computerReadingProgress, msTo, today } from 'src/helpers';
+import { computerReadingProgress, msTo, SOURCE_VIEW_CLASS, today } from 'src/helpers';
 import Toolbox from 'src/main';
 import Confirm from 'src/Modals/Confirm';
 
-export default function readingDataTracking(self: Toolbox, el: Element, file: TFile) {
+export default function readingDataTracking(self: Toolbox, file: TFile) {
   if (!self.settings.readDataTracking || !self.hasReadingPage(file)) return;
+  const el = document.querySelector(SOURCE_VIEW_CLASS);
   let { readingProgress = 0, readingDate, completionDate } = self.app.metadataCache.getFileCache(file)?.frontmatter || {};
   self.app.fileManager.processFrontMatter(file, frontmatter => {
     if (readingDate && !completionDate) {

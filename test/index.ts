@@ -1,14 +1,13 @@
 import Toolbox from 'src/main';
 // import './Helpers.test';
 // import './commands/Encryption.test';
-import './commands/renumberFootnote.test';
 import { arrayBufferToBase64, TFolder } from 'obsidian';
 
 const root = 'test';
 export async function create(self: Toolbox, filename: string, content: string) {
   const path = `${root}/${filename}.md`;
   await self.app.vault.adapter.write(path, content);
-  return self.app.vault.getFileByPath(path);
+  return self.app.vault.getFiles().find(f => f.path === path)
 }
 
 export async function clearRootFFolder(self: Toolbox) {
