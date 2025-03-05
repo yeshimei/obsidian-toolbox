@@ -697,6 +697,7 @@ var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
 var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var FOOTNOTE_CLASS = ".cm-footref";
+var STATUS_BAR_CLASS = ".status-bar";
 var imageSuffix = ["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp"];
 var videoSuffix = ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm"];
 function sanitizeFileName(fileName) {
@@ -9735,11 +9736,14 @@ var self2;
 var pageTurner;
 function flipEvent(f2, file) {
   self2 = f2;
+  const statusBar = document.querySelector(STATUS_BAR_CLASS);
   fullScreen(0, false);
   pageTurner && pageTurner.destroy();
+  statusBar.show();
   if (!self2.settings.flip || !self2.hasReadingPage(file))
     return;
   fullScreen(-1, false);
+  statusBar.hide();
   const el = document.querySelector(SOURCE_VIEW_CLASS);
   pageTurner = new PageTurner(el, {
     onTurnUp: (event) => flip(event, el, file),
@@ -9885,6 +9889,14 @@ var PageTurner = class {
       event.stopPropagation();
       event.stopImmediatePropagation();
     };
+    this.handleKeydown = (event) => {
+      this.handleEvent(event);
+      if (event.key === "ArrowUp") {
+        this.options.onTurnUp(event);
+      } else if (event.key === "ArrowDown") {
+        this.options.onTurnDown(event);
+      }
+    };
     this.handleMouseDown = (event) => {
       this.setupLongPressTimers(event);
       this.handleEvent(event);
@@ -9929,6 +9941,7 @@ var PageTurner = class {
     this.element.addEventListener("wheel", this.handleWheel, this.eventOptions);
     this.element.addEventListener("click", this.handleClick, this.eventOptions);
     this.element.addEventListener("contextmenu", this.handleContextmenu, this.eventOptions);
+    this.element.addEventListener("keydown", this.handleKeydown, this.eventOptions);
     this.element.addEventListener("mousedown", this.handleMouseDown, this.eventOptions);
     this.element.addEventListener("mouseup", this.handleMouseUp, this.eventOptions);
     this.element.addEventListener("mouseleave", this.handleMouseLeave, this.eventOptions);

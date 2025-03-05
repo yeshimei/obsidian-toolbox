@@ -6,6 +6,8 @@ export const MOBILE_NAVBAR_CLASS = '.mobile-navbar-actions';
 export const COMMENT_CLASS = '.__comment';
 export const OUT_LINK_CLASS = '.cm-underline';
 export const FOOTNOTE_CLASS = '.cm-footref';
+export const STATUS_BAR_CLASS = '.status-bar';
+
 export const imageSuffix = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp'];
 export const videoSuffix = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
 

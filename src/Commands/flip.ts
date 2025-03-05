@@ -1,5 +1,5 @@
 import { Platform, TFile } from 'obsidian';
-import { $, COMMENT_CLASS, editorBlur, FOOTNOTE_CLASS, getBasename, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS } from 'src/helpers';
+import { $, COMMENT_CLASS, editorBlur, FOOTNOTE_CLASS, getBasename, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS, STATUS_BAR_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelExhibition } from 'src/Modals/PanelExhibition';
 import { PanelExhibitionHlight } from 'src/Modals/PanelExhibitionHlight';
@@ -9,10 +9,13 @@ let pageTurner: PageTurner;
 
 export function flipEvent(f: Toolbox, file: TFile) {
   self = f;
+  const statusBar = document.querySelector(STATUS_BAR_CLASS) as HTMLElement;
   fullScreen(0, false);
   pageTurner && pageTurner.destroy();
+  statusBar.show()
   if (!self.settings.flip || !self.hasReadingPage(file)) return;
   fullScreen(-1, false);
+  statusBar.hide()
   const el = document.querySelector(SOURCE_VIEW_CLASS) as HTMLElement;
   pageTurner = new PageTurner(el, {
     onTurnUp: event => flip(event, el, file),
@@ -110,8 +113,8 @@ function getSelection() {
 }
 
 type PageTurnerOptions = {
-  onTurnUp: (event: MouseEvent | TouchEvent) => void;
-  onTurnDown: (event: MouseEvent | TouchEvent) => void;
+  onTurnUp: (event: MouseEvent | TouchEvent | KeyboardEvent) => void;
+  onTurnDown: (event: MouseEvent | TouchEvent | KeyboardEvent) => void;
   onLongPressB: (event: MouseEvent | TouchEvent) => void;
   onLongPressA: (event: MouseEvent | TouchEvent) => void;
 };
@@ -161,6 +164,7 @@ export class PageTurner {
     this.element.addEventListener('wheel', this.handleWheel, this.eventOptions);
     this.element.addEventListener('click', this.handleClick, this.eventOptions);
     this.element.addEventListener('contextmenu', this.handleContextmenu, this.eventOptions);
+    this.element.addEventListener('keydown', this.handleKeydown, this.eventOptions);
 
     // Mouse events
     this.element.addEventListener('mousedown', this.handleMouseDown, this.eventOptions);
@@ -225,6 +229,15 @@ export class PageTurner {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
+  };
+
+  private handleKeydown = (event: KeyboardEvent) => {
+    this.handleEvent(event);
+    if (event.key === 'ArrowUp') {
+      this.options.onTurnUp(event)
+    } else if (event.key === 'ArrowDown') {
+      this.options.onTurnDown(event)
+    } 
   };
 
   private handleMouseDown = (event: MouseEvent) => {
