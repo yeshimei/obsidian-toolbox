@@ -25,7 +25,7 @@ export function flipEvent(f: Toolbox, file: TFile) {
   });
 }
 
-function flip(event: MouseEvent | TouchEvent, el: HTMLElement, file: TFile, direction = true) {
+function flip(event: MouseEvent | TouchEvent | KeyboardEvent, el: HTMLElement, file: TFile, direction = true) {
   const target = event.target as HTMLElement;
   const should = (!pageTurner.isTouchMoving && Platform.isMobile) || Platform.isDesktop;
   // 点击划线，显示其评论
@@ -106,10 +106,6 @@ async function handleFootnoteClick(target: HTMLElement, file: TFile) {
   const context = await self.app.vault.cachedRead(file);
   const text = new RegExp(`\\[\\^${footnote}\\]: (.*)`).exec(context);
   new PanelExhibition(self.app, '脚注', text ? text[1] : '空空如也').open();
-}
-
-function getSelection() {
-  return self.getEditor()?.getSelection()?.length;
 }
 
 type PageTurnerOptions = {

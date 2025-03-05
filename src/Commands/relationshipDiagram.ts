@@ -60,6 +60,7 @@ async function joinTree(node: any) {
         const r = parseListToTree(content);
         const d = findTree(r, id, 'id');
         if (d) {
+          d.parent = child
           child.children = d.children;
         }
       }

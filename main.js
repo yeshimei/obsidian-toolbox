@@ -10300,6 +10300,7 @@ async function joinTree(node) {
         const r2 = parseListToTree(content);
         const d = findTree(r2, id, "id");
         if (d) {
+          d.parent = child;
           child.children = d.children;
         }
       }
