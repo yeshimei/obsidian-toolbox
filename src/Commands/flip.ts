@@ -222,11 +222,9 @@ export class PageTurner {
   };
 
   private handleContextmenu = (event: MouseEvent) => {
-    if (Platform.isDesktop && getSelection() === 0) {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-    }
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
   };
 
   private handleMouseDown = (event: MouseEvent) => {
@@ -242,10 +240,8 @@ export class PageTurner {
         this.handlePageTurn(event);
       }
     } else if (event.button === 2) {
-      if (Platform.isDesktop && getSelection() === 0) {
-        this.destroyed = !this.destroyed;
-        editorBlur(self.app);
-      }
+      this.destroyed = !this.destroyed;
+      editorBlur(self.app);
     }
   };
 
