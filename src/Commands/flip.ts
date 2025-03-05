@@ -9,21 +9,22 @@ let pageTurner: PageTurner;
 
 export function flipEvent(f: Toolbox, file: TFile) {
   self = f;
-  inspectFullScreen();
+  fullScreen(0, false);
   pageTurner && pageTurner.destroy();
   if (!self.settings.flip || !self.hasReadingPage(file)) return;
+  fullScreen(-1, false);
   const el = document.querySelector(SOURCE_VIEW_CLASS) as HTMLElement;
   pageTurner = new PageTurner(el, {
     onTurnUp: event => flip(event, el, file),
     onTurnDown: event => flip(event, el, file, false),
     onLongPressA: pageTurnerLongPress,
-    onLongPressB: fullScreen
+    onLongPressB: () => fullScreen()
   });
 }
 
 function flip(event: MouseEvent | TouchEvent, el: HTMLElement, file: TFile, direction = true) {
   const target = event.target as HTMLElement;
-  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || Platform.isDesktop
+  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || Platform.isDesktop;
   // 点击划线，显示其评论
   if (target.hasClass(COMMENT_CLASS.slice(1))) should && handleCommentClick(target, file);
   // 点击双链，显示其内容
@@ -33,56 +34,39 @@ function flip(event: MouseEvent | TouchEvent, el: HTMLElement, file: TFile, dire
   // 点击其他内容，翻页
   else {
     el.scrollTop = direction ? el.scrollTop - el.clientHeight - self.settings.fileCorrect : el.scrollTop + el.clientHeight + self.settings.fileCorrect;
-    self.debounceReadDataTracking(self, file)
+    self.debounceReadDataTracking(self, file);
   }
 }
 
-function fullScreen() {
+function fullScreen(mode: boolean | number = null, save = true) {
   if (!Platform.isMobile) return;
-  if (pageTurner.keyboardWatcher.isKeyboardVisible) return;
+  if (pageTurner?.keyboardWatcher?.isKeyboardVisible) return;
   const t = $(MOBILE_HEADER_CLASS);
   const b = $(MOBILE_NAVBAR_CLASS);
 
-  if (self.settings.fullScreenMode) {
-    t?.show();
-    b?.show();
-    self.settings.fullScreenMode = false;
+  const fullScreenMode = mode === -1 ? self.settings.fullScreenMode : mode === null ? !self.settings.fullScreenMode : mode;
+
+  if (fullScreenMode) {
+    b?.hide();
+    t?.hide();
   } else {
-    b?.hide();
-    t?.hide();
-    self.settings.fullScreenMode = true;
+    b?.show();
+    t?.show();
   }
 
-  pageTurner.destroyed = false;
-  self.saveSettings();
-}
-
-function inspectFullScreen() {
-  if (Platform.isMobile && self.settings.fullScreenMode) {
-    const t = $(MOBILE_HEADER_CLASS);
-    const b = $(MOBILE_NAVBAR_CLASS);
-    t?.hide();
-    b?.hide();
+  if (save) {
+    self.settings.fullScreenMode = Boolean(fullScreenMode);
+    self.saveSettings();
+    pageTurner && (pageTurner.destroyed = false);
   }
 }
 
-
-
-function pageTurnerLongPress () {
-  const editor = self.getEditor();
-  const selection = editor.getSelection();
-  if (Platform.isDesktop) {
-    if (selection.length === 0) {
-      pageTurner.destroyed = !pageTurner.destroyed;
-      if (pageTurner.destroyed) editorBlur(self.app);
-    }
-  }
-
-  if (Platform.isMobile) {
+function pageTurnerLongPress(event: MouseEvent | TouchEvent) {
+  if (Platform.isMobile && event.type === 'touchstart') {
     if (pageTurner.lock) pageTurner.destroyed = pageTurner.keyboardWatcher.isKeyboardVisible;
-    else pageTurner.destroyed = true
+    else pageTurner.destroyed = true;
   }
-} 
+}
 
 function handleCommentClick(target: HTMLElement, file: any) {
   const { comment, date, tagging, id } = target.dataset;
@@ -121,6 +105,10 @@ async function handleFootnoteClick(target: HTMLElement, file: TFile) {
   new PanelExhibition(self.app, '脚注', text ? text[1] : '空空如也').open();
 }
 
+function getSelection() {
+  return self.getEditor()?.getSelection()?.length;
+}
+
 type PageTurnerOptions = {
   onTurnUp: (event: MouseEvent | TouchEvent) => void;
   onTurnDown: (event: MouseEvent | TouchEvent) => void;
@@ -133,14 +121,14 @@ export class PageTurner {
   destroyed: boolean;
   keyboardWatcher: KeyboardObserver;
   isTouchMoving = false;
-  lock: boolean
+  lock: boolean;
   private options: PageTurnerOptions;
   private touchStartX = 0;
   private touchStartY = 0;
   private isLongPress = false;
   private readonly eventOptions = { capture: true, passive: false };
-  private timerA: number 
-  private timerB: number
+  private timerA: number;
+  private timerB: number;
 
   constructor(element: HTMLElement, options: PageTurnerOptions) {
     this.element = element;
@@ -154,17 +142,16 @@ export class PageTurner {
     // 移动端软键盘事件
     this.keyboardWatcher = new KeyboardObserver(
       () => {
-        this.destroyed = true
+        this.destroyed = true;
         this.lock = true;
       },
       () => {
         this.destroyed = false;
-        this.lock = false;  
+        this.lock = false;
         editorBlur(self.app);
       }
     );
 
-    
     // Touch events
     this.element.addEventListener('touchstart', this.handleTouchStart, this.eventOptions);
     this.element.addEventListener('touchmove', this.handleTouchMove, this.eventOptions);
@@ -173,6 +160,7 @@ export class PageTurner {
     // Wheel events
     this.element.addEventListener('wheel', this.handleWheel, this.eventOptions);
     this.element.addEventListener('click', this.handleClick, this.eventOptions);
+    this.element.addEventListener('contextmenu', this.handleContextmenu, this.eventOptions);
 
     // Mouse events
     this.element.addEventListener('mousedown', this.handleMouseDown, this.eventOptions);
@@ -189,7 +177,7 @@ export class PageTurner {
 
   private handleTouchStart = (event: TouchEvent) => {
     this.handleEvent(event);
-    this.setupLongPressTimers(event)
+    this.setupLongPressTimers(event);
     const touch = event.touches[0];
     this.touchStartX = touch.clientX;
     this.touchStartY = touch.clientY;
@@ -233,16 +221,31 @@ export class PageTurner {
     this.handleEvent(event);
   };
 
+  private handleContextmenu = (event: MouseEvent) => {
+    if (Platform.isDesktop && getSelection() === 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    }
+  };
+
   private handleMouseDown = (event: MouseEvent) => {
-    this.handleEvent(event);
     this.setupLongPressTimers(event);
+    this.handleEvent(event);
   };
 
   private handleMouseUp = (event: MouseEvent) => {
-    this.handleEvent(event);
     this.clearLongPressTimers();
-    if (!this.isLongPress) {
-      this.handlePageTurn(event);
+    this.handleEvent(event);
+    if (event.button === 0) {
+      if (!this.isLongPress) {
+        this.handlePageTurn(event);
+      }
+    } else if (event.button === 2) {
+      if (Platform.isDesktop && getSelection() === 0) {
+        this.destroyed = !this.destroyed;
+        editorBlur(self.app);
+      }
     }
   };
 
@@ -251,7 +254,7 @@ export class PageTurner {
     this.clearLongPressTimers();
   };
 
-  private setupLongPressTimers (event: MouseEvent | TouchEvent) {
+  private setupLongPressTimers(event: MouseEvent | TouchEvent) {
     this.clearLongPressTimers();
     this.isLongPress = false;
     this.timerA = window.setTimeout(() => {
@@ -265,7 +268,7 @@ export class PageTurner {
     }, 2500);
   }
 
-  private clearLongPressTimers () {
+  private clearLongPressTimers() {
     clearTimeout(this.timerA);
     clearTimeout(this.timerB);
   }
@@ -296,11 +299,11 @@ export class PageTurner {
       ['touchend', this.handleTouchEnd],
       ['wheel', this.handleWheel],
       ['click', this.handleClick],
+      ['contextmenu', this.handleContextmenu],
       ['mousedown', this.handleMouseDown],
       ['mouseup', this.handleMouseUp],
       ['mouseleave', this.handleMouseLeave]
-    ] as const
-    
+    ] as const;
 
     events.forEach(([type, handler]) => {
       this.element.removeEventListener(type, handler, this.eventOptions);
