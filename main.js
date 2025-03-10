@@ -10516,14 +10516,25 @@ var TempRelationView = class extends import_obsidian21.ItemView {
       label.dataset.children = children;
       const w1 = label.getBBox().width;
       label.textContent = name;
-      const x = Number(label.getAttribute("x"));
-      const y = Number(label.getAttribute("y"));
+      let x = Number(label.getAttribute("x"));
+      let y = Number(label.getAttribute("y"));
       const w2 = label.getBBox().width;
       label.setAttribute("x", `${x + w1 - w2}`);
       label.setAttribute("y", `${y + 4}`);
+      x = Number(label.getAttribute("x"));
+      y = Number(label.getAttribute("y"));
+      const bg = label.previousSibling;
+      bg.style.opacity = "1";
+      bg.style.fontWeight = "bold";
+      bg.style.width = `${w2 + 6}px`;
+      bg.setAttribute("x", String(x - 3));
+      bg.setAttribute("y", String(y - 11));
+      bg.style.display = "none";
       if (type === "-") {
         label.style.opacity = "0.5";
         label.style.fontStyle = "italic";
+      } else if (type === "*") {
+        bg.style.display = "block";
       }
     });
   }
