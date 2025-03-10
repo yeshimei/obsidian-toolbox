@@ -10311,11 +10311,15 @@ async function joinTree(node, root) {
     }
   }
 }
+function commit(child) {
+  var _a2;
+  return `  commit id: "${child.name}%%${child.link || ""}%%${child.id || ""}%%${child.type || ""}%%${child.tag || ""}%%${child.branchName}%%${child.branchId}%%${child.level}%%${(_a2 = child.parent) == null ? void 0 : _a2.name}%%${child.children.length}" ${child.children.length > 0 ? "type: REVERSE" : ""} ${child.tag ? `tag: "${child.tag}"` : ""}`;
+}
 function processBranch(node, cmds) {
   const branchName = node.children[0].branchName;
   cmds.push(`  branch "${branchName}"`);
   for (const child of node.children) {
-    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? "type: REVERSE" : ""} ${child.tag ? `tag: "${child.tag}"` : ""}`);
+    cmds.push(commit(child));
     if (child.children.length > 0) {
       const childBranch = child.children[0].branchName;
       cmds.push(`  branch "${childBranch}"`);
@@ -10326,7 +10330,7 @@ function processBranch(node, cmds) {
 }
 function processChildren(node, cmds) {
   for (const child of node.children) {
-    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? "type: REVERSE" : ""} ${child.tag ? `tag: "${child.tag}"` : ""}`);
+    cmds.push(commit(child));
     if (child.children.length > 0) {
       const childBranch = child.children[0].branchName;
       cmds.push(`  branch "${childBranch}"`);
@@ -10363,7 +10367,7 @@ function parseListToTree(str2) {
 }
 function updateTreeCollapseState(tree, hideBranchNames) {
   function traverse(node) {
-    if (hideBranchNames.includes(node.name)) {
+    if (hideBranchNames.includes(node.branchId)) {
       node._children = node._children || node.children;
       node.children = [];
     } else if (node._children) {
@@ -10494,7 +10498,34 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     this.viewEl = contentEl;
     await render(self3.app, this.content, contentEl);
     this.zoom = new ZoomDrag(contentEl);
+    this.format();
     this.multicolorLabel();
+  }
+  format() {
+    this.viewEl.querySelectorAll(".commit-label").forEach((label) => {
+      const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split("%%");
+      label.dataset.name = name;
+      label.dataset.link = link;
+      label.dataset.id = id;
+      label.dataset.type = type;
+      label.dataset.tag = tag;
+      label.dataset.branchName = branchName;
+      label.dataset.branchId = branchId;
+      label.dataset.level = level;
+      label.dataset.parent = parent;
+      label.dataset.children = children;
+      const w1 = label.getBBox().width;
+      label.textContent = name;
+      const x = Number(label.getAttribute("x"));
+      const y = Number(label.getAttribute("y"));
+      const w2 = label.getBBox().width;
+      label.setAttribute("x", `${x + w1 - w2}`);
+      label.setAttribute("y", `${y + 4}`);
+      if (type === "-") {
+        label.style.opacity = "0.5";
+        label.style.fontStyle = "italic";
+      }
+    });
   }
   async onClose() {
     var _a2;
@@ -10504,23 +10535,22 @@ var TempRelationView = class extends import_obsidian21.ItemView {
   }
   async onclick(e2) {
     const target = e2.target;
+    const { name, link, branchId } = target.dataset;
     if (target.hasClass("commit-label")) {
-      const name = target.textContent;
-      if (!name)
-        return;
       if (e2.ctrlKey)
         this.truncation(name);
       else if (e2.altKey)
         this.logicalChain(name);
       else
-        this.openLink(name);
+        this.openLink(link);
     }
     if (target.hasClass("commit")) {
       const target2 = e2.target;
-      const name = target2.classList[target2.classList.length - 2];
-      if (!name)
+      const name2 = target2.classList[target2.classList.length - 2];
+      const id = name2.split("%%")[6];
+      if (!name2)
         return;
-      this.exhibitionBranch(name);
+      this.exhibitionBranch(id);
     }
   }
   onmouseover(e2) {
@@ -10542,9 +10572,8 @@ var TempRelationView = class extends import_obsidian21.ItemView {
       return;
     target.style.textDecorationLine = "none";
   }
-  async openLink(name) {
+  async openLink(link) {
     var _a2;
-    const link = this.getLink(this.gitChart, name);
     const currentFile = self3.app.workspace.getActiveFile();
     if (currentFile && link) {
       if (!this.app.workspace.getLeafById((_a2 = this.splitLeaf) == null ? void 0 : _a2.id)) {
@@ -10558,12 +10587,13 @@ var TempRelationView = class extends import_obsidian21.ItemView {
       this.splitLeaf = leaf;
     }
   }
-  async exhibitionBranch(name) {
-    this.hideBranchNames = this.hideBranchNames.includes(name) ? this.hideBranchNames.filter((n) => n !== name) : [...this.hideBranchNames, name];
+  async exhibitionBranch(id) {
+    this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter((n) => n !== id) : [...this.hideBranchNames, id];
     updateTreeCollapseState(this.gitChart, this.hideBranchNames);
     const content = generateGitgraphFromList(this.gitChart, this.title);
     this.viewEl.empty();
     await render(self3.app, content, this.viewEl);
+    this.format();
     this.multicolorLabel();
   }
   logicalChain(name) {
@@ -10589,12 +10619,11 @@ var TempRelationView = class extends import_obsidian21.ItemView {
       return;
     const labels = document.querySelectorAll(".commit-label");
     labels.forEach((label) => {
-      const name = label.textContent;
-      const validSelector = `.${CSS.escape(name.split(" ").pop())}`;
-      const commit = document.querySelector(validSelector);
-      if (!commit)
+      const id = label.dataset.branchId;
+      const commit2 = document.querySelector(`circle[class*="${id}"]`);
+      if (!commit2)
         return;
-      const color = getComputedStyle(commit).fill;
+      const color = getComputedStyle(commit2).fill;
       if (color)
         label.style.fill = color;
     });

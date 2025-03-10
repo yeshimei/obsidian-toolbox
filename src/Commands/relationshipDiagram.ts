@@ -23,6 +23,7 @@ async function relationshipDiagram(editor: Editor, file: TFile) {
   const tree = await processTree(content, name);
   const text = generateGitgraphFromList(tree, filename);
   await createTempRelationGraph(name || filename, text, tree);
+  
 }
 
 function generateGitgraphFromList(tree: any, title: string) {
@@ -73,11 +74,15 @@ async function joinTree(node: any, root: any) {
   }
 }
 
+function commit (child: any) {
+  return `  commit id: "${child.name}%%${child.link || ''}%%${child.id || ''}%%${child.type || ''}%%${child.tag || ''}%%${child.branchName}%%${child.branchId}%%${child.level}%%${child.parent?.name}%%${child.children.length}" ${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`
+}
+
 function processBranch(node: any, cmds: any) {
   const branchName = node.children[0].branchName;
   cmds.push(`  branch "${branchName}"`);
   for (const child of node.children) {
-    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`);
+    cmds.push(commit(child));
     if (child.children.length > 0) {
       const childBranch = child.children[0].branchName;
       cmds.push(`  branch "${childBranch}"`);
@@ -89,7 +94,7 @@ function processBranch(node: any, cmds: any) {
 
 function processChildren(node: any, cmds: any) {
   for (const child of node.children) {
-    cmds.push(`  commit id: "${child.name}"${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`);
+    cmds.push(commit(child));
     if (child.children.length > 0) {
       const childBranch = child.children[0].branchName;
       cmds.push(`  branch "${childBranch}"`);
@@ -129,8 +134,7 @@ function parseListToTree(str: string) {
 
 function updateTreeCollapseState(tree: any, hideBranchNames: string[]) {
   function traverse(node: any) {
-    
-    if (hideBranchNames.includes(node.name)) {
+    if (hideBranchNames.includes(node.branchId)) {
       node._children = node._children || node.children;
       node.children = [];
     } else if (node._children) {
@@ -278,8 +282,37 @@ class TempRelationView extends ItemView {
     this.viewEl = contentEl;
     await render(self.app, this.content, contentEl);
     this.zoom = new ZoomDrag(contentEl);
+    this.format()
     this.multicolorLabel()
   }
+
+  format() {
+    this.viewEl.querySelectorAll('.commit-label').forEach((label: SVGTextElement) => {
+      const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split('%%')
+      label.dataset.name = name
+      label.dataset.link = link
+      label.dataset.id = id
+      label.dataset.type = type
+      label.dataset.tag = tag
+      label.dataset.branchName = branchName
+      label.dataset.branchId = branchId
+      label.dataset.level = level
+      label.dataset.parent = parent
+      label.dataset.children = children
+      const w1 = label.getBBox().width
+      label.textContent = name
+      const x = Number(label.getAttribute('x'))
+      const y = Number(label.getAttribute('y'))
+      const w2 = label.getBBox().width
+      label.setAttribute('x', `${x + w1 - w2}`)
+      label.setAttribute('y', `${y + 4}`)
+      if (type === '-') {
+        label.style.opacity = '0.5'
+        label.style.fontStyle = 'italic'
+      }
+    })
+  }
+
 
   async onClose() {
     this.splitLeaf?.detach();
@@ -289,17 +322,17 @@ class TempRelationView extends ItemView {
 
   async onclick(e: MouseEvent) {
     const target = e.target as HTMLElement;
+    const { name, link, branchId } = target.dataset;
     if (target.hasClass('commit-label')) {
-      const name = target.textContent;
-      if (!name) return;
       if (e.ctrlKey) this.truncation(name);
       else if (e.altKey) this.logicalChain(name);
-      else this.openLink(name);
+      else this.openLink(link);
     } if (target.hasClass('commit')) {
       const target = e.target as HTMLElement;
       const name = target.classList[target.classList.length - 2];
+      const id = name.split('%%')[6]
       if (!name) return;
-      this.exhibitionBranch(name);
+      this.exhibitionBranch(id);
     }
   }
 
@@ -320,8 +353,7 @@ class TempRelationView extends ItemView {
     target.style.textDecorationLine = 'none';
   }
 
-  async openLink(name: string) {
-    const link = this.getLink(this.gitChart, name);
+  async openLink(link: string) {
     const currentFile = self.app.workspace.getActiveFile();
     if (currentFile && link) {
       if (!this.app.workspace.getLeafById(this.splitLeaf?.id)) {
@@ -336,12 +368,17 @@ class TempRelationView extends ItemView {
     }
   }
 
-  async exhibitionBranch (name: string) {
-    this.hideBranchNames = this.hideBranchNames.includes(name) ? this.hideBranchNames.filter(n => n!== name) : [...this.hideBranchNames, name];
+  async exhibitionBranch (id: string) {
+    this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter(n => n!== id) : [...this.hideBranchNames, id];
     updateTreeCollapseState(this.gitChart, this.hideBranchNames)
     const content = generateGitgraphFromList(this.gitChart, this.title)
     this.viewEl.empty()
     await render(self.app, content, this.viewEl);
+    // const target = document.querySelector(`.commit-label[data-branch-id="${id}"]`) as HTMLElement
+    // if (target) {
+    //   target.textContent += `(${target.dataset.children})`
+    // }
+    this.format()
     this.multicolorLabel()
   }
 
@@ -367,9 +404,8 @@ class TempRelationView extends ItemView {
     if (!self.settings.gitChartMultiColorLabel) return
     const labels = document.querySelectorAll('.commit-label')
     labels.forEach((label: HTMLElement) => {
-      const name = label.textContent
-      const validSelector = `.${CSS.escape(name.split(' ').pop())}`;
-      const commit = document.querySelector(validSelector)
+      const id = label.dataset.branchId
+      const commit = document.querySelector(`circle[class*="${id}"]`)
       if (!commit) return
       const color = getComputedStyle(commit).fill
       if (color) label.style.fill = color
