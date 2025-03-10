@@ -10290,9 +10290,9 @@ gitGraph TB:`
   }
   return commands.slice(0, -1).join("\n") + "\n```";
 }
-async function joinTree(node) {
+async function joinTree(node, root) {
   for (let child of node.children) {
-    if (child.type === "==") {
+    if (child.type === "+") {
       const [filename, id] = child.link.split("#^");
       const file = self3.getFileByShort(filename);
       if (file) {
@@ -10302,11 +10302,12 @@ async function joinTree(node) {
         if (d) {
           d.parent = child;
           child.children = d.children;
+          removeTree(root, id, "id");
         }
       }
     }
     if (child.children.length > 0) {
-      await joinTree(child);
+      await joinTree(child, root);
     }
   }
 }
@@ -10338,7 +10339,7 @@ function processChildren(node, cmds) {
 async function processTree(listStr, name) {
   let tree = parseListToTree(listStr);
   tree = name ? { children: [findTree(tree, name)] } : tree;
-  await joinTree(tree);
+  await joinTree(tree, tree);
   return tree;
 }
 function parseListToTree(str2) {
@@ -10346,14 +10347,15 @@ function parseListToTree(str2) {
   const root = { children: [] };
   const stack = [{ node: root, level: -1 }];
   for (const line of lines) {
-    let { level, name, type, link, id, tag } = parseLine(line);
+    let lineData = parseLine(line);
+    const { level, name } = lineData;
     if (!name)
       continue;
     while (stack.length > 1 && stack[stack.length - 1].level >= level) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode = { id, name, tag, level, type, link, children: [], branchName: (parent == null ? void 0 : parent.name) || "\u9ED8\u8BA4", parent: level === 0 ? null : parent };
+    const newNode = Object.assign({}, lineData, { children: [], branchName: (parent == null ? void 0 : parent.branchId) || "default", parent: level === 0 ? null : parent });
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
@@ -10387,6 +10389,21 @@ function findTree(originalRoot, targetName, key = "name") {
   }
   return null;
 }
+function removeTree(originalRoot, targetName, key = "name") {
+  for (let i2 = 0; i2 < originalRoot.children.length; i2++) {
+    const child = originalRoot.children[i2];
+    if (child[key] === targetName) {
+      originalRoot.children.splice(i2, 1);
+      return child;
+    }
+    if (child.children.length > 0) {
+      const found = removeTree(child, targetName, key);
+      if (found)
+        return found;
+    }
+  }
+  return null;
+}
 function getFlattenedPath(tree, targetName) {
   const paths = [];
   const target = findTree(tree, targetName);
@@ -10408,8 +10425,14 @@ function getCursorText(editor) {
 function parseLine(line) {
   var _a2;
   const level = line.match(/^(\t*)/)[0].length;
+  const branchId = Math.random().toString(16).slice(2);
   let content = line.replace(/^[\t]*-[\t]*/, "").trim();
   const isMark = /==.*?\[\[.*?#\^\w{6}(?:|.*?)\]\].*?==/.test(content);
+  let type;
+  if (/^\[.\](?!\])/.test(content)) {
+    type = content[1];
+    content = content.slice(3).trim();
+  }
   const tag = (_a2 = content.match(/ #(\S+)/)) == null ? void 0 : _a2[1];
   if (tag)
     content = content.replace(` #${tag}`, "");
@@ -10420,17 +10443,18 @@ function parseLine(line) {
   const regex = /^(=*)\[\[([^|#]+(?:#[^|]*)?)(?:\|([^\]]+))?\]\]\1(?:\s*\^([^\s=]+))?$|^([^[\]]+)$/;
   const match = content.match(regex);
   if (!match)
-    return { type: "plain", level, name: content, tag };
+    return { type, level, name: content, tag, branchId };
   if (match[5])
-    return { type: "plain", level, name: match[5], tag };
-  const [, type, link, name, id] = match;
+    return { type, level, name: match[5], tag, branchId };
+  const [, , link, name, id] = match;
   return {
     id,
     tag,
     type: type || "link",
     level,
     link,
-    name: name || link
+    name: name || link,
+    branchId
   };
 }
 async function createTempRelationGraph(title, content, gitChartData) {
@@ -10547,7 +10571,6 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     if (!tree)
       return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree);
-    console.log(this.gitChart);
   }
   truncation(name) {
     const copy = deepClone(this.gitChart);

@@ -50,9 +50,9 @@ gitGraph TB:`
   return commands.slice(0, -1).join('\n') + '\n```';
 }
 
-async function joinTree(node: any) {
+async function joinTree(node: any, root: any) {
   for (let child of node.children) {
-    if (child.type === '==') {
+    if (child.type === '+') {
       const [filename, id] = child.link.split('#^');
       const file = self.getFileByShort(filename);
       if (file) {
@@ -62,12 +62,13 @@ async function joinTree(node: any) {
         if (d) {
           d.parent = child
           child.children = d.children;
+          removeTree(root, id, 'id')
         }
       }
     }
 
     if (child.children.length > 0) {
-      await joinTree(child);
+      await joinTree(child, root);
     }
   }
 }
@@ -102,7 +103,7 @@ function processChildren(node: any, cmds: any) {
 async function processTree(listStr: string, name?: string) {
   let tree = parseListToTree(listStr);
   tree = name ? { children: [findTree(tree, name)] } : tree;
-  await joinTree(tree);
+  await joinTree(tree, tree);
   return tree;
 }
 
@@ -111,14 +112,15 @@ function parseListToTree(str: string) {
   const root: any = { children: [] };
   const stack = [{ node: root, level: -1 }];
   for (const line of lines) {
-    let { level, name, type, link, id, tag } = parseLine(line);
+    let lineData = parseLine(line);
+    const { level, name } = lineData
     if (!name) continue;
 
     while (stack.length > 1 && stack[stack.length - 1].level >= level) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode: any = { id, name, tag, level, type, link, children: [], branchName: parent?.name || '默认', parent: level === 0 ? null : parent};
+    const newNode: any = Object.assign({}, lineData, {children: [], branchName: parent?.branchId || 'default', parent: level === 0 ? null : parent})
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
@@ -156,6 +158,21 @@ function findTree(originalRoot: any, targetName: string, key = 'name'): any {
   return null;
 }
 
+function removeTree(originalRoot: any, targetName: string, key = 'name'): any {
+  for (let i = 0; i < originalRoot.children.length; i++) {
+    const child = originalRoot.children[i];
+    if (child[key] === targetName) {
+      originalRoot.children.splice(i, 1);
+      return child;
+    }
+    if (child.children.length > 0) {
+      const found = removeTree(child, targetName, key);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 function getFlattenedPath (tree: any, targetName: string) {
   const paths = []
   const target = findTree(tree, targetName)
@@ -178,8 +195,15 @@ function getCursorText(editor: Editor): string {
 
 function parseLine(line: string) {
   const level = line.match(/^(\t*)/)[0].length;
+  const branchId = Math.random().toString(16).slice(2);
   let content = line.replace(/^[\t]*-[\t]*/, '').trim();
   const isMark = /==.*?\[\[.*?#\^\w{6}(?:|.*?)\]\].*?==/.test(content);
+  let type
+  if (/^\[.\](?!\])/.test(content)) {
+    type = content[1]
+    content = content.slice(3).trim()
+  } 
+
   const tag = content.match(/ #(\S+)/)?.[1]
   if (tag) content = content.replace(` #${tag}`, '')
   content = content.replace(/^\s*(?:.*?)(\[\[.*?\]\])\s*(?:.*?)(\^[0-9a-z]{6})?\s*$/, (match, p1, p2) => {
@@ -189,16 +213,17 @@ function parseLine(line: string) {
 
   const regex = /^(=*)\[\[([^|#]+(?:#[^|]*)?)(?:\|([^\]]+))?\]\]\1(?:\s*\^([^\s=]+))?$|^([^[\]]+)$/;
   const match = content.match(regex);
-  if (!match) return { type: 'plain', level, name: content, tag };
-  if (match[5]) return { type: 'plain', level, name: match[5], tag };
-  const [, type, link, name, id] = match;
+  if (!match) return { type, level, name: content, tag, branchId };
+  if (match[5]) return { type, level, name: match[5], tag, branchId };
+  const [, , link, name, id] = match;
   return {
     id,
     tag,
     type: type || 'link',
     level,
     link,
-    name: name || link
+    name: name || link,
+    branchId
   };
 }
 
@@ -324,7 +349,6 @@ class TempRelationView extends ItemView {
     let tree = getFlattenedPath(deepClone(this.gitChart), name);
     if (!tree) return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree);
-    console.log(this.gitChart)
   }
 
   truncation(name: string) {
