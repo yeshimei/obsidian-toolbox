@@ -23,7 +23,6 @@ async function relationshipDiagram(editor: Editor, file: TFile) {
   const tree = await processTree(content, name);
   const text = generateGitgraphFromList(tree, filename);
   await createTempRelationGraph(name || filename, text, tree);
-  
 }
 
 function generateGitgraphFromList(tree: any, title: string) {
@@ -51,6 +50,29 @@ gitGraph TB:`
   return commands.slice(0, -1).join('\n') + '\n```';
 }
 
+function transformChainTree(node: any): void {
+  for (const child of node.children) {
+    if (child.type === 't' && child.children.length > 0) {
+      chain(child.children);
+      child.children = [child.children[0]];
+    }
+    if (child.children.length > 0) {
+      transformChainTree(child);
+    }
+  }
+
+  function chain(children: any) {
+    for (let i = 0; i < children.length - 1; i++) {
+      const currentNode = children[i];
+      const nextNode = children[i + 1];
+      currentNode.children.push(nextNode);
+      nextNode.parent = currentNode;
+      nextNode.branchName = currentNode.branchId;
+      nextNode.level = currentNode.level + 1;
+    }
+  }
+}
+
 async function joinTree(node: any, root: any) {
   for (let child of node.children) {
     if (child.type === '+') {
@@ -61,9 +83,9 @@ async function joinTree(node: any, root: any) {
         const r = parseListToTree(content);
         const d = findTree(r, id, 'id');
         if (d) {
-          d.parent = child
+          d.parent = child;
           child.children = d.children;
-          removeTree(root, id, 'id')
+          removeTree(root, id, 'id');
         }
       }
     }
@@ -74,8 +96,8 @@ async function joinTree(node: any, root: any) {
   }
 }
 
-function commit (child: any) {
-  return `  commit id: "${child.name}%%${child.link || ''}%%${child.id || ''}%%${child.type || ''}%%${child.tag || ''}%%${child.branchName}%%${child.branchId}%%${child.level}%%${child.parent?.name}%%${child.children.length}" ${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`
+function commit(child: any) {
+  return `  commit id: "${child.name}%%${child.link || ''}%%${child.id || ''}%%${child.type || ''}%%${child.tag || ''}%%${child.branchName}%%${child.branchId}%%${child.level}%%${child.parent?.name}%%${child.children.length}" ${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`;
 }
 
 function processBranch(node: any, cmds: any) {
@@ -109,6 +131,7 @@ async function processTree(listStr: string, name?: string) {
   let tree = parseListToTree(listStr);
   tree = name ? { children: [findTree(tree, name)] } : tree;
   await joinTree(tree, tree);
+  transformChainTree(tree);
   return tree;
 }
 
@@ -118,14 +141,14 @@ function parseListToTree(str: string) {
   const stack = [{ node: root, level: -1 }];
   for (const line of lines) {
     let lineData = parseLine(line);
-    const { level, name } = lineData
+    const { level, name } = lineData;
     if (!name) continue;
 
     while (stack.length > 1 && stack[stack.length - 1].level >= level) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode: any = Object.assign({}, lineData, {children: [], branchName: parent?.branchId || 'default', parent: level === 0 ? null : parent})
+    const newNode: any = Object.assign({}, lineData, { children: [], branchName: parent?.branchId || 'default', parent: level === 0 ? null : parent });
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
@@ -149,7 +172,6 @@ function updateTreeCollapseState(tree: any, hideBranchNames: string[]) {
   }
   traverse(tree);
 }
-
 
 function findTree(originalRoot: any, targetName: string, key = 'name'): any {
   for (const child of originalRoot.children) {
@@ -177,18 +199,18 @@ function removeTree(originalRoot: any, targetName: string, key = 'name'): any {
   return null;
 }
 
-function getFlattenedPath (tree: any, targetName: string) {
-  const paths = []
-  const target = findTree(tree, targetName)
-  let node = target
-  while(node.parent) {
-    paths.push(node.parent)
-    node = node.parent
+function getFlattenedPath(tree: any, targetName: string) {
+  const paths = [];
+  const target = findTree(tree, targetName);
+  let node = target;
+  while (node.parent) {
+    paths.push(node.parent);
+    node = node.parent;
   }
-  paths.unshift(target)
-  paths.forEach(node => node.children = [])
-  paths.reverse()
-  return paths  
+  paths.unshift(target);
+  paths.forEach(node => (node.children = []));
+  paths.reverse();
+  return paths;
 }
 
 function getCursorText(editor: Editor): string {
@@ -202,18 +224,18 @@ function parseLine(line: string) {
   const branchId = Math.random().toString(16).slice(2);
   let content = line.replace(/^[\t]*-[\t]*/, '').trim();
   const isMark = /==.*?\[\[.*?#\^\w{6}(?:|.*?)\]\].*?==/.test(content);
-  let type
+  let type;
   if (/^\[.\](?!\])/.test(content)) {
-    type = content[1]
-    content = content.slice(3).trim()
-  } 
+    type = content[1];
+    content = content.slice(3).trim();
+  }
 
-  const tag = content.match(/ #(\S+)/)?.[1]
-  if (tag) content = content.replace(` #${tag}`, '')
+  const tag = content.match(/ #(\S+)/)?.[1];
+  if (tag) content = content.replace(` #${tag}`, '');
   content = content.replace(/^\s*(?:.*?)(\[\[.*?\]\])\s*(?:.*?)(\^[0-9a-z]{6})?\s*$/, (match, p1, p2) => {
     p1 = isMark ? `==${p1}==` : p1;
     return p2 ? `${p1} ${p2}` : p1;
-  })
+  });
 
   const regex = /^(=*)\[\[([^|#]+(?:#[^|]*)?)(?:\|([^\]]+))?\]\]\1(?:\s*\^([^\s=]+))?$|^([^[\]]+)$/;
   const match = content.match(regex);
@@ -271,7 +293,7 @@ class TempRelationView extends ItemView {
     return `关系图: ${this.title}`;
   }
 
-  async onOpen() { 
+  async onOpen() {
     const container = this.containerEl.children[1];
     container.empty();
     const contentEl = container.createDiv('temp-relation-content');
@@ -282,48 +304,47 @@ class TempRelationView extends ItemView {
     this.viewEl = contentEl;
     await render(self.app, this.content, contentEl);
     this.zoom = new ZoomDrag(contentEl);
-    this.format()
-    this.multicolorLabel()
+    this.format();
+    this.multicolorLabel();
   }
 
   format() {
     this.viewEl.querySelectorAll('.commit-label').forEach((label: SVGTextElement) => {
-      const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split('%%')
-      label.dataset.name = name
-      label.dataset.link = link
-      label.dataset.id = id
-      label.dataset.type = type
-      label.dataset.tag = tag
-      label.dataset.branchName = branchName
-      label.dataset.branchId = branchId
-      label.dataset.level = level
-      label.dataset.parent = parent
-      label.dataset.children = children
-      const w1 = label.getBBox().width
-      label.textContent = name
-      let x = Number(label.getAttribute('x'))
-      let y = Number(label.getAttribute('y'))
-      const w2 = label.getBBox().width
-      label.setAttribute('x', `${x + w1 - w2}`)
-      label.setAttribute('y', `${y + 4}`)
-      x = Number(label.getAttribute('x'))
-      y = Number(label.getAttribute('y'))
-      const bg = label.previousSibling as HTMLElement
-      bg.style.opacity = '1'
-      bg.style.fontWeight = 'bold'
-      bg.style.width = `${w2 + 6}px`
-      bg.setAttribute('x', String(x - 3))
-      bg.setAttribute('y', String(y - 11))
-       bg.style.display = 'none'
+      const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split('%%');
+      label.dataset.name = name;
+      label.dataset.link = link;
+      label.dataset.id = id;
+      label.dataset.type = type;
+      label.dataset.tag = tag;
+      label.dataset.branchName = branchName;
+      label.dataset.branchId = branchId;
+      label.dataset.level = level;
+      label.dataset.parent = parent;
+      label.dataset.children = children;
+      const w1 = label.getBBox().width;
+      label.textContent = name;
+      let x = Number(label.getAttribute('x'));
+      let y = Number(label.getAttribute('y'));
+      const w2 = label.getBBox().width;
+      label.setAttribute('x', `${x + w1 - w2}`);
+      label.setAttribute('y', `${y + 4}`);
+      x = Number(label.getAttribute('x'));
+      y = Number(label.getAttribute('y'));
+      const bg = label.previousSibling as HTMLElement;
+      bg.style.opacity = '1';
+      bg.style.fontWeight = 'bold';
+      bg.style.width = `${w2 + 6}px`;
+      bg.setAttribute('x', String(x - 3));
+      bg.setAttribute('y', String(y - 11));
+      bg.style.display = 'none';
       if (type === '-') {
-        label.style.opacity = '0.5'
-        label.style.fontStyle = 'italic'
+        label.style.opacity = '0.5';
+        label.style.fontStyle = 'italic';
       } else if (type === '*') {
-        bg.style.display = 'block'
+        bg.style.display = 'block';
       }
-    })
+    });
   }
-
 
   async onClose() {
     this.splitLeaf?.detach();
@@ -338,10 +359,11 @@ class TempRelationView extends ItemView {
       if (e.ctrlKey) this.truncation(name);
       else if (e.altKey) this.logicalChain(name);
       else this.openLink(link);
-    } if (target.hasClass('commit')) {
+    }
+    if (target.hasClass('commit')) {
       const target = e.target as HTMLElement;
       const name = target.classList[target.classList.length - 2];
-      const id = name.split('%%')[6]
+      const id = name.split('%%')[6];
       if (!name) return;
       this.exhibitionBranch(id);
     }
@@ -379,18 +401,18 @@ class TempRelationView extends ItemView {
     }
   }
 
-  async exhibitionBranch (id: string) {
-    this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter(n => n!== id) : [...this.hideBranchNames, id];
-    updateTreeCollapseState(this.gitChart, this.hideBranchNames)
-    const content = generateGitgraphFromList(this.gitChart, this.title)
-    this.viewEl.empty()
+  async exhibitionBranch(id: string) {
+    this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter(n => n !== id) : [...this.hideBranchNames, id];
+    updateTreeCollapseState(this.gitChart, this.hideBranchNames);
+    const content = generateGitgraphFromList(this.gitChart, this.title);
+    this.viewEl.empty();
     await render(self.app, content, this.viewEl);
     // const target = document.querySelector(`.commit-label[data-branch-id="${id}"]`) as HTMLElement
     // if (target) {
     //   target.textContent += `(${target.dataset.children})`
     // }
-    this.format()
-    this.multicolorLabel()
+    this.format();
+    this.multicolorLabel();
   }
 
   logicalChain(name: string) {
@@ -400,8 +422,8 @@ class TempRelationView extends ItemView {
   }
 
   truncation(name: string) {
-    const copy = deepClone(this.gitChart)
-    updateTreeCollapseState(copy, [])
+    const copy = deepClone(this.gitChart);
+    updateTreeCollapseState(copy, []);
     let tree = findTree(copy, name);
     if (!tree) return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree);
@@ -411,16 +433,16 @@ class TempRelationView extends ItemView {
     return findTree(nodes, name)?.link;
   }
 
-  multicolorLabel () {
-    if (!self.settings.gitChartMultiColorLabel) return
-    const labels = document.querySelectorAll('.commit-label')
+  multicolorLabel() {
+    if (!self.settings.gitChartMultiColorLabel) return;
+    const labels = document.querySelectorAll('.commit-label');
     labels.forEach((label: HTMLElement) => {
-      const id = label.dataset.branchId
-      const commit = document.querySelector(`circle[class*="${id}"]`)
-      if (!commit) return
-      const color = getComputedStyle(commit).fill
-      if (color) label.style.fill = color
-    })
+      const id = label.dataset.branchId;
+      const commit = document.querySelector(`circle[class*="${id}"]`);
+      if (!commit) return;
+      const color = getComputedStyle(commit).fill;
+      if (color) label.style.fill = color;
+    });
   }
 }
 
@@ -646,51 +668,50 @@ class ZoomDrag {
   }
 }
 
-
 function deepClone<T>(obj: T, map = new WeakMap()): T {
   // 处理非对象或null的情况
   if (typeof obj !== 'object' || obj === null) {
-      return obj;
+    return obj;
   }
 
   // 处理循环引用
   if (map.has(obj)) {
-      return map.get(obj);
+    return map.get(obj);
   }
 
   // 处理特殊对象类型
   const objType = Object.prototype.toString.call(obj);
   switch (objType) {
-      case '[object Date]':
-          const date = obj as unknown as Date;
-          return new Date(date) as unknown as T;
-          
-      case '[object RegExp]': {
-          const regexp = obj as unknown as RegExp;
-          const newRegExp = new RegExp(regexp.source, regexp.flags);
-          newRegExp.lastIndex = regexp.lastIndex;
-          return newRegExp as unknown as T;
-      }
-          
-      case '[object Map]': {
-          const mapObj = obj as unknown as Map<any, any>;
-          const cloneMap = new Map();
-          map.set(obj, cloneMap);
-          mapObj.forEach((value, key) => {
-              cloneMap.set(deepClone(key, map), deepClone(value, map));
-          });
-          return cloneMap as unknown as T;
-      }
-          
-      case '[object Set]': {
-          const setObj = obj as unknown as Set<any>;
-          const cloneSet = new Set();
-          map.set(obj, cloneSet);
-          setObj.forEach(value => {
-              cloneSet.add(deepClone(value, map));
-          });
-          return cloneSet as unknown as T;
-      }
+    case '[object Date]':
+      const date = obj as unknown as Date;
+      return new Date(date) as unknown as T;
+
+    case '[object RegExp]': {
+      const regexp = obj as unknown as RegExp;
+      const newRegExp = new RegExp(regexp.source, regexp.flags);
+      newRegExp.lastIndex = regexp.lastIndex;
+      return newRegExp as unknown as T;
+    }
+
+    case '[object Map]': {
+      const mapObj = obj as unknown as Map<any, any>;
+      const cloneMap = new Map();
+      map.set(obj, cloneMap);
+      mapObj.forEach((value, key) => {
+        cloneMap.set(deepClone(key, map), deepClone(value, map));
+      });
+      return cloneMap as unknown as T;
+    }
+
+    case '[object Set]': {
+      const setObj = obj as unknown as Set<any>;
+      const cloneSet = new Set();
+      map.set(obj, cloneSet);
+      setObj.forEach(value => {
+        cloneSet.add(deepClone(value, map));
+      });
+      return cloneSet as unknown as T;
+    }
   }
 
   // 处理数组和普通对象
@@ -699,7 +720,7 @@ function deepClone<T>(obj: T, map = new WeakMap()): T {
 
   // 使用Reflect.ownKeys获取所有自有属性（包括Symbol）
   Reflect.ownKeys(obj).forEach(key => {
-      clone[key] = deepClone((obj as any)[key], map);
+    clone[key] = deepClone((obj as any)[key], map);
   });
 
   return clone;
