@@ -781,8 +781,8 @@ async function createFile(app, path, cover = false) {
   file ? cover && await app.vault.modify(file, "") : file = await app.vault.create(path, "");
   return file;
 }
-function codeBlockParamParse(source, separator = "=") {
-  return source.split("\n").filter((row) => row.length > 0).map((row) => row.split(separator)).reduce((res, ret) => {
+function codeBlockParamParse(source, separator2 = "=") {
+  return source.split("\n").filter((row) => row.length > 0).map((row) => row.split(separator2)).reduce((res, ret) => {
     res[ret[0]] = ret[1];
     return res;
   }, {});
@@ -10162,6 +10162,7 @@ function readingDataTracking(self4, file) {
 // src/Commands/relationshipDiagram.ts
 var import_obsidian21 = require("obsidian");
 var self3;
+var separator = getId();
 function relationshipDiagramCommand(f2) {
   self3 = f2;
   self3.settings.gitChart && self3.addCommand({
@@ -10205,21 +10206,36 @@ gitGraph TB:`
 function transformChainTree(node) {
   for (const child of node.children) {
     if (child.type === "t" && child.children.length > 0) {
-      chain(child.children);
+      const children = child.children;
+      for (let i2 = 0; i2 < children.length - 1; i2++) {
+        const currentNode = children[i2];
+        const nextNode = children[i2 + 1];
+        currentNode.children.push(nextNode);
+        nextNode.parent = currentNode;
+        nextNode.branchName = currentNode.branchId;
+        nextNode.level = currentNode.level + 1;
+      }
       child.children = [child.children[0]];
     }
     if (child.children.length > 0) {
       transformChainTree(child);
     }
   }
-  function chain(children) {
-    for (let i2 = 0; i2 < children.length - 1; i2++) {
-      const currentNode = children[i2];
-      const nextNode = children[i2 + 1];
-      currentNode.children.push(nextNode);
-      nextNode.parent = currentNode;
-      nextNode.branchName = currentNode.branchId;
-      nextNode.level = currentNode.level + 1;
+}
+function placeholderTree(node) {
+  for (let i2 = 0; i2 < node.children.length; i2++) {
+    const child = node.children[i2];
+    if (child.type === "%") {
+      console.log(child);
+      node.children.splice(i2, 1, ...child.children);
+      child.children.forEach((c2) => {
+        c2.parent = node;
+        c2.level--;
+        c2.branchName = node.branchId;
+      });
+    }
+    if (child.children.length > 0) {
+      placeholderTree(child);
     }
   }
 }
@@ -10246,7 +10262,7 @@ async function joinTree(node, root) {
 }
 function commit(child) {
   var _a2;
-  return `  commit id: "${child.name}%%${child.link || ""}%%${child.id || ""}%%${child.type || ""}%%${child.tag || ""}%%${child.branchName}%%${child.branchId}%%${child.level}%%${(_a2 = child.parent) == null ? void 0 : _a2.name}%%${child.children.length}" ${child.children.length > 0 ? "type: REVERSE" : ""} ${child.tag ? `tag: "${child.tag}"` : ""}`;
+  return `  commit id: "${child.name}${separator}${child.link || ""}${separator}${child.id || ""}${separator}${child.type || ""}${separator}${child.tag || ""}${separator}${child.branchName}${separator}${child.branchId}${separator}${child.level}${separator}${(_a2 = child.parent) == null ? void 0 : _a2.name}${separator}${child.children.length}" ${child.children.length > 0 ? "type: REVERSE" : ""} ${child.tag ? `tag: "${child.tag}"` : ""}`;
 }
 function processBranch(node, cmds) {
   const branchName = node.children[0].branchName;
@@ -10278,6 +10294,7 @@ async function processTree(listStr, name) {
   tree = name ? { children: [findTree(tree, name)] } : tree;
   await joinTree(tree, tree);
   transformChainTree(tree);
+  placeholderTree(tree);
   return tree;
 }
 function parseListToTree(str2) {
@@ -10363,7 +10380,7 @@ function getCursorText(editor) {
 function parseLine(line) {
   var _a2;
   const level = line.match(/^(\t*)/)[0].length;
-  const branchId = Math.random().toString(16).slice(2);
+  const branchId = getId();
   let content = line.replace(/^[\t]*-[\t]*/, "").trim();
   const isMark = /==.*?\[\[.*?#\^\w{6}(?:|.*?)\]\].*?==/.test(content);
   let type;
@@ -10437,7 +10454,7 @@ var TempRelationView = class extends import_obsidian21.ItemView {
   }
   format() {
     this.viewEl.querySelectorAll(".commit-label").forEach((label) => {
-      const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split("%%");
+      const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split(separator);
       label.dataset.name = name;
       label.dataset.link = link;
       label.dataset.id = id;
@@ -10492,7 +10509,7 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     if (target.hasClass("commit")) {
       const target2 = e2.target;
       const name2 = target2.classList[target2.classList.length - 2];
-      const id = name2.split("%%")[6];
+      const id = name2.split(separator)[6];
       if (!name2)
         return;
       this.exhibitionBranch(id);
@@ -10733,6 +10750,9 @@ var ZoomDrag = class {
     document.removeEventListener("mouseup", this.handleMouseUp);
   }
 };
+function getId() {
+  return Math.random().toString(36).slice(2);
+}
 function deepClone(obj, map = /* @__PURE__ */ new WeakMap()) {
   if (typeof obj !== "object" || obj === null) {
     return obj;

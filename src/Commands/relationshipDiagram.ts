@@ -3,6 +3,7 @@ import { render } from 'src/helpers';
 import Toolbox from 'src/main';
 
 let self: Toolbox;
+let separator = getId();
 
 export default function relationshipDiagramCommand(f: Toolbox) {
   self = f;
@@ -53,22 +54,39 @@ gitGraph TB:`
 function transformChainTree(node: any): void {
   for (const child of node.children) {
     if (child.type === 't' && child.children.length > 0) {
-      chain(child.children);
+      const children = child.children;
+      for (let i = 0; i < children.length - 1; i++) {
+        const currentNode = children[i];
+        const nextNode = children[i + 1];
+        currentNode.children.push(nextNode);
+        nextNode.parent = currentNode;
+        nextNode.branchName = currentNode.branchId;
+        nextNode.level = currentNode.level + 1;
+      }
       child.children = [child.children[0]];
     }
+
     if (child.children.length > 0) {
       transformChainTree(child);
     }
   }
+}
 
-  function chain(children: any) {
-    for (let i = 0; i < children.length - 1; i++) {
-      const currentNode = children[i];
-      const nextNode = children[i + 1];
-      currentNode.children.push(nextNode);
-      nextNode.parent = currentNode;
-      nextNode.branchName = currentNode.branchId;
-      nextNode.level = currentNode.level + 1;
+function placeholderTree(node: any): void {
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i];
+    if (child.type === '%') {
+      console.log(child);
+      node.children.splice(i, 1, ...child.children);
+      child.children.forEach((c: any) => {
+        c.parent = node;
+        c.level--;
+        c.branchName = node.branchId;
+      });
+    }
+
+    if (child.children.length > 0) {
+      placeholderTree(child);
     }
   }
 }
@@ -97,7 +115,7 @@ async function joinTree(node: any, root: any) {
 }
 
 function commit(child: any) {
-  return `  commit id: "${child.name}%%${child.link || ''}%%${child.id || ''}%%${child.type || ''}%%${child.tag || ''}%%${child.branchName}%%${child.branchId}%%${child.level}%%${child.parent?.name}%%${child.children.length}" ${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`;
+  return `  commit id: "${child.name}${separator}${child.link || ''}${separator}${child.id || ''}${separator}${child.type || ''}${separator}${child.tag || ''}${separator}${child.branchName}${separator}${child.branchId}${separator}${child.level}${separator}${child.parent?.name}${separator}${child.children.length}" ${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`;
 }
 
 function processBranch(node: any, cmds: any) {
@@ -132,6 +150,7 @@ async function processTree(listStr: string, name?: string) {
   tree = name ? { children: [findTree(tree, name)] } : tree;
   await joinTree(tree, tree);
   transformChainTree(tree);
+  placeholderTree(tree);
   return tree;
 }
 
@@ -221,7 +240,7 @@ function getCursorText(editor: Editor): string {
 
 function parseLine(line: string) {
   const level = line.match(/^(\t*)/)[0].length;
-  const branchId = Math.random().toString(16).slice(2);
+  const branchId = getId();
   let content = line.replace(/^[\t]*-[\t]*/, '').trim();
   const isMark = /==.*?\[\[.*?#\^\w{6}(?:|.*?)\]\].*?==/.test(content);
   let type;
@@ -310,7 +329,7 @@ class TempRelationView extends ItemView {
 
   format() {
     this.viewEl.querySelectorAll('.commit-label').forEach((label: SVGTextElement) => {
-      const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split('%%');
+      const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split(separator);
       label.dataset.name = name;
       label.dataset.link = link;
       label.dataset.id = id;
@@ -363,7 +382,7 @@ class TempRelationView extends ItemView {
     if (target.hasClass('commit')) {
       const target = e.target as HTMLElement;
       const name = target.classList[target.classList.length - 2];
-      const id = name.split('%%')[6];
+      const id = name.split(separator)[6];
       if (!name) return;
       this.exhibitionBranch(id);
     }
@@ -658,28 +677,27 @@ class ZoomDrag {
         });
       }
 
-      // 清理扩展属性
       delete (element as HTMLElementWithZoomDragState).zoomDragState;
     });
 
-    // 清理文档级事件
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
   }
 }
 
+function getId() {
+  return Math.random().toString(36).slice(2);
+}
+
 function deepClone<T>(obj: T, map = new WeakMap()): T {
-  // 处理非对象或null的情况
   if (typeof obj !== 'object' || obj === null) {
     return obj;
   }
 
-  // 处理循环引用
   if (map.has(obj)) {
     return map.get(obj);
   }
 
-  // 处理特殊对象类型
   const objType = Object.prototype.toString.call(obj);
   switch (objType) {
     case '[object Date]':
@@ -714,11 +732,9 @@ function deepClone<T>(obj: T, map = new WeakMap()): T {
     }
   }
 
-  // 处理数组和普通对象
   const clone: any = Array.isArray(obj) ? [] : {};
   map.set(obj, clone);
 
-  // 使用Reflect.ownKeys获取所有自有属性（包括Symbol）
   Reflect.ownKeys(obj).forEach(key => {
     clone[key] = deepClone((obj as any)[key], map);
   });
