@@ -51,44 +51,31 @@ gitGraph TB:`
   return commands.slice(0, -1).join('\n') + '\n```';
 }
 
-function transformChainTree(node: any): void {
-  for (const child of node.children) {
-    if (child.type === 't' && child.children.length > 0) {
-      const children = child.children;
-      for (let i = 0; i < children.length - 1; i++) {
-        const currentNode = children[i];
-        const nextNode = children[i + 1];
-        currentNode.children.push(nextNode);
-        nextNode.parent = currentNode;
-        nextNode.branchName = currentNode.branchId;
-        nextNode.level = currentNode.level + 1;
-      }
-      child.children = [child.children[0]];
-    }
-
-    if (child.children.length > 0) {
-      transformChainTree(child);
-    }
-  }
+function transformChainNotIncludingOneself(child: any, i: number, parent: any) {
+  transformChain(child);
+  placeholder(child, i, parent);
 }
 
-function placeholderTree(node: any): void {
-  for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i];
-    if (child.type === '%') {
-      console.log(child);
-      node.children.splice(i, 1, ...child.children);
-      child.children.forEach((c: any) => {
-        c.parent = node;
-        c.level--;
-        c.branchName = node.branchId;
-      });
-    }
-
-    if (child.children.length > 0) {
-      placeholderTree(child);
-    }
+function transformChain(child: any): void {
+  const children = child.children;
+  for (let i = 0; i < children.length - 1; i++) {
+    const currentNode = children[i];
+    const nextNode = children[i + 1];
+    currentNode.children.push(nextNode);
+    nextNode.parent = currentNode;
+    nextNode.branchName = currentNode.branchId;
+    nextNode.level = currentNode.level + 1;
   }
+  child.children = [child.children[0]].filter(Boolean);
+}
+
+function placeholder(child: any, i: number, parent: any) {
+  parent.children.splice(i, 1, ...child.children);
+  child.children.forEach((c: any) => {
+    c.parent = parent;
+    c.level--;
+    c.branchName = parent.branchId;
+  });
 }
 
 async function joinTree(node: any, root: any) {
@@ -110,6 +97,19 @@ async function joinTree(node: any, root: any) {
 
     if (child.children.length > 0) {
       await joinTree(child, root);
+    }
+  }
+}
+
+function forEachTree(node: any, type: string, callback: Function) {
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i];
+    if (child.type === type) {
+      callback(child, i, node);
+    }
+
+    if (child.children.length > 0) {
+      forEachTree(child, type, callback);
     }
   }
 }
@@ -149,8 +149,9 @@ async function processTree(listStr: string, name?: string) {
   let tree = parseListToTree(listStr);
   tree = name ? { children: [findTree(tree, name)] } : tree;
   await joinTree(tree, tree);
-  transformChainTree(tree);
-  placeholderTree(tree);
+  forEachTree(tree, '%', placeholder);
+  forEachTree(tree, 'i', transformChain);
+  forEachTree(tree, 'l', transformChainNotIncludingOneself);
   return tree;
 }
 

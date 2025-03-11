@@ -10203,41 +10203,29 @@ gitGraph TB:`
   }
   return commands.slice(0, -1).join("\n") + "\n```";
 }
-function transformChainTree(node) {
-  for (const child of node.children) {
-    if (child.type === "t" && child.children.length > 0) {
-      const children = child.children;
-      for (let i2 = 0; i2 < children.length - 1; i2++) {
-        const currentNode = children[i2];
-        const nextNode = children[i2 + 1];
-        currentNode.children.push(nextNode);
-        nextNode.parent = currentNode;
-        nextNode.branchName = currentNode.branchId;
-        nextNode.level = currentNode.level + 1;
-      }
-      child.children = [child.children[0]];
-    }
-    if (child.children.length > 0) {
-      transformChainTree(child);
-    }
-  }
+function transformChainNotIncludingOneself(child, i2, parent) {
+  transformChain(child);
+  placeholder(child, i2, parent);
 }
-function placeholderTree(node) {
-  for (let i2 = 0; i2 < node.children.length; i2++) {
-    const child = node.children[i2];
-    if (child.type === "%") {
-      console.log(child);
-      node.children.splice(i2, 1, ...child.children);
-      child.children.forEach((c2) => {
-        c2.parent = node;
-        c2.level--;
-        c2.branchName = node.branchId;
-      });
-    }
-    if (child.children.length > 0) {
-      placeholderTree(child);
-    }
+function transformChain(child) {
+  const children = child.children;
+  for (let i2 = 0; i2 < children.length - 1; i2++) {
+    const currentNode = children[i2];
+    const nextNode = children[i2 + 1];
+    currentNode.children.push(nextNode);
+    nextNode.parent = currentNode;
+    nextNode.branchName = currentNode.branchId;
+    nextNode.level = currentNode.level + 1;
   }
+  child.children = [child.children[0]].filter(Boolean);
+}
+function placeholder(child, i2, parent) {
+  parent.children.splice(i2, 1, ...child.children);
+  child.children.forEach((c2) => {
+    c2.parent = parent;
+    c2.level--;
+    c2.branchName = parent.branchId;
+  });
 }
 async function joinTree(node, root) {
   for (let child of node.children) {
@@ -10257,6 +10245,17 @@ async function joinTree(node, root) {
     }
     if (child.children.length > 0) {
       await joinTree(child, root);
+    }
+  }
+}
+function forEachTree(node, type, callback) {
+  for (let i2 = 0; i2 < node.children.length; i2++) {
+    const child = node.children[i2];
+    if (child.type === type) {
+      callback(child, i2, node);
+    }
+    if (child.children.length > 0) {
+      forEachTree(child, type, callback);
     }
   }
 }
@@ -10293,8 +10292,9 @@ async function processTree(listStr, name) {
   let tree = parseListToTree(listStr);
   tree = name ? { children: [findTree(tree, name)] } : tree;
   await joinTree(tree, tree);
-  transformChainTree(tree);
-  placeholderTree(tree);
+  forEachTree(tree, "%", placeholder);
+  forEachTree(tree, "i", transformChain);
+  forEachTree(tree, "l", transformChainNotIncludingOneself);
   return tree;
 }
 function parseListToTree(str2) {
