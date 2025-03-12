@@ -339,7 +339,6 @@ class TempRelationView extends ItemView {
     const container = this.containerEl.children[1];
     container.empty();
     const contentEl = container.createDiv('temp-relation-content');
-    contentEl.style.overflow = 'visible';
     contentEl.addEventListener('click', this.onclick.bind(this));
     contentEl.addEventListener('mouseover', this.onmouseover.bind(this));
     contentEl.addEventListener('mouseout', this.onmouseout.bind(this));
@@ -351,6 +350,7 @@ class TempRelationView extends ItemView {
   }
 
   format() {
+    let textWidth = 0
     this.viewEl.querySelectorAll('.commit-label').forEach((label: SVGTextElement) => {
       const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split(separator);
       label.dataset.name = name;
@@ -364,6 +364,7 @@ class TempRelationView extends ItemView {
       label.dataset.parent = parent;
       label.dataset.children = children;
       const w1 = label.getBBox().width;
+      textWidth = Math.max(textWidth, w1);
       label.textContent = name;
       let x = Number(label.getAttribute('x'));
       let y = Number(label.getAttribute('y'));
@@ -386,6 +387,20 @@ class TempRelationView extends ItemView {
         bg.style.display = 'block';
       }
     });
+
+    // 隐藏滚动条
+    this.viewEl.style.overflow = 'visible';
+    
+    this.viewEl.parentElement.style.overflow = 'hidden';
+    // 调整svg为固定宽度
+    const svg = document.querySelector('svg[aria-roledescription="gitGraph"]') as HTMLElement;
+    svg.setAttribute('width', svg.style.maxWidth)
+    // 图表距离左边 10%
+    const fullWidth = document.querySelector('.mermaid').clientWidth;
+    const tenPercentWidth = fullWidth * -0.1; 
+    const viewBoxWidth = Number(svg.getAttribute('viewBox')?.split(' ')[0])
+    svg.style.transformOrigin = '50% 50%';
+    svg.style.transform = `translate(${viewBoxWidth - tenPercentWidth}px, 0px) `;
   }
 
   async onClose() {

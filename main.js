@@ -10549,7 +10549,6 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     const container = this.containerEl.children[1];
     container.empty();
     const contentEl = container.createDiv("temp-relation-content");
-    contentEl.style.overflow = "visible";
     contentEl.addEventListener("click", this.onclick.bind(this));
     contentEl.addEventListener("mouseover", this.onmouseover.bind(this));
     contentEl.addEventListener("mouseout", this.onmouseout.bind(this));
@@ -10560,6 +10559,8 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     this.multicolorLabel();
   }
   format() {
+    var _a2;
+    let textWidth = 0;
     this.viewEl.querySelectorAll(".commit-label").forEach((label) => {
       const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split(separator);
       label.dataset.name = name;
@@ -10573,6 +10574,7 @@ var TempRelationView = class extends import_obsidian21.ItemView {
       label.dataset.parent = parent;
       label.dataset.children = children;
       const w1 = label.getBBox().width;
+      textWidth = Math.max(textWidth, w1);
       label.textContent = name;
       let x = Number(label.getAttribute("x"));
       let y = Number(label.getAttribute("y"));
@@ -10595,6 +10597,15 @@ var TempRelationView = class extends import_obsidian21.ItemView {
         bg.style.display = "block";
       }
     });
+    this.viewEl.style.overflow = "visible";
+    this.viewEl.parentElement.style.overflow = "hidden";
+    const svg = document.querySelector('svg[aria-roledescription="gitGraph"]');
+    svg.setAttribute("width", svg.style.maxWidth);
+    const fullWidth = document.querySelector(".mermaid").clientWidth;
+    const tenPercentWidth = fullWidth * -0.1;
+    const viewBoxWidth = Number((_a2 = svg.getAttribute("viewBox")) == null ? void 0 : _a2.split(" ")[0]);
+    svg.style.transformOrigin = "50% 50%";
+    svg.style.transform = `translate(${viewBoxWidth - tenPercentWidth}px, 0px) `;
   }
   async onClose() {
     var _a2;
