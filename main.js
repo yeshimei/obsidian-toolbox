@@ -10554,12 +10554,11 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     contentEl.addEventListener("mouseout", this.onmouseout.bind(this));
     this.viewEl = contentEl;
     await render(self3.app, this.content, contentEl);
-    this.zoom = new ZoomDrag(contentEl);
+    this.zoom = new ZoomDrag(document.querySelectorAll(".view-content")[1]);
     this.format();
     this.multicolorLabel();
   }
   format() {
-    var _a2;
     let textWidth = 0;
     this.viewEl.querySelectorAll(".commit-label").forEach((label) => {
       const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split(separator);
@@ -10599,13 +10598,16 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     });
     this.viewEl.style.overflow = "visible";
     this.viewEl.parentElement.style.overflow = "hidden";
-    const svg = document.querySelector('svg[aria-roledescription="gitGraph"]');
-    svg.setAttribute("width", svg.style.maxWidth);
-    const fullWidth = document.querySelector(".mermaid").clientWidth;
-    const tenPercentWidth = fullWidth * -0.1;
-    const viewBoxWidth = Number((_a2 = svg.getAttribute("viewBox")) == null ? void 0 : _a2.split(" ")[0]);
-    svg.style.transformOrigin = "50% 50%";
-    svg.style.transform = `translate(${viewBoxWidth - tenPercentWidth}px, 0px) `;
+    document.querySelectorAll(".mermaid").forEach((mermaid) => {
+      var _a2;
+      const svg = mermaid.firstChild;
+      svg.setAttribute("width", svg.style.maxWidth);
+      const fullWidth = mermaid.clientWidth;
+      const tenPercentWidth = fullWidth * -0.1;
+      const viewBoxWidth = Number((_a2 = svg.getAttribute("viewBox")) == null ? void 0 : _a2.split(" ")[0]);
+      svg.style.transformOrigin = "50% 50%";
+      svg.style.transform = `translate(${viewBoxWidth - tenPercentWidth}px, 0px) `;
+    });
   }
   async onClose() {
     var _a2;
@@ -10713,57 +10715,53 @@ var ZoomDrag = class {
   constructor(element) {
     this.elementEventHandlers = /* @__PURE__ */ new WeakMap();
     this.handleMouseMove = (e2) => {
-      this.elements.forEach((element) => {
-        const state = element.zoomDragState;
-        if (state.isDragging) {
-          state.x = e2.clientX - state.startX;
-          state.y = e2.clientY - state.startY;
-          this.applyTransform(element);
-        }
-      });
+      const element = this.element;
+      const state = element.zoomDragState;
+      if (state.isDragging) {
+        state.x = e2.clientX - state.startX;
+        state.y = e2.clientY - state.startY;
+        this.applyTransform(element);
+      }
     };
     this.handleMouseUp = () => {
-      this.elements.forEach((element) => {
-        element.zoomDragState.isDragging = false;
-      });
+      this.element.zoomDragState.isDragging = false;
       document.removeEventListener("mousemove", this.handleMouseMove);
       document.removeEventListener("mouseup", this.handleMouseUp);
     };
-    this.elements = [element];
+    this.element = element;
     this.initEvents();
   }
   initEvents() {
-    this.elements.forEach((element) => {
-      element.zoomDragState = {
-        scale: 1,
-        x: 0,
-        y: 0,
-        isDragging: false,
-        startX: 0,
-        startY: 0,
-        lastTouchDistance: null
-      };
-      const eventHandlers = [];
-      const wheelHandler = this.handleWheel.bind(this);
-      element.addEventListener("wheel", wheelHandler);
-      eventHandlers.push({ type: "wheel", handler: wheelHandler });
-      const mouseDownHandler = this.handleMouseDown.bind(this);
-      element.addEventListener("mousedown", mouseDownHandler);
-      eventHandlers.push({ type: "mousedown", handler: mouseDownHandler });
-      const contextMenuHandler = (e2) => e2.preventDefault();
-      element.addEventListener("contextmenu", contextMenuHandler);
-      eventHandlers.push({ type: "contextmenu", handler: contextMenuHandler });
-      const touchStartHandler = this.handleTouchStart.bind(this);
-      element.addEventListener("touchstart", touchStartHandler);
-      eventHandlers.push({ type: "touchstart", handler: touchStartHandler });
-      const touchMoveHandler = this.handleTouchMove.bind(this);
-      element.addEventListener("touchmove", touchMoveHandler, { passive: false });
-      eventHandlers.push({ type: "touchmove", handler: touchMoveHandler, options: { passive: false } });
-      const touchEndHandler = this.handleTouchEnd.bind(this);
-      element.addEventListener("touchend", touchEndHandler);
-      eventHandlers.push({ type: "touchend", handler: touchEndHandler });
-      this.elementEventHandlers.set(element, eventHandlers);
-    });
+    const element = this.element;
+    element.zoomDragState = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      lastTouchDistance: null
+    };
+    const eventHandlers = [];
+    const wheelHandler = this.handleWheel.bind(this);
+    element.addEventListener("wheel", wheelHandler);
+    eventHandlers.push({ type: "wheel", handler: wheelHandler });
+    const mouseDownHandler = this.handleMouseDown.bind(this);
+    element.addEventListener("mousedown", mouseDownHandler);
+    eventHandlers.push({ type: "mousedown", handler: mouseDownHandler });
+    const contextMenuHandler = (e2) => e2.preventDefault();
+    element.addEventListener("contextmenu", contextMenuHandler);
+    eventHandlers.push({ type: "contextmenu", handler: contextMenuHandler });
+    const touchStartHandler = this.handleTouchStart.bind(this);
+    element.addEventListener("touchstart", touchStartHandler);
+    eventHandlers.push({ type: "touchstart", handler: touchStartHandler });
+    const touchMoveHandler = this.handleTouchMove.bind(this);
+    element.addEventListener("touchmove", touchMoveHandler, { passive: false });
+    eventHandlers.push({ type: "touchmove", handler: touchMoveHandler, options: { passive: false } });
+    const touchEndHandler = this.handleTouchEnd.bind(this);
+    element.addEventListener("touchend", touchEndHandler);
+    eventHandlers.push({ type: "touchend", handler: touchEndHandler });
+    this.elementEventHandlers.set(element, eventHandlers);
   }
   handleWheel(e2) {
     e2.preventDefault();
@@ -10832,16 +10830,15 @@ var ZoomDrag = class {
     }
   }
   handleTouchEnd() {
-    this.elements.forEach((element) => {
-      const state = element.zoomDragState;
-      state.isDragging = false;
-      state.lastTouchDistance = null;
-    });
+    const state = this.element.zoomDragState;
+    state.isDragging = false;
+    state.lastTouchDistance = null;
   }
   applyTransform(element) {
     const state = element.zoomDragState;
-    element.style.transformOrigin = "50% 50%";
-    element.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+    const target = element.firstChild;
+    target.style.transformOrigin = "50% 50%";
+    target.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
   }
   getTouchDistance(touches) {
     const dx = touches[0].clientX - touches[1].clientX;
@@ -10855,15 +10852,14 @@ var ZoomDrag = class {
     };
   }
   destroy() {
-    this.elements.forEach((element) => {
-      const handlers = this.elementEventHandlers.get(element);
-      if (handlers) {
-        handlers.forEach(({ type, handler, options }) => {
-          element.removeEventListener(type, handler, options);
-        });
-      }
-      delete element.zoomDragState;
-    });
+    const element = this.element;
+    const handlers = this.elementEventHandlers.get(element);
+    if (handlers) {
+      handlers.forEach(({ type, handler, options }) => {
+        element.removeEventListener(type, handler, options);
+      });
+    }
+    delete element.zoomDragState;
     document.removeEventListener("mousemove", this.handleMouseMove);
     document.removeEventListener("mouseup", this.handleMouseUp);
   }

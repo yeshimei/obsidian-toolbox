@@ -344,7 +344,7 @@ class TempRelationView extends ItemView {
     contentEl.addEventListener('mouseout', this.onmouseout.bind(this));
     this.viewEl = contentEl;
     await render(self.app, this.content, contentEl);
-    this.zoom = new ZoomDrag(contentEl);
+    this.zoom = new ZoomDrag(document.querySelectorAll('.view-content')[1]);
     this.format();
     this.multicolorLabel();
   }
@@ -390,17 +390,22 @@ class TempRelationView extends ItemView {
 
     // 隐藏滚动条
     this.viewEl.style.overflow = 'visible';
-    
     this.viewEl.parentElement.style.overflow = 'hidden';
-    // 调整svg为固定宽度
-    const svg = document.querySelector('svg[aria-roledescription="gitGraph"]') as HTMLElement;
-    svg.setAttribute('width', svg.style.maxWidth)
-    // 图表距离左边 10%
-    const fullWidth = document.querySelector('.mermaid').clientWidth;
-    const tenPercentWidth = fullWidth * -0.1; 
-    const viewBoxWidth = Number(svg.getAttribute('viewBox')?.split(' ')[0])
-    svg.style.transformOrigin = '50% 50%';
-    svg.style.transform = `translate(${viewBoxWidth - tenPercentWidth}px, 0px) `;
+
+    
+   
+    
+    document.querySelectorAll('.mermaid').forEach((mermaid: HTMLElement) => {
+      // 调整svg为固定宽度
+      const svg = mermaid.firstChild as HTMLElement;
+      svg.setAttribute('width', svg.style.maxWidth)
+      // 图表距离左边 10%
+      const fullWidth = mermaid.clientWidth;
+      const tenPercentWidth = fullWidth * -0.1; 
+      const viewBoxWidth = Number(svg.getAttribute('viewBox')?.split(' ')[0])
+      svg.style.transformOrigin = '50% 50%';
+      svg.style.transform = `translate(${viewBoxWidth - tenPercentWidth}px, 0px) `;
+    })
   }
 
   async onClose() {
@@ -522,57 +527,54 @@ type EventHandlerEntry = {
 };
 
 class ZoomDrag {
-  elements: HTMLElement[];
+  element: HTMLElementWithZoomDragState;
   elementEventHandlers = new WeakMap<HTMLElement, EventHandlerEntry[]>();
 
-  constructor(element: HTMLElement) {
-    this.elements = [element];
+  constructor(element: Element) {
+    this.element = element as HTMLElementWithZoomDragState;
     this.initEvents();
   }
 
   initEvents(): void {
-    this.elements.forEach(element => {
-      // 初始化变换状态
-      (element as HTMLElementWithZoomDragState).zoomDragState = {
-        scale: 1,
-        x: 0,
-        y: 0,
-        isDragging: false,
-        startX: 0,
-        startY: 0,
-        lastTouchDistance: null
-      };
+    const element = this.element;
+    element.zoomDragState = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      lastTouchDistance: null
+    };
 
-      const eventHandlers: EventHandlerEntry[] = [];
+    const eventHandlers: EventHandlerEntry[] = [];
 
-      // 桌面端事件
-      const wheelHandler = this.handleWheel.bind(this);
-      element.addEventListener('wheel', wheelHandler);
-      eventHandlers.push({ type: 'wheel', handler: wheelHandler });
+    const wheelHandler = this.handleWheel.bind(this);
+    element.addEventListener('wheel', wheelHandler);
+    eventHandlers.push({ type: 'wheel', handler: wheelHandler });
 
-      const mouseDownHandler = this.handleMouseDown.bind(this);
-      element.addEventListener('mousedown', mouseDownHandler);
-      eventHandlers.push({ type: 'mousedown', handler: mouseDownHandler });
+    const mouseDownHandler = this.handleMouseDown.bind(this);
+    element.addEventListener('mousedown', mouseDownHandler);
+    eventHandlers.push({ type: 'mousedown', handler: mouseDownHandler });
 
-      const contextMenuHandler = (e: Event) => e.preventDefault();
-      element.addEventListener('contextmenu', contextMenuHandler);
-      eventHandlers.push({ type: 'contextmenu', handler: contextMenuHandler });
+    const contextMenuHandler = (e: Event) => e.preventDefault();
+    element.addEventListener('contextmenu', contextMenuHandler);
+    eventHandlers.push({ type: 'contextmenu', handler: contextMenuHandler });
 
-      // 移动端事件
-      const touchStartHandler = this.handleTouchStart.bind(this);
-      element.addEventListener('touchstart', touchStartHandler);
-      eventHandlers.push({ type: 'touchstart', handler: touchStartHandler });
+    // 移动端事件
+    const touchStartHandler = this.handleTouchStart.bind(this);
+    element.addEventListener('touchstart', touchStartHandler);
+    eventHandlers.push({ type: 'touchstart', handler: touchStartHandler });
 
-      const touchMoveHandler = this.handleTouchMove.bind(this);
-      element.addEventListener('touchmove', touchMoveHandler, { passive: false });
-      eventHandlers.push({ type: 'touchmove', handler: touchMoveHandler, options: { passive: false } });
+    const touchMoveHandler = this.handleTouchMove.bind(this);
+    element.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    eventHandlers.push({ type: 'touchmove', handler: touchMoveHandler, options: { passive: false } });
 
-      const touchEndHandler = this.handleTouchEnd.bind(this);
-      element.addEventListener('touchend', touchEndHandler);
-      eventHandlers.push({ type: 'touchend', handler: touchEndHandler });
+    const touchEndHandler = this.handleTouchEnd.bind(this);
+    element.addEventListener('touchend', touchEndHandler);
+    eventHandlers.push({ type: 'touchend', handler: touchEndHandler });
 
-      this.elementEventHandlers.set(element, eventHandlers);
-    });
+    this.elementEventHandlers.set(element, eventHandlers);
   }
 
   handleWheel(e: WheelEvent): void {
@@ -611,20 +613,17 @@ class ZoomDrag {
   }
 
   handleMouseMove = (e: MouseEvent): void => {
-    this.elements.forEach(element => {
-      const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
-      if (state.isDragging) {
-        state.x = e.clientX - state.startX;
-        state.y = e.clientY - state.startY;
-        this.applyTransform(element);
-      }
-    });
+    const element = this.element
+    const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
+    if (state.isDragging) {
+      state.x = e.clientX - state.startX;
+      state.y = e.clientY - state.startY;
+      this.applyTransform(element);
+    }
   };
 
   handleMouseUp = (): void => {
-    this.elements.forEach(element => {
-      (element as HTMLElementWithZoomDragState).zoomDragState!.isDragging = false;
-    });
+    this.element.zoomDragState!.isDragging = false;
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
   };
@@ -676,17 +675,16 @@ class ZoomDrag {
   }
 
   handleTouchEnd(): void {
-    this.elements.forEach(element => {
-      const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
-      state.isDragging = false;
-      state.lastTouchDistance = null;
-    });
+    const state = this.element.zoomDragState!;
+    state.isDragging = false;
+    state.lastTouchDistance = null;
   }
 
   applyTransform(element: HTMLElement): void {
     const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
-    element.style.transformOrigin = '50% 50%';
-    element.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+    const target = element.firstChild as HTMLElement;
+    target.style.transformOrigin = '50% 50%';
+    target.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
   }
 
   getTouchDistance(touches: TouchList): number {
@@ -703,16 +701,15 @@ class ZoomDrag {
   }
 
   public destroy(): void {
-    this.elements.forEach(element => {
-      const handlers = this.elementEventHandlers.get(element);
-      if (handlers) {
-        handlers.forEach(({ type, handler, options }) => {
-          element.removeEventListener(type, handler, options);
-        });
-      }
+    const element = this.element;
+    const handlers = this.elementEventHandlers.get(element);
+    if (handlers) {
+      handlers.forEach(({ type, handler, options }) => {
+        element.removeEventListener(type, handler, options);
+      });
+    }
 
-      delete (element as HTMLElementWithZoomDragState).zoomDragState;
-    });
+    delete (element as HTMLElementWithZoomDragState).zoomDragState;
 
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
