@@ -82,6 +82,8 @@ export interface ToolboxSettings {
 
   gitChart: boolean,
   gitChartMultiColorLabel: boolean;
+  gitChartPartition: boolean;
+  gitChartPartitionFolding: boolean;
 
   sandbox: boolean;
   sandboxFolder: string;
@@ -102,32 +104,32 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
     encryption: {}
   },
 
-  passwordCreator: true,
+  passwordCreator: false,
   passwordCreatorMixedContent: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!@$%^&*()_+',
   passwordCreatorLength: 16,
-  polysemy: true,
-  searchForWords: true,
+  polysemy: false,
+  searchForWords: false,
   wordsSaveFolder: '',
   cardSaveFolder: '',
 
-  flip: true,
+  flip: false,
   fileCorrect: -35,
 
   fullScreenMode: false,
 
-  readDataTracking: true,
+  readDataTracking: false,
   readDataTrackingFolder: '书库',
   readDataTrackingTimeout: 300 * 1000,
   readDataTrackingDelayTime: 3 * 1000,
 
-  highlight: true,
+  highlight: false,
 
-  dialogue: true,
+  dialogue: false,
 
   characterRelationships: false,
   characterRelationshipsFolder: '书库/人物关系',
 
-  readingNotes: true,
+  readingNotes: false,
   readingNotesToFolder: '书库/读书笔记',
   outLink: true,
   blockId: true,
@@ -135,9 +137,9 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   discuss: true,
   syncDate: false,
 
-  reviewOfReadingNotes: true,
+  reviewOfReadingNotes: false,
 
-  readingPageStyles: true,
+  readingPageStyles: false,
   fontSize: 36,
 
   chat: false,
@@ -147,13 +149,13 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   chatPromptFolder: '',
   chatSaveFolder: '',
 
-  completion: true,
+  completion: false,
   completionDelay: 100,
   completionMaxLength: 128,
 
-  blockReference: true,
+  blockReference: false,
 
-  encryption: true,
+  encryption: false,
   encryptionSupportImage: true,
   encryptionImageCompress: false,
   encryptionImageCompressMaxSize: 2,
@@ -163,23 +165,25 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   encryptionChunkSize: 1024 * 1024 * 1024,
   encryptionRememberPassMode: 'notSave',
 
-  gallery: true,
+  gallery: false,
 
-  poster: true,
+  poster: false,
 
-  gitChart: true,
+  gitChart: false,
   gitChartMultiColorLabel: false,
+  gitChartPartition: false,
+  gitChartPartitionFolding: false,
 
   sandbox: false,
   sandboxFolder: '',
 
   resourceTo: false,
   searchForPlants: false,
-  searchForPlantsFolder: '卡片盒/归档',
+  searchForPlantsFolder: '',
   videoLinkFormat: false,
   switchLibrary: false,
   bilibiliAISummaryFormat: false,
-  bilibiliAISummaryFormatFolder: '归档/BILIBILI AI 视频总结',
+  bilibiliAISummaryFormatFolder: '',
   summarizeAndRenameNote: false,
   summarizeAndRenameNoteFolder: ''
 };
@@ -490,14 +494,14 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
 
       if (this.plugin.settings.completion) {
-        new Setting(containerEl).setName('延迟（ms）,不低于 100ms').addText(cd =>
+        new Setting(containerEl).setName('自动补全 - 延迟（ms）').setDesc('不低于 100ms').addText(cd =>
           cd.setValue('' + this.plugin.settings.completionDelay).onChange(async value => {
             this.plugin.settings.completionDelay = Number(value);
             await this.plugin.saveSettings();
           })
         );
 
-        new Setting(containerEl).setName('最大字节').addText(cd =>
+        new Setting(containerEl).setName('自动补全 - 最大字节').addText(cd =>
           cd.setValue('' + this.plugin.settings.completionMaxLength).onChange(async value => {
             this.plugin.settings.completionMaxLength = Number(value);
             await this.plugin.saveSettings();
@@ -555,7 +559,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
           );
 
         if (this.plugin.settings.encryptionImageCompress) {
-          new Setting(containerEl).setName('压缩后的图片大小尽量不超过（mb）').addText(cd =>
+          new Setting(containerEl).setName('压缩图片 - 压缩后的图片大小尽量不超过（mb）').addText(cd =>
             cd.setValue('' + this.plugin.settings.encryptionImageCompressMaxSize).onChange(async value => {
               this.plugin.settings.encryptionImageCompressMaxSize = Number(value);
               await this.plugin.saveSettings();
@@ -563,7 +567,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
           );
 
           new Setting(containerEl)
-            .setName('长图比率')
+            .setName('压缩图片 - 长图比率')
             .setDesc('对长图进行浅压缩，以避免过于模糊')
             .addText(cd =>
               cd.setValue('' + this.plugin.settings.encryptionImageCompressLongScreenshotRatio).onChange(async value => {
@@ -573,7 +577,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
             );
 
           new Setting(containerEl)
-            .setName('保留exif')
+            .setName('压缩图片 - 保留exif')
             .setDesc('图像的元数据。如焦距，地理位置信息等')
             .addToggle(cd =>
               cd.setValue(this.plugin.settings.encryptionImageCompressPreserveExif).onChange(async value => {
@@ -680,13 +684,32 @@ export class ToolboxSettingTab extends PluginSettingTab {
     );
 
     if (this.plugin.settings.gitChart) {
-      new Setting(containerEl).setName('彩色文本').setDesc('标签颜色跟随分支颜色').addToggle(cd =>
+      new Setting(containerEl).setName('彩色文本').setDesc('文本颜色跟随分支颜色').addToggle(cd =>
         cd.setValue(this.plugin.settings.gitChartMultiColorLabel).onChange(async value => {
           this.plugin.settings.gitChartMultiColorLabel = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
+
+      new Setting(containerEl).setName('分区').setDesc('当生成完整图表时，根据子列表分成多个图表').addToggle(cd =>
+        cd.setValue(this.plugin.settings.gitChartPartition).onChange(async value => {
+          this.plugin.settings.gitChartPartition = value;
+          this.plugin.settings.gitChartPartitionFolding = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+      if (this.plugin.settings.gitChartPartition) {
+        new Setting(containerEl).setName('分区 - 默认折叠').setDesc('提升渲染性能').addToggle(cd =>
+          cd.setValue(this.plugin.settings.gitChartPartitionFolding).onChange(async value => {
+            this.plugin.settings.gitChartPartitionFolding =  value;
+            await this.plugin.saveSettings();
+            this.display();
+          })
+        );
+      }
     }
 
 

@@ -4,6 +4,8 @@ import Toolbox from 'src/main';
 
 let self: Toolbox;
 let separator = getId();
+let hideBranchNames: string[] = [];
+let filename = ''
 
 export default function relationshipDiagramCommand(f: Toolbox) {
   self = f;
@@ -18,12 +20,30 @@ export default function relationshipDiagramCommand(f: Toolbox) {
 
 async function relationshipDiagram(editor: Editor, file: TFile) {
   const content = await self.app.vault.read(file);
-  const filename = file.basename;
+  filename = file.basename;
   const lineText = getCursorText(editor);
   const { name } = parseLine(lineText);
   const tree = await processTree(content, name);
-  const text = generateGitgraphFromList(tree, filename);
-  await createTempRelationGraph(name || filename, text, tree);
+  const context = partition(tree, name || filename);
+  await createTempRelationGraph(name || filename, context, tree);
+}
+
+function partition (tree: any, title: string, folding = true) {
+  if (self.settings.gitChartPartition && title === filename) {
+    let content = ''
+
+    if (self.settings.gitChartPartitionFolding && folding) {
+      hideBranchNames = tree.children.map((node: any) => node.branchId)
+      updateTreeCollapseState(tree, hideBranchNames)
+    }
+
+    tree.children.forEach((node: any) => {
+      content += generateGitgraphFromList({ children: [node] }, title);
+    })
+    return content
+  } else {
+    return generateGitgraphFromList(tree, title);
+  }
 }
 
 function generateGitgraphFromList(tree: any, title: string) {
@@ -48,7 +68,7 @@ gitGraph TB:`
       processBranch(mainNode, commands);
     }
   }
-  return commands.slice(0, -1).join('\n') + '\n```';
+  return commands.slice(0, -1).join('\n') + '\n```\n\n';
 }
 
 function transformChainNotIncludingOneself(child: any, i: number, parent: any) {
@@ -115,7 +135,7 @@ function forEachTree(node: any, type: string, callback: Function) {
 }
 
 function commit(child: any) {
-  return `  commit id: "${child.name}${separator}${child.link || ''}${separator}${child.id || ''}${separator}${child.type || ''}${separator}${child.tag || ''}${separator}${child.branchName}${separator}${child.branchId}${separator}${child.level}${separator}${child.parent?.name}${separator}${child.children.length}" ${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`;
+  return `  commit id: "${child.name}${separator}${child.link || ''}${separator}${child.id || ''}${separator}${child.type || ''}${separator}${child.tag || ''}${separator}${child.branchName}${separator}${child.branchId}${separator}${child.level}${separator}${child.parent?.name || ''}${separator}${child.children.length}" ${child.children.length > 0 ? 'type: REVERSE' : ''} ${child.tag ? `tag: "${child.tag}"` : ''}`;
 }
 
 function processBranch(node: any, cmds: any) {
@@ -303,6 +323,8 @@ class TempRelationView extends ItemView {
     this.title = title;
     this.content = content;
     this.gitChart = gitChart;
+    this.hideBranchNames = this.hideBranchNames.concat(hideBranchNames)
+    hideBranchNames = []
   }
 
   getViewType(): string {
@@ -421,18 +443,14 @@ class TempRelationView extends ItemView {
     }
   }
 
-  async exhibitionBranch(id: string) {
-    this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter(n => n !== id) : [...this.hideBranchNames, id];
-    updateTreeCollapseState(this.gitChart, this.hideBranchNames);
-    const content = generateGitgraphFromList(this.gitChart, this.title);
-    this.viewEl.empty();
+  async exhibitionBranch (id: string) {
+    this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter(n => n!== id) : [...this.hideBranchNames, id];
+    updateTreeCollapseState(this.gitChart, this.hideBranchNames)
+    const content = partition(this.gitChart, this.title, false)
+    this.viewEl.empty()
     await render(self.app, content, this.viewEl);
-    // const target = document.querySelector(`.commit-label[data-branch-id="${id}"]`) as HTMLElement
-    // if (target) {
-    //   target.textContent += `(${target.dataset.children})`
-    // }
-    this.format();
-    this.multicolorLabel();
+    this.format()
+    this.multicolorLabel()
   }
 
   logicalChain(name: string) {
