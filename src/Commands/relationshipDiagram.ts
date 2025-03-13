@@ -5,7 +5,7 @@ import Toolbox from 'src/main';
 let self: Toolbox;
 let separator = getId();
 let hideBranchNames: string[] = [];
-let filename = ''
+let filename = '';
 
 export default function relationshipDiagramCommand(f: Toolbox) {
   self = f;
@@ -28,19 +28,19 @@ async function relationshipDiagram(editor: Editor, file: TFile) {
   await createTempRelationGraph(name || filename, context, tree);
 }
 
-function partition (tree: any, title: string, folding = true) {
+function partition(tree: any, title: string, folding = true) {
   if (self.settings.gitChartPartition && title === filename) {
-    let content = ''
+    let content = '';
 
     if (self.settings.gitChartPartitionFolding && folding) {
-      hideBranchNames = tree.children.map((node: any) => node.branchId)
-      updateTreeCollapseState(tree, hideBranchNames)
+      hideBranchNames = tree.children.map((node: any) => node.branchId);
+      updateTreeCollapseState(tree, hideBranchNames);
     }
 
     tree.children.forEach((node: any) => {
       content += generateGitgraphFromList({ children: [node] }, title);
-    })
-    return content
+    });
+    return content;
   } else {
     return generateGitgraphFromList(tree, title);
   }
@@ -323,8 +323,8 @@ class TempRelationView extends ItemView {
     this.title = title;
     this.content = content;
     this.gitChart = gitChart;
-    this.hideBranchNames = this.hideBranchNames.concat(hideBranchNames)
-    hideBranchNames = []
+    this.hideBranchNames = this.hideBranchNames.concat(hideBranchNames);
+    hideBranchNames = [];
   }
 
   getViewType(): string {
@@ -338,19 +338,22 @@ class TempRelationView extends ItemView {
   async onOpen() {
     const container = this.containerEl.children[1];
     container.empty();
-    const contentEl = container.createDiv('temp-relation-content');
+    const parentEl = container.createDiv('temp-relation-content');
+    parentEl.style.width = '100%';
+    parentEl.style.height = '100%';
+    const contentEl = parentEl.createDiv('temp-relation-content-contarner');
     contentEl.addEventListener('click', this.onclick.bind(this));
     contentEl.addEventListener('mouseover', this.onmouseover.bind(this));
     contentEl.addEventListener('mouseout', this.onmouseout.bind(this));
     this.viewEl = contentEl;
     await render(self.app, this.content, contentEl);
-    this.zoom = new ZoomDrag(document.querySelectorAll('.view-content')[1]);
+    this.zoom = new ZoomDrag(parentEl);
     this.format();
     this.multicolorLabel();
   }
 
   format() {
-    let textWidth = 0
+    let textWidth = 0;
     this.viewEl.querySelectorAll('.commit-label').forEach((label: SVGTextElement) => {
       const [name, link, id, type, tag, branchName, branchId, level, parent, children] = label.textContent.split(separator);
       label.dataset.name = name;
@@ -392,20 +395,17 @@ class TempRelationView extends ItemView {
     this.viewEl.style.overflow = 'visible';
     this.viewEl.parentElement.style.overflow = 'hidden';
 
-    
-   
-    
     document.querySelectorAll('.mermaid').forEach((mermaid: HTMLElement) => {
       // 调整svg为固定宽度
       const svg = mermaid.firstChild as HTMLElement;
-      svg.setAttribute('width', svg.style.maxWidth)
+      svg.setAttribute('width', svg.style.maxWidth);
       // 图表距离左边 10%
       const fullWidth = mermaid.clientWidth;
-      const tenPercentWidth = fullWidth * -0.1; 
-      const viewBoxWidth = Number(svg.getAttribute('viewBox')?.split(' ')[0])
+      const tenPercentWidth = fullWidth * -0.1;
+      const viewBoxWidth = Number(svg.getAttribute('viewBox')?.split(' ')[0]);
       svg.style.transformOrigin = '50% 50%';
       svg.style.transform = `translate(${viewBoxWidth - tenPercentWidth}px, 0px) `;
-    })
+    });
   }
 
   async onClose() {
@@ -463,14 +463,14 @@ class TempRelationView extends ItemView {
     }
   }
 
-  async exhibitionBranch (id: string) {
-    this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter(n => n!== id) : [...this.hideBranchNames, id];
-    updateTreeCollapseState(this.gitChart, this.hideBranchNames)
-    const content = partition(this.gitChart, this.title, false)
-    this.viewEl.empty()
+  async exhibitionBranch(id: string) {
+    this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter(n => n !== id) : [...this.hideBranchNames, id];
+    updateTreeCollapseState(this.gitChart, this.hideBranchNames);
+    const content = partition(this.gitChart, this.title, false);
+    this.viewEl.empty();
     await render(self.app, content, this.viewEl);
-    this.format()
-    this.multicolorLabel()
+    this.format();
+    this.multicolorLabel();
   }
 
   logicalChain(name: string) {
@@ -613,7 +613,7 @@ class ZoomDrag {
   }
 
   handleMouseMove = (e: MouseEvent): void => {
-    const element = this.element
+    const element = this.element;
     const state = (element as HTMLElementWithZoomDragState).zoomDragState!;
     if (state.isDragging) {
       state.x = e.clientX - state.startX;
