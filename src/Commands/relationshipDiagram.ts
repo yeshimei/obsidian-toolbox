@@ -381,13 +381,17 @@ class TempRelationView extends ItemView {
       bg.style.fontWeight = 'bold';
       bg.style.width = `${w2 + 6}px`;
       bg.setAttribute('x', String(x - 3));
-      bg.setAttribute('y', String(y - 11));
+      bg.setAttribute('y', String(y - 10));
       bg.style.display = 'none';
       if (type === '-') {
         label.style.opacity = '0.5';
         label.style.fontStyle = 'italic';
       } else if (type === '*') {
         bg.style.display = 'block';
+        if (self.settings.gitChartMultiColorLabel) {
+          bg.style.fill = this.getColor(branchId);
+          bg.style.opacity = '.2';
+        }
       }
     });
 
@@ -496,11 +500,14 @@ class TempRelationView extends ItemView {
     const labels = document.querySelectorAll('.commit-label');
     labels.forEach((label: HTMLElement) => {
       const id = label.dataset.branchId;
-      const commit = document.querySelector(`circle[class*="${id}"]`);
-      if (!commit) return;
-      const color = getComputedStyle(commit).fill;
+      const color = this.getColor(id);
       if (color) label.style.fill = color;
     });
+  }
+
+  getColor(id: string) {
+    const commit = document.querySelector(`circle[class*="${id}"]`);
+    return getComputedStyle(commit)?.fill;
   }
 }
 

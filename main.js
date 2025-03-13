@@ -10502,13 +10502,17 @@ var TempRelationView = class extends import_obsidian21.ItemView {
       bg.style.fontWeight = "bold";
       bg.style.width = `${w2 + 6}px`;
       bg.setAttribute("x", String(x - 3));
-      bg.setAttribute("y", String(y - 11));
+      bg.setAttribute("y", String(y - 10));
       bg.style.display = "none";
       if (type === "-") {
         label.style.opacity = "0.5";
         label.style.fontStyle = "italic";
       } else if (type === "*") {
         bg.style.display = "block";
+        if (self3.settings.gitChartMultiColorLabel) {
+          bg.style.fill = this.getColor(branchId);
+          bg.style.opacity = ".2";
+        }
       }
     });
     this.viewEl.style.overflow = "visible";
@@ -10617,13 +10621,15 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     const labels = document.querySelectorAll(".commit-label");
     labels.forEach((label) => {
       const id = label.dataset.branchId;
-      const commit2 = document.querySelector(`circle[class*="${id}"]`);
-      if (!commit2)
-        return;
-      const color = getComputedStyle(commit2).fill;
+      const color = this.getColor(id);
       if (color)
         label.style.fill = color;
     });
+  }
+  getColor(id) {
+    var _a2;
+    const commit2 = document.querySelector(`circle[class*="${id}"]`);
+    return (_a2 = getComputedStyle(commit2)) == null ? void 0 : _a2.fill;
   }
 };
 var ZoomDrag = class {
