@@ -381,7 +381,7 @@ class TempRelationView extends ItemView {
       bg.style.fontWeight = 'bold';
       bg.style.width = `${w2 + 6}px`;
       bg.setAttribute('x', String(x - 3));
-      bg.setAttribute('y', String(y - 10));
+      bg.setAttribute('y', String(y - 11));
       bg.style.display = 'none';
       if (type === '-') {
         label.style.opacity = '0.5';

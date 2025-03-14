@@ -14,9 +14,10 @@ export function flipEvent(f: Toolbox, file: TFile) {
   pageTurner && pageTurner.destroy();
   statusBar.show()
   if (!self.settings.flip || !self.hasReadingPage(file)) return;
+  const contentEl = self.getView()?.containerEl;
   fullScreen(-1, false);
   statusBar.hide()
-  const el = document.querySelector(SOURCE_VIEW_CLASS) as HTMLElement;
+  const el = contentEl.querySelector(SOURCE_VIEW_CLASS) as HTMLElement;
   pageTurner = new PageTurner(el, {
     onTurnUp: event => flip(event, el, file),
     onTurnDown: event => flip(event, el, file, false),
