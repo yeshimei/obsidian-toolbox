@@ -9757,17 +9757,23 @@ function flipEvent(f2, file) {
 }
 function flip(event, el, file, direction = true) {
   const target = event.target;
-  const should = !pageTurner.isTouchMoving && import_obsidian16.Platform.isMobile || import_obsidian16.Platform.isDesktop;
-  if (target.hasClass(COMMENT_CLASS.slice(1)))
-    should && handleCommentClick(target, file);
-  else if (target.hasClass(OUT_LINK_CLASS.slice(1)))
-    should && handleOutLinkClick(target, file);
-  else if (target.hasClass(FOOTNOTE_CLASS.slice(1)))
-    should && handleFootnoteClick(target, file);
-  else {
-    el.scrollTop = direction ? el.scrollTop - el.clientHeight - self2.settings.fileCorrect : el.scrollTop + el.clientHeight + self2.settings.fileCorrect;
-    self2.debounceReadDataTracking(self2, file);
+  const should = !pageTurner.isTouchMoving && import_obsidian16.Platform.isMobile || import_obsidian16.Platform.isDesktop && event.type !== "wheel";
+  if (should) {
+    if (target.hasClass(COMMENT_CLASS.slice(1)))
+      handleCommentClick(target, file);
+    else if (target.hasClass(OUT_LINK_CLASS.slice(1)))
+      handleOutLinkClick(target, file);
+    else if (target.hasClass(FOOTNOTE_CLASS.slice(1)))
+      handleFootnoteClick(target, file);
+    else
+      scrollPage(el, direction, file);
+  } else {
+    scrollPage(el, direction, file);
   }
+}
+function scrollPage(el, direction, file) {
+  el.scrollTop = direction ? el.scrollTop - el.clientHeight - self2.settings.fileCorrect : el.scrollTop + el.clientHeight + self2.settings.fileCorrect;
+  self2.debounceReadDataTracking(self2, file);
 }
 function fullScreen(mode = null, save = true) {
   var _a2;
@@ -9853,6 +9859,7 @@ var PageTurner = class {
       this.isTouchMoving = false;
     };
     this.handleTouchMove = (event) => {
+      this.clearLongPressTimers();
       if (!this.isTouchMoving) {
         const touch = event.touches[0];
         const deltaX = Math.abs(touch.clientX - this.touchStartX);
@@ -9944,7 +9951,6 @@ var PageTurner = class {
     this.element.addEventListener("wheel", this.handleWheel, this.eventOptions);
     this.element.addEventListener("click", this.handleClick, this.eventOptions);
     this.element.addEventListener("contextmenu", this.handleContextmenu, this.eventOptions);
-    this.element.addEventListener("keydown", this.handleKeydown, this.eventOptions);
     this.element.addEventListener("mousedown", this.handleMouseDown, this.eventOptions);
     this.element.addEventListener("mouseup", this.handleMouseUp, this.eventOptions);
     this.element.addEventListener("mouseleave", this.handleMouseLeave, this.eventOptions);

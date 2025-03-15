@@ -28,18 +28,24 @@ export function flipEvent(f: Toolbox, file: TFile) {
 
 function flip(event: MouseEvent | TouchEvent | KeyboardEvent, el: HTMLElement, file: TFile, direction = true) {
   const target = event.target as HTMLElement;
-  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || Platform.isDesktop;
-  // 点击划线，显示其评论
-  if (target.hasClass(COMMENT_CLASS.slice(1))) should && handleCommentClick(target, file);
+  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || (Platform.isDesktop && event.type !== 'wheel' );
+  if (should) {
+      // 点击划线，显示其评论
+  if (target.hasClass(COMMENT_CLASS.slice(1))) handleCommentClick(target, file);
   // 点击双链，显示其内容
-  else if (target.hasClass(OUT_LINK_CLASS.slice(1))) should && handleOutLinkClick(target, file);
+  else if (target.hasClass(OUT_LINK_CLASS.slice(1))) handleOutLinkClick(target, file);
   // 点击脚注，显示其内容
-  else if (target.hasClass(FOOTNOTE_CLASS.slice(1))) should && handleFootnoteClick(target, file);
+  else if (target.hasClass(FOOTNOTE_CLASS.slice(1))) handleFootnoteClick(target, file);
   // 点击其他内容，翻页
-  else {
-    el.scrollTop = direction ? el.scrollTop - el.clientHeight - self.settings.fileCorrect : el.scrollTop + el.clientHeight + self.settings.fileCorrect;
-    self.debounceReadDataTracking(self, file);
+  else scrollPage(el, direction, file)
+  } else {
+    scrollPage(el, direction, file)
   }
+}
+
+function scrollPage (el: HTMLElement, direction: boolean, file: TFile) {
+  el.scrollTop = direction ? el.scrollTop - el.clientHeight - self.settings.fileCorrect : el.scrollTop + el.clientHeight + self.settings.fileCorrect;
+  self.debounceReadDataTracking(self, file);
 }
 
 function fullScreen(mode: boolean | number = null, save = true) {
@@ -161,7 +167,7 @@ export class PageTurner {
     this.element.addEventListener('wheel', this.handleWheel, this.eventOptions);
     this.element.addEventListener('click', this.handleClick, this.eventOptions);
     this.element.addEventListener('contextmenu', this.handleContextmenu, this.eventOptions);
-    this.element.addEventListener('keydown', this.handleKeydown, this.eventOptions);
+    // this.element.addEventListener('keydown', this.handleKeydown, this.eventOptions);
 
     // Mouse events
     this.element.addEventListener('mousedown', this.handleMouseDown, this.eventOptions);
@@ -186,6 +192,7 @@ export class PageTurner {
   };
 
   private handleTouchMove = (event: TouchEvent) => {
+    this.clearLongPressTimers();
     if (!this.isTouchMoving) {
       const touch = event.touches[0];
       const deltaX = Math.abs(touch.clientX - this.touchStartX);
