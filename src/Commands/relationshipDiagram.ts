@@ -22,8 +22,8 @@ async function relationshipDiagram(editor: Editor, file: TFile) {
   const content = await self.app.vault.read(file);
   filename = file.basename;
   const lineText = getCursorText(editor);
-  const { name } = parseLine(lineText);
-  const tree = await processTree(content, name);
+  const { rawContent, name } = parseLine(lineText);
+  const tree = await processTree(content, rawContent);
   const context = partition(tree, name || filename);
   await createTempRelationGraph(name || filename, context, tree);
 }
@@ -169,9 +169,9 @@ function processChildren(node: any, cmds: any) {
   cmds.push(`  checkout "${node.branchName}"`);
 }
 
-async function processTree(listStr: string, name?: string) {
+async function processTree(listStr: string, rawContent?: string) {
   let tree = parseListToTree(listStr);
-  tree = name ? { children: [findTree(tree, name)] } : tree;
+  tree = rawContent ? { children: [findTree(tree, rawContent, 'rawContent')] } : tree;
   await joinTree(tree, tree);
   forEachTree(tree, '%', placeholder);
   forEachTree(tree, 'i', transformChain);
@@ -283,8 +283,8 @@ function parseLine(line: string) {
 
   const regex = /^(=*)\[\[([^|#]+(?:#[^|]*)?)(?:\|([^\]]+))?\]\]\1(?:\s*\^([^\s=]+))?$|^([^[\]]+)$/;
   const match = content.match(regex);
-  if (!match) return { type, level, name: content, tag, branchId };
-  if (match[5]) return { type, level, name: match[5], tag, branchId };
+  if (!match) return { type, level, name: content, tag, branchId, rawContent: line };
+  if (match[5]) return { type, level, name: match[5], tag, branchId, rawContent: line };
   const [, , link, name, id] = match;
   return {
     id,
@@ -293,7 +293,8 @@ function parseLine(line: string) {
     level,
     link,
     name: name || link,
-    branchId
+    branchId,
+    rawContent: line
   };
 }
 
