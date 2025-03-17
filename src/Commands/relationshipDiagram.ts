@@ -109,7 +109,11 @@ async function joinTree(node: any, root: any) {
         const d = findTree(r, id, 'id');
         if (d) {
           d.parent = child;
-          child.children = d.children;
+          child.children = child.children.concat(d.children);
+          child.children.forEach((c: any) => {
+            c.parent = child;
+            c.branchName = child.branchId;
+          });
           removeTree(root, id, 'id');
         }
       }
