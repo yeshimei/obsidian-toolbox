@@ -3,7 +3,7 @@ import { md5 } from 'js-md5';
 import { arrayBufferToBase64, base64ToArrayBuffer, Notice, TFile } from 'obsidian';
 import Confirm from 'src/Modals/Confirm';
 import InputBox from 'src/Modals/InputBox';
-import { $, createFile, getBasename, insertString, isImagePath, isLongScreenshot, isNoteEncrypt, isResourceEncrypt, isVideoPath, mergeArrayBuffers } from '../helpers';
+import { createFile, getBasename, insertString, isImagePath, isLongScreenshot, isNoteEncrypt, isResourceEncrypt, isVideoPath, mergeArrayBuffers } from '../helpers';
 import Toolbox from '../main';
 import ProgressBarEncryption from '../Modals/ProgressBarEncryption';
 const progress = new ProgressBarEncryption();
@@ -49,8 +49,8 @@ export async function encOrDecPopUp(self: Toolbox, file: TFile) {
 export async function toggleEncryptNote(self: Toolbox, file: TFile) {
   if (!file) return;
   const content = await self.app.vault.read(file);
-  const editorViewLine = $('.markdown-source-view .cm-content');
-  const previewViewLine = $('.markdown-preview-view p[dir="auto"]');
+  const editorViewLine = document.querySelector('.markdown-source-view .cm-content') as HTMLElement;
+  const previewViewLine = document.querySelector('.markdown-preview-view p[dir="auto"]') as HTMLElement;
 
   if (isNoteEncrypt(content)) {
     editorViewLine?.hide();

@@ -25,7 +25,7 @@ import repositionVideo from './CustomizedCommands/repositionVideo';
 import resourcesToCommand, { resourceTo } from './CustomizedCommands/resourceTo';
 import searchForPlantCommand from './CustomizedCommands/searchForPlant';
 import switchLibrary from './CustomizedCommands/switchLibrary';
-import { debounce, hasRootFolder } from './helpers';
+import { debounce, isFileInDirectory } from './helpers';
 import { DEFAULT_SETTINGS, ToolboxSettings, ToolboxSettingTab } from './settings';
 import { sandbox } from './Commands/sandbox';
 import chatWebPageClipping from './Commands/chatWebPageClipping';
@@ -35,6 +35,7 @@ export default class Toolbox extends Plugin {
   debounceReadDataTracking: Function;
   settings: ToolboxSettings;
   startTime: number;
+  
   async onload() {
     this.encryptionTempData = {};
     await this.loadSettings();
@@ -169,7 +170,7 @@ export default class Toolbox extends Plugin {
   }
 
   hasReadingPage(file: TFile, mode = true) {
-    return file && file.extension === 'md' && this.hasTag(file, 'book') && hasRootFolder(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === 'source' : true);
+    return file && file.extension === 'md' && this.hasTag(file, 'book') && isFileInDirectory(file, this.settings.readDataTrackingFolder) && (mode ? this.getView().getMode() === 'source' : true);
   }
 
   hasTag(file: TFile, name: string) {

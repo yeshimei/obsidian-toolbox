@@ -1,5 +1,5 @@
 import { TFile } from 'obsidian';
-import { SOURCE_VIEW_CLASS } from 'src/helpers';
+import {SOURCE_VIEW_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 
 // 调整阅读页面样式的函数

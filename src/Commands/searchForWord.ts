@@ -1,5 +1,5 @@
 import { Editor, htmlToMarkdown, Notice } from 'obsidian';
-import { createElement, hasRootFolder, requestUrlToHTML } from 'src/helpers';
+import { createElement, isFileInDirectory, requestUrlToHTML } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelSearchForWord } from 'src/Modals/PanelSearchForWord';
 
@@ -63,7 +63,7 @@ async function searchForWord(self: Toolbox, editor: Editor) {
       folder = self.settings.cardSaveFolder;
     }
 
-    file = self.app.vault.getMarkdownFiles().find(file => hasRootFolder(file, folder) && file.basename === word);
+    file = self.app.vault.getMarkdownFiles().find(file => isFileInDirectory(file, folder) && file.basename === word);
 
     if (file) {
       new Notice(type === 'words' ? '词语已存在' : '卡片笔记已存在');

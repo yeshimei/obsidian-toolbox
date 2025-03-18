@@ -16,7 +16,7 @@ export default function asyncNoteCommand(self: Toolbox) {
           .forEach(file => syncNote(self, file))
     });
 }
-
+``
 export async function syncNote(self: Toolbox, file: TFile) {
   if (!self.settings.readingNotes) return;
   let markdown = await self.app.vault.read(file);
@@ -25,7 +25,7 @@ export async function syncNote(self: Toolbox, file: TFile) {
   let outlinks = 0;
   let dialogue = 0;
 
-  let { links, frontmatter } = self.app.metadataCache.getFileCache(file);
+  let { links, frontmatter } = self.app.metadataCache.getFileCache(file) as any;
   let content = '---\ntags: 读书笔记\n---';
   // 出链
 

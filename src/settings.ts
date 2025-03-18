@@ -1,4 +1,4 @@
-import { App, Platform, PluginSettingTab, Setting } from 'obsidian';
+import { App, Platform, PluginSettingTab, Setting, SuggestModal, TFile } from 'obsidian';
 import Toolbox from './main';
 
 export interface ToolboxSettings {
@@ -99,8 +99,6 @@ export interface ToolboxSettings {
   switchLibrary: boolean;
   bilibiliAISummaryFormat: boolean;
   bilibiliAISummaryFormatFolder: string;
-  summarizeAndRenameNote: boolean;
-  summarizeAndRenameNoteFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ToolboxSettings = {
@@ -192,8 +190,6 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   switchLibrary: false,
   bilibiliAISummaryFormat: false,
   bilibiliAISummaryFormatFolder: '',
-  summarizeAndRenameNote: false,
-  summarizeAndRenameNoteFolder: ''
 };
 
 export class ToolboxSettingTab extends PluginSettingTab {
@@ -208,198 +204,190 @@ export class ToolboxSettingTab extends PluginSettingTab {
     let { containerEl } = this;
     containerEl.empty();
     containerEl.createEl('h1', { text: this.plugin.manifest.name });
-
-    if (true) {
-      new Setting(containerEl)
-        .setName('🕐 阅读数据跟踪')
-        .setDesc('阅读进度、时长，未读以及读完')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.readDataTracking).onChange(async value => {
-            this.plugin.settings.readDataTracking = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-
-      if (this.plugin.settings.readDataTracking) {
-        new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
-          cd.setValue('' + this.plugin.settings.readDataTrackingFolder).onChange(async value => {
-            this.plugin.settings.readDataTrackingFolder = value;
-            await this.plugin.saveSettings();
-          })
-        );
-
-        new Setting(containerEl)
-          .setName('超时')
-          .setDesc(`超过一段时间未翻页将暂停跟踪阅读时长，以获得更准确的数据。`)
-          .addText(cd =>
-            cd.setValue('' + this.plugin.settings.readDataTrackingTimeout).onChange(async value => {
-              this.plugin.settings.readDataTrackingTimeout = Number(value);
-              await this.plugin.saveSettings();
-            })
-          );
-
-        new Setting(containerEl)
-          .setName('跟踪数据延迟更新')
-          .setDesc('在某些老旧水墨屏设备或者单文件体积过大，每次更新跟踪数据都会导致翻页明显滞后，设置延迟以大幅提升翻页流畅性')
-          .addText(text =>
-            text.setValue('' + this.plugin.settings.readDataTrackingDelayTime).onChange(async value => {
-              this.plugin.settings.readDataTrackingDelayTime = Number(value);
-              await this.plugin.saveSettings();
-            })
-          );
-      }
-
-      new Setting(containerEl)
-        .setName('👇🏼 翻页')
-        .setDesc('点击下翻，左滑下翻，右滑上翻，长按0.5s进入编辑模式，收起软键盘进入阅读模式')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.flip).onChange(async value => {
-            this.plugin.settings.flip = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-
-      if (this.plugin.settings.flip) {
-        new Setting(containerEl).setName('修正值').addText(cd =>
-          cd.setValue('' + this.plugin.settings.fileCorrect).onChange(async value => {
-            this.plugin.settings.fileCorrect = Number(value);
-            await this.plugin.saveSettings();
-          })
-        );
-      }
-
-      new Setting(containerEl)
-        .setName('🤗 全屏模式')
-        .setDesc('长按 2.5s 打开或关闭全屏模式')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.fullScreenMode).onChange(async value => {
-            this.plugin.settings.fullScreenMode = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-
-      new Setting(containerEl).setName('🔎 查词').addToggle(cd =>
-        cd.setValue(this.plugin.settings.searchForWords).onChange(async value => {
-          this.plugin.settings.searchForWords = value;
+    new Setting(containerEl)
+      .setName('🕐 阅读数据跟踪')
+      .setDesc('阅读进度、时长，未读以及读完')
+      .setHeading()
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.readDataTracking).onChange(async value => {
+          this.plugin.settings.readDataTracking = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
 
-      if (this.plugin.settings.searchForWords) {
-        new Setting(containerEl).setName('生词放在哪个文件夹？').addText(cd =>
-          cd.setValue('' + this.plugin.settings.wordsSaveFolder).onChange(async value => {
-            this.plugin.settings.wordsSaveFolder = value;
+    if (this.plugin.settings.readDataTracking) {
+      createFolderTrackingSetting(new Setting(containerEl).setName('跟踪哪个文件夹'), this.plugin, 'readDataTrackingFolder')
+      
+      const setting  = new Setting(containerEl)
+        .setName(`超时 (${this.plugin.settings.readDataTrackingTimeout / 36000}m)`)
+        .setDesc(`超过一段时间未翻页将暂停跟踪阅读时长，以获得更准确的数据。`)
+        .addSlider(slider =>
+          slider.setLimits(36000 * 5, 360000, 36000).setValue(this.plugin.settings.readDataTrackingTimeout).onChange(async value => {
+            this.plugin.settings.readDataTrackingTimeout = Number(value);
             await this.plugin.saveSettings();
+            setting.setName(`超时 (${value / 36000}m)`)
           })
         );
 
-        new Setting(containerEl).setName('卡片笔记放在哪个文件夹？').addText(cd =>
-          cd.setValue('' + this.plugin.settings.cardSaveFolder).onChange(async value => {
-            this.plugin.settings.cardSaveFolder = value;
+
+        const setting2  = new Setting(containerEl)
+        .setName(`跟踪数据延迟更新 (${this.plugin.settings.readDataTrackingDelayTime / 1000}s)`)
+        .setDesc(`在某些老旧水墨屏设备或者单文件体积过大，每次更新跟踪数据都会导致翻页明显滞后，设置延迟以大幅提升翻页流畅性`)
+        .addSlider(slider =>
+          slider.setLimits(0, 5000, 1000).setValue(this.plugin.settings.readDataTrackingDelayTime).onChange(async value => {
+            this.plugin.settings.readDataTrackingDelayTime = Number(value);
             await this.plugin.saveSettings();
+            setting2.setName(`跟踪数据延迟更新 (${value / 1000}s)`)
           })
         );
-      }
+    }
 
-      new Setting(containerEl).setName('✏️ 划线').addToggle(cd =>
-        cd.setValue(this.plugin.settings.highlight).onChange(async value => {
-          this.plugin.settings.highlight = value;
+    new Setting(containerEl)
+      .setName('👇🏼 翻页')
+      .setDesc('点击下翻，左滑下翻，右滑上翻，长按0.5s进入编辑模式，收起软键盘进入阅读模式')
+      .setHeading()
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.flip).onChange(async value => {
+          this.plugin.settings.flip = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
 
-      new Setting(containerEl)
-        .setName('🔔 讨论')
-        .setDesc('在当前行下方添加对本章节或本书的见解')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.dialogue).onChange(async value => {
-            this.plugin.settings.dialogue = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
+    if (this.plugin.settings.flip) {
+      new Setting(containerEl).setName('修正值').addText(cd =>
+        cd.setValue('' + this.plugin.settings.fileCorrect).onChange(async value => {
+          this.plugin.settings.fileCorrect = Number(value);
+          await this.plugin.saveSettings();
+        })
+      );
+    }
 
-      new Setting(containerEl)
-        .setName('🕵️‍♀️ 人物关系')
-        .setDesc('根据阅读进度创建多张人物关系的 mermaid 图')
-        .addToggle(cd =>
-          cd.setValue(this.plugin.settings.characterRelationships).onChange(async value => {
-            this.plugin.settings.characterRelationships = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-
-      if (this.plugin.settings.characterRelationships) {
-        new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
-          cd.setValue('' + this.plugin.settings.characterRelationshipsFolder).onChange(async value => {
-            this.plugin.settings.characterRelationshipsFolder = value;
-            await this.plugin.saveSettings();
-          })
-        );
-      }
-
-      new Setting(containerEl).setName('📙 同步读书笔记').addToggle(cd =>
-        cd.setValue(this.plugin.settings.readingNotes).onChange(async value => {
-          this.plugin.settings.readingNotes = value;
+    new Setting(containerEl)
+      .setName('🤗 全屏模式')
+      .setDesc('长按 2.5s 打开或关闭全屏模式')
+      .setHeading()
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.fullScreenMode).onChange(async value => {
+          this.plugin.settings.fullScreenMode = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
 
-      if (this.plugin.settings.readingNotes) {
-        new Setting(containerEl).setName('同步至哪个文件夹').addText(cd =>
-          cd.setValue('' + this.plugin.settings.readingNotesToFolder).onChange(async value => {
-            this.plugin.settings.readingNotesToFolder = value;
+    new Setting(containerEl)
+    .setName('🔎 查词')
+    .setHeading()
+    .addToggle(cd =>
+      cd.setValue(this.plugin.settings.searchForWords).onChange(async value => {
+        this.plugin.settings.searchForWords = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    if (this.plugin.settings.searchForWords) {
+      createFolderTrackingSetting(new Setting(containerEl).setName('生词放在哪个文件夹？'), this.plugin, 'wordsSaveFolder')
+      createFolderTrackingSetting(new Setting(containerEl).setName('卡片笔记放在哪个文件夹？'), this.plugin, 'cardSaveFolder')
+    }
+
+    new Setting(containerEl)
+    .setName('✏️ 划线')
+    .setHeading()
+    .addToggle(cd =>
+      cd.setValue(this.plugin.settings.highlight).onChange(async value => {
+        this.plugin.settings.highlight = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    new Setting(containerEl)
+      .setName('🔔 讨论')
+      .setDesc('在当前行下方添加对本章节或本书的见解')
+      .setHeading()
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.dialogue).onChange(async value => {
+          this.plugin.settings.dialogue = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('🕵️‍♀️ 人物关系')
+      .setHeading()
+      .setDesc('根据阅读进度创建多张人物关系的 mermaid 图')
+      .addToggle(cd =>
+        cd.setValue(this.plugin.settings.characterRelationships).onChange(async value => {
+          this.plugin.settings.characterRelationships = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+    if (this.plugin.settings.characterRelationships) {
+      createFolderTrackingSetting(new Setting(containerEl).setName('跟踪哪个文件夹'), this.plugin, 'characterRelationshipsFolder')
+    }
+
+    new Setting(containerEl)
+    .setName('📙 同步读书笔记')
+    .setHeading()
+    .addToggle(cd =>
+      cd.setValue(this.plugin.settings.readingNotes).onChange(async value => {
+        this.plugin.settings.readingNotes = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
+
+    if (this.plugin.settings.readingNotes) {
+      createFolderTrackingSetting(new Setting(containerEl).setName('同步至哪个文件夹'), this.plugin, 'readingNotesToFolder')
+
+      new Setting(containerEl).setName('同步出链').addToggle(cd =>
+        cd.setValue(this.plugin.settings.outLink).onChange(async value => {
+          this.plugin.settings.outLink = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl).setName('同步讨论').addToggle(cd =>
+        cd.setValue(this.plugin.settings.discuss).onChange(async value => {
+          this.plugin.settings.discuss = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl)
+        .setName('同步元字段')
+        .setDesc('添加划线，想法和出链数量元字段')
+        .addToggle(cd =>
+          cd.setValue(this.plugin.settings.frontmatter).onChange(async value => {
+            this.plugin.settings.frontmatter = value;
             await this.plugin.saveSettings();
           })
         );
 
-        new Setting(containerEl).setName('同步出链').addToggle(cd =>
-          cd.setValue(this.plugin.settings.outLink).onChange(async value => {
-            this.plugin.settings.outLink = value;
-            await this.plugin.saveSettings();
-          })
-        );
+      new Setting(containerEl).setName('同步日期').addToggle(cd =>
+        cd.setValue(this.plugin.settings.syncDate).onChange(async value => {
+          this.plugin.settings.syncDate = value;
+          await this.plugin.saveSettings();
+        })
+      );
 
-        new Setting(containerEl).setName('同步讨论').addToggle(cd =>
-          cd.setValue(this.plugin.settings.discuss).onChange(async value => {
-            this.plugin.settings.discuss = value;
-            await this.plugin.saveSettings();
-          })
-        );
+      new Setting(containerEl).setName('添加块id').addToggle(cd =>
+        cd.setValue(this.plugin.settings.blockId).onChange(async value => {
+          this.plugin.settings.blockId = value;
+          await this.plugin.saveSettings();
+        })
+      );
+    }
 
-        new Setting(containerEl)
-          .setName('同步元字段')
-          .setDesc('添加划线，想法和出链数量元字段')
-          .addToggle(cd =>
-            cd.setValue(this.plugin.settings.frontmatter).onChange(async value => {
-              this.plugin.settings.frontmatter = value;
-              await this.plugin.saveSettings();
-            })
-          );
-
-        new Setting(containerEl).setName('同步日期').addToggle(cd =>
-          cd.setValue(this.plugin.settings.syncDate).onChange(async value => {
-            this.plugin.settings.syncDate = value;
-            await this.plugin.saveSettings();
-          })
-        );
-
-        new Setting(containerEl).setName('添加块id').addToggle(cd =>
-          cd.setValue(this.plugin.settings.blockId).onChange(async value => {
-            this.plugin.settings.blockId = value;
-            await this.plugin.saveSettings();
-          })
-        );
-      }
-
-      new Setting(containerEl).setName('🎈 阅读页面').addToggle(cd =>
+      new Setting(containerEl)
+      .setName('🎈 阅读页面')
+      .setHeading()
+      .addToggle(cd =>
         cd.setValue(this.plugin.settings.readingPageStyles).onChange(async value => {
           this.plugin.settings.readingPageStyles = value;
           await this.plugin.saveSettings();
@@ -408,16 +396,21 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       if (this.plugin.settings.readingPageStyles) {
-        new Setting(containerEl).setName('字体大小').addText(cd =>
-          cd.setValue('' + this.plugin.settings.fontSize).onChange(async value => {
+        const setting  = new Setting(containerEl)
+        .setName(`字体大小 (${this.plugin.settings.fontSize}px)`)
+        .addSlider(slider =>
+          slider.setLimits(18, 46, 1).setValue(this.plugin.settings.fontSize).onChange(async value => {
             this.plugin.settings.fontSize = Number(value);
             await this.plugin.saveSettings();
+            setting.setName(`字体大小 (${value}px)`)
           })
         );
       }
-    }
 
-    new Setting(containerEl).setName('📖 读书笔记回顾').addToggle(cd =>
+    new Setting(containerEl)
+    .setName('📖 读书笔记回顾')
+    .setHeading()
+    .addToggle(cd =>
       cd.setValue(this.plugin.settings.reviewOfReadingNotes).onChange(async value => {
         this.plugin.settings.reviewOfReadingNotes = value;
         await this.plugin.saveSettings();
@@ -425,7 +418,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       })
     );
 
-    const AIChatEl = new Setting(containerEl).setName('🤖 AI Chat');
+    const AIChatEl = new Setting(containerEl).setName('🤖 AI Chat').setHeading()
     AIChatEl.addToggle(cd =>
       cd.setValue(this.plugin.settings.chat).onChange(async value => {
         this.plugin.settings.chat = value;
@@ -477,18 +470,8 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
-      new Setting(containerEl).setName('Promats Folder').addText(cd =>
-        cd.setValue('' + this.plugin.settings.chatPromptFolder).onChange(async value => {
-          this.plugin.settings.chatPromptFolder = value;
-          await this.plugin.saveSettings();
-        })
-      );
-      new Setting(containerEl).setName('将对话保存至哪个文件夹').addText(cd =>
-        cd.setValue('' + this.plugin.settings.chatSaveFolder).onChange(async value => {
-          this.plugin.settings.chatSaveFolder = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      createFolderTrackingSetting(new Setting(containerEl).setName('Promats Folder'), this.plugin, 'chatPromptFolder')
+      createFolderTrackingSetting(new Setting(containerEl).setName('将对话保存至哪个文件夹'), this.plugin, 'chatSaveFolder')
 
       new Setting(containerEl).setName('网页剪藏').setDesc('为网页剪藏笔记生成核心摘要和吸引人的标题').addToggle(cd =>
         cd.setValue(this.plugin.settings.chatWebPageClipping).onChange(async value => {
@@ -499,7 +482,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       if (this.plugin.settings.chatWebPageClipping) {
-        new Setting(containerEl).setName('网页剪藏 - 文件夹').setDesc('使用英文逗号分隔').addText(cd =>
+        new Setting(containerEl).setName('网页剪藏 - 跟踪哪些文件夹').addTextArea(cd =>
           cd.setValue('' + this.plugin.settings.chatWebPageClippingFolder).onChange(async value => {
             this.plugin.settings.chatWebPageClippingFolder = value;
             await this.plugin.saveSettings();
@@ -539,6 +522,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('🔒 笔记加密')
       .setDesc('本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。')
+      .setHeading()
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.encryption).onChange(async value => {
           this.plugin.settings.encryption = value;
@@ -631,7 +615,10 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
     }
 
-    new Setting(containerEl).setName('🔑 密码创建器').addToggle(cd =>
+    new Setting(containerEl)
+    .setName('🔑 密码创建器')
+    .setHeading()
+    .addToggle(cd =>
       cd.setValue(this.plugin.settings.passwordCreator).onChange(async value => {
         this.plugin.settings.passwordCreator = value;
         await this.plugin.saveSettings();
@@ -658,6 +645,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('🔗 多义笔记转跳')
       .setDesc('to: "[[filename or path]]"')
+      .setHeading()
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.polysemy).onChange(async value => {
           this.plugin.settings.polysemy = value;
@@ -669,6 +657,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName('📌 块引用')
       .setDesc('获取光标所在行（块）的双链，方便复制到地方使用')
+      .setHeading()
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.blockReference).onChange(async value => {
           this.plugin.settings.blockReference = value;
@@ -677,7 +666,10 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
-    new Setting(containerEl).setName('📸 画廊').addToggle(cd =>
+    new Setting(containerEl)
+    .setName('📸 画廊')
+    .setHeading()
+    .addToggle(cd =>
       cd.setValue(this.plugin.settings.gallery).onChange(async value => {
         this.plugin.settings.gallery = value;
         await this.plugin.saveSettings();
@@ -689,6 +681,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       new Setting(containerEl)
         .setName('🏞️ 海报')
         .setDesc('将视频第一帧作为海报')
+        .setHeading()
         .addToggle(cd =>
           cd.setValue(this.plugin.settings.poster).onChange(async value => {
             this.plugin.settings.poster = value;
@@ -698,7 +691,11 @@ export class ToolboxSettingTab extends PluginSettingTab {
         );
     }
 
-    new Setting(containerEl).setName('🧮 Mermaid GitGraph').setDesc('将无序列表生成 Mermaid GitGraph').addToggle(cd =>
+    new Setting(containerEl)
+    .setName('🧮 Mermaid GitGraph')
+    .setDesc('将无序列表生成 Mermaid GitGraph')
+    .setHeading()
+    .addToggle(cd =>
       cd.setValue(this.plugin.settings.gitChart).onChange(async value => {
         this.plugin.settings.gitChart = value;
         await this.plugin.saveSettings();
@@ -736,7 +733,11 @@ export class ToolboxSettingTab extends PluginSettingTab {
     }
 
 
-    new Setting(containerEl).setName('📦 沙箱（Beta）').setDesc('外部脚本注入，可实现更丰富的功能').addToggle(cd =>
+    new Setting(containerEl)
+    .setName('📦 沙箱（Beta）')
+    .setDesc('外部脚本注入，可实现更丰富的功能')
+    .setHeading()
+    .addToggle(cd =>
       cd.setValue(this.plugin.settings.sandbox).onChange(async value => {
         this.plugin.settings.sandbox = value;
         await this.plugin.saveSettings();
@@ -745,13 +746,25 @@ export class ToolboxSettingTab extends PluginSettingTab {
     );
 
     if (this.plugin.settings.sandbox) {
-      new Setting(containerEl).setName('脚本所在文件夹').addText(cd =>
-        cd.setValue('' + this.plugin.settings.sandboxFolder).onChange(async value => {
-          this.plugin.settings.sandboxFolder = value;
-          this.plugin.settings.passwordCreatorMixedContent = value;
-          await this.plugin.saveSettings();
-        })
-      );
+      createFolderTrackingSetting(new Setting(containerEl).setName('脚本所在文件夹'), this.plugin, 'sandboxFolder')
     }
   }
+}
+
+
+function createFolderTrackingSetting(setting: Setting, plugin: any, key: string) {
+  setting.addDropdown(dropdown => {
+      const folders = [...new Set(
+          plugin.app.vault.getFiles().map((f: TFile) => f.parent?.path || "/")
+      )].sort();
+      dropdown.addOption("", "选择文件夹");
+      folders.forEach((folder: string) => {
+          dropdown.addOption(folder, folder);
+      });
+      dropdown.setValue(plugin.settings[key] || "");
+      dropdown.onChange(async value => {
+          plugin.settings[key] = value;
+          await plugin.saveSettings();
+      });
+  });
 }

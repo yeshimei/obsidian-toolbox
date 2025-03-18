@@ -1,5 +1,5 @@
 import { Platform, TFile } from 'obsidian';
-import { $, COMMENT_CLASS, editorBlur, FOOTNOTE_CLASS, getBasename, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS, STATUS_BAR_CLASS } from 'src/helpers';
+import { COMMENT_CLASS, editorBlur, FOOTNOTE_CLASS, getBasename, MOBILE_HEADER_CLASS, MOBILE_NAVBAR_CLASS, OUT_LINK_CLASS, SOURCE_VIEW_CLASS, STATUS_BAR_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 import { PanelExhibition } from 'src/Modals/PanelExhibition';
 import { PanelExhibitionHlight } from 'src/Modals/PanelExhibitionHlight';
@@ -51,8 +51,8 @@ function scrollPage (el: HTMLElement, direction: boolean, file: TFile) {
 function fullScreen(mode: boolean | number = null, save = true) {
   if (!Platform.isMobile) return;
   if (pageTurner?.keyboardWatcher?.isKeyboardVisible) return;
-  const t = $(MOBILE_HEADER_CLASS);
-  const b = $(MOBILE_NAVBAR_CLASS);
+  const t = document.querySelector(MOBILE_HEADER_CLASS) as HTMLElement;
+  const b = document.querySelector(MOBILE_NAVBAR_CLASS) as HTMLElement;
 
   const fullScreenMode = mode === -1 ? self.settings.fullScreenMode : mode === null ? !self.settings.fullScreenMode : mode;
 

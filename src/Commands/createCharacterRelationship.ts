@@ -1,5 +1,5 @@
 import { Editor, Notice, TFile } from 'obsidian';
-import { $, computerReadingProgress, createElement, getBlock, hasRootFolder, SOURCE_VIEW_CLASS } from 'src/helpers';
+import { computerReadingProgress, createElement, getBlock, isFileInDirectory, SOURCE_VIEW_CLASS } from 'src/helpers';
 import Toolbox from 'src/main';
 
 export default function createCharacterRelationshipCommand(self: Toolbox) {
@@ -13,7 +13,7 @@ export default function createCharacterRelationshipCommand(self: Toolbox) {
 }
 
 export async function switchCharacterRelationship(self: Toolbox, file: TFile) {
-  if (!hasRootFolder(file, self.settings.characterRelationshipsFolder)) return;
+  if (!isFileInDirectory(file, self.settings.characterRelationshipsFolder)) return;
   document.onclick = evt => {
     const target = evt.target as HTMLElement;
     if (target.hasClass('__character-relationship__')) {
@@ -47,7 +47,7 @@ async function createCharacterRelationship(self: Toolbox, editor: Editor, file: 
 
   // 人物关系笔记的内容
   let blockId = getBlock(self.app, editor, file) as string;
-  const progress = computerReadingProgress($(SOURCE_VIEW_CLASS));
+  const progress = computerReadingProgress(document.querySelector(SOURCE_VIEW_CLASS));
   await characterRelationship(self, targetFile, headingText, file.path, blockId, progress);
   await self.app.workspace.getLeaf(true).openFile(targetFile);
 }
