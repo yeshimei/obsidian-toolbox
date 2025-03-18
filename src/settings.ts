@@ -59,6 +59,10 @@ export interface ToolboxSettings {
   chatPromptFolder: string;
   chatSaveFolder: string;
 
+  chatWebPageClipping: boolean;
+  chatWebPageClippingFolder: string;
+  chatWebPageClippingSummaryTopUp: boolean;
+
   completion: boolean;
   completionDelay: number;
   completionMaxLength: number;
@@ -148,6 +152,10 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   chatModel: 'deepseek-chat',
   chatPromptFolder: '',
   chatSaveFolder: '',
+
+  chatWebPageClipping: false,
+  chatWebPageClippingFolder: '',
+  chatWebPageClippingSummaryTopUp: false,
 
   completion: false,
   completionDelay: 100,
@@ -482,6 +490,24 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
+      new Setting(containerEl).setName('网页剪藏').setDesc('为网页剪藏笔记生成核心摘要和吸引人的标题').addToggle(cd =>
+        cd.setValue(this.plugin.settings.chatWebPageClipping).onChange(async value => {
+          this.plugin.settings.chatWebPageClipping = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
+      if (this.plugin.settings.chatWebPageClipping) {
+        new Setting(containerEl).setName('网页剪藏 - 文件夹').setDesc('使用英文逗号分隔').addText(cd =>
+          cd.setValue('' + this.plugin.settings.chatWebPageClippingFolder).onChange(async value => {
+            this.plugin.settings.chatWebPageClippingFolder = value;
+            await this.plugin.saveSettings();
+          })
+        );
+      }
+
+
       new Setting(containerEl)
         .setName('自动补全')
         .setDesc('根据当前段落内容，自动补全接下来的笔记内容。桌面端按空格键补全建议内容插入到光标位置，移动端点击补全建议内容插入到光标位置。')
@@ -508,9 +534,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
           })
         );
       }
-    }
-
-    if (this.plugin.settings.chat) {
     }
 
     new Setting(containerEl)

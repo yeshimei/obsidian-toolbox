@@ -24,11 +24,11 @@ import repositionBilibiliAISummary from './CustomizedCommands/repositionBilibili
 import repositionVideo from './CustomizedCommands/repositionVideo';
 import resourcesToCommand, { resourceTo } from './CustomizedCommands/resourceTo';
 import searchForPlantCommand from './CustomizedCommands/searchForPlant';
-import summarizeAndRenameNote from './CustomizedCommands/summarizeAndRenameNote';
 import switchLibrary from './CustomizedCommands/switchLibrary';
 import { debounce, hasRootFolder } from './helpers';
 import { DEFAULT_SETTINGS, ToolboxSettings, ToolboxSettingTab } from './settings';
 import { sandbox } from './Commands/sandbox';
+import chatWebPageClipping from './Commands/chatWebPageClipping';
 
 export default class Toolbox extends Plugin {
   encryptionTempData: any;
@@ -99,7 +99,7 @@ export default class Toolbox extends Plugin {
         // 切换人物关系视图
         switchCharacterRelationship(this, file);
         // 为笔记生成标题和摘要
-        summarizeAndRenameNote(this, file);
+        chatWebPageClipping(this, file);
       })
     );
 
