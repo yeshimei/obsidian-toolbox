@@ -58,6 +58,7 @@ export interface ToolboxSettings {
   chatModel: string;
   chatPromptFolder: string;
   chatSaveFolder: string;
+  chatDefaultUsingR1: boolean;
 
   chatWebPageClipping: boolean;
   chatWebPageClippingFolder: string;
@@ -150,6 +151,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   chatModel: 'deepseek-chat',
   chatPromptFolder: '',
   chatSaveFolder: '',
+  chatDefaultUsingR1: false,
 
   chatWebPageClipping: false,
   chatWebPageClippingFolder: '',
@@ -472,6 +474,16 @@ export class ToolboxSettingTab extends PluginSettingTab {
 
       createFolderTrackingSetting(new Setting(containerEl).setName('Promats Folder'), this.plugin, 'chatPromptFolder')
       createFolderTrackingSetting(new Setting(containerEl).setName('将对话保存至哪个文件夹'), this.plugin, 'chatSaveFolder')
+
+      
+      new Setting(containerEl).setName('默认使用推理模型').addToggle(cd =>
+        cd.setValue(this.plugin.settings.chatDefaultUsingR1).onChange(async value => {
+          this.plugin.settings.chatDefaultUsingR1 = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+
 
       new Setting(containerEl).setName('网页剪藏').setDesc('为网页剪藏笔记生成核心摘要和吸引人的标题').addToggle(cd =>
         cd.setValue(this.plugin.settings.chatWebPageClipping).onChange(async value => {

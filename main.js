@@ -941,7 +941,7 @@ function adjustReadingPageStyle(self4, file) {
   }
 }
 
-// src/Commands/AIChat.ts
+// src/Commands/chat.ts
 var import_obsidian6 = require("obsidian");
 
 // src/Modals/FuzzySuggest.ts
@@ -998,6 +998,14 @@ var actions = [
       icon: "link",
       fn: wikiLink
     }
+  },
+  {
+    value: "\u751F\u6210\u4E00\u5F20\u5361\u7247\u7B14\u8BB0 \u{1F4C7}",
+    text: {
+      name: "cardNote",
+      icon: "notepad-text",
+      fn: cardNote
+    }
   }
 ];
 var AIChatAction_default = actions;
@@ -1025,6 +1033,25 @@ function wikiLink() {
 function notSaveChat() {
   this.chat.stopChat();
   this.chat.saveChatFile && this.self.app.vault.delete(this.chat.saveChatFile);
+}
+async function cardNote() {
+  var _a2;
+  const editor = (_a2 = this.self.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView)) == null ? void 0 : _a2.editor;
+  const name = this.chat.messages.find((message) => message.type === "question").content;
+  const content = this.chat.messages.find((message) => message.type === "answer").content;
+  const folder = this.self.settings.cardSaveFolder;
+  let file = this.self.app.vault.getMarkdownFiles().find((file2) => isFileInDirectory(file2, folder) && file2.basename === name);
+  if (file) {
+    new import_obsidian4.Notice("\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
+  } else {
+    const filepath = `${folder}/${name}.md`;
+    file = await this.self.app.vault.create(filepath, content || "");
+  }
+  if (editor && file) {
+    const text = editor.getSelection();
+    text && editor.replaceSelection(`[[${file.path.slice(0, -3)}|${text}]]`);
+  }
+  this.self.app.workspace.getLeaf(true).openFile(file);
 }
 
 // src/Commands/AIChatInPrompt.ts
@@ -1071,7 +1098,7 @@ async function startChat(name, self4, chat4, c2, c1) {
   await chat4.openChat(
     [
       { role: "system", content: promptContent, type: "prompt" },
-      { role: "user", content, type: "file" }
+      { role: "user", content, type: "content", files: [file.path] }
     ],
     (text, type) => {
       if (type === "content") {
@@ -1085,7 +1112,7 @@ async function startChat(name, self4, chat4, c2, c1) {
   );
 }
 
-// src/Commands/chat.ts
+// src/Commands/AIChatManager.ts
 var import_obsidian5 = require("obsidian");
 
 // node_modules/openai/internal/qs/formats.mjs
@@ -4705,8 +4732,8 @@ var Chat2 = class extends APIResource {
     this.completions = new Completions2(this._client);
   }
 };
-(function(Chat4) {
-  Chat4.Completions = Completions2;
+(function(Chat3) {
+  Chat3.Completions = Completions2;
 })(Chat2 || (Chat2 = {}));
 
 // node_modules/openai/resources/beta/realtime/sessions.mjs
@@ -6367,8 +6394,8 @@ OpenAI.BatchesPage = BatchesPage;
 OpenAI.Uploads = Uploads;
 var openai_default = OpenAI;
 
-// src/Commands/chat.ts
-var defaultOpenAioptions = {
+// src/Commands/AIChatManager.ts
+var defaultOpenAiOptions = {
   frequency_penalty: 0,
   presence_penalty: 0,
   temperature: 1,
@@ -6376,20 +6403,25 @@ var defaultOpenAioptions = {
   action: "default",
   save: true
 };
-var Chat3 = class {
+var AIChatManager = class {
   constructor(self4) {
-    this.data = { ...defaultOpenAioptions };
+    this.data = { ...defaultOpenAiOptions };
     this.title = "";
     this.messages = [];
     this.isStopped = true;
     this.self = self4;
   }
   async getTitle(updateText) {
-    await this.openChat({ role: "user", content: AIChatInPrompt_default["namingTitle"].promptContent, type: "title" }, async (text) => {
+    const chat4 = new AIChatManager(this.self);
+    chat4.data.save = false;
+    await chat4.openChat([
+      { role: "system", content: AIChatInPrompt_default["namingTitle"].promptContent, type: "prompt" },
+      { role: "user", content: this.messages.slice(-1)[0].content, type: "content" }
+    ], async (text) => {
       updateText(text);
       this.title += text;
+      chat4.title += text;
     });
-    this.messages = this.messages.filter((res) => res.type !== "title");
   }
   /**
    * 指定 prompt，根据给定名称从文件系统中读取提示内容及其相关参数
@@ -6400,18 +6432,18 @@ var Chat3 = class {
     const path = this.self.settings.chatPromptFolder + "/" + name + ".md";
     const file = this.self.app.vault.getFiles().find((f2) => f2.path === path);
     if (!file) {
-      this.data = { ...defaultOpenAioptions };
+      this.data = { ...defaultOpenAiOptions };
       return;
     }
     this.promptName = name;
     this.promptContent = (await this.self.app.vault.cachedRead(file)).replace(/---[\s\S]*?---/, "");
     const frontmatter = ((_a2 = this.self.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) || {};
-    this.data.frequency_penalty = Number(frontmatter.frequency_penalty || defaultOpenAioptions.frequency_penalty);
-    this.data.presence_penalty = Number(frontmatter.presence_penalty || defaultOpenAioptions.presence_penalty);
-    this.data.temperature = Number(frontmatter.temperature || defaultOpenAioptions.temperature);
+    this.data.frequency_penalty = Number(frontmatter.frequency_penalty || defaultOpenAiOptions.frequency_penalty);
+    this.data.presence_penalty = Number(frontmatter.presence_penalty || defaultOpenAiOptions.presence_penalty);
+    this.data.temperature = Number(frontmatter.temperature || defaultOpenAiOptions.temperature);
     this.data.max_tokens = frontmatter.max_tokens ? Number(frontmatter.max_tokens) : null;
-    this.data.top_p = Number(frontmatter.top_p || defaultOpenAioptions.top_p);
-    this.data.action = frontmatter.action || defaultOpenAioptions.action;
+    this.data.top_p = Number(frontmatter.top_p || defaultOpenAiOptions.top_p);
+    this.data.action = frontmatter.action || defaultOpenAiOptions.action;
     this.data.save = frontmatter.save === "false" || frontmatter.save === "0" ? false : true;
   }
   /**
@@ -6441,7 +6473,7 @@ var Chat3 = class {
   /**
    * 加载历史聊天记录
    * @param path - 聊天记录文件的路径
-   * @returns {Promise<MESSAGE_TYEP[]>} 返回聊天记录
+   * @returns {Promise<MESSAGE_TYPE[]>} 返回聊天记录
    */
   async loadHistoryChat(path) {
     const file = this.self.app.vault.getFiles().find((f2) => f2.path === path);
@@ -6514,29 +6546,28 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
   /**
    * 开启聊天
    *
-   * @param messgae - 需要发送的消息
+   * @param message - 需要发送的消息
    * @param updateText - 更新聊天内容的回调函数。
    * @returns Promise<void>
    */
-  async openChat(messgae, updateText) {
-    if (!messgae)
+  async openChat(message, updateText) {
+    if (!message)
       return;
     this.isStopped = false;
-    const { chatKey, chatUrl, chatModel } = this.self.settings;
-    this.promptContent && this.messages.push({ role: "system", content: this.promptContent, type: "prompt" });
-    this.promptContent = null;
-    if (typeof messgae === "string") {
-      messgae = [{ content: messgae, role: "user", type: "question" }];
-    } else if (!Array.isArray(messgae)) {
-      messgae = [messgae];
+    let { chatKey, chatUrl, chatModel } = this.self.settings;
+    if (this.model)
+      chatModel = this.model;
+    if (this.promptContent && this.messages.length === 0) {
+      this.messages.push({ role: "system", content: this.promptContent, type: "prompt" });
     }
-    let messages = this.messages.filter((res) => res.type !== "question");
-    const type = messgae[0].type;
-    this.messages = this.messages.concat(messgae);
-    messages = messages.concat(messgae);
-    const answer = { role: "system", content: "", type: type === "question" ? "answer" : type };
-    this.messages.push(answer);
-    messages.push(answer);
+    if (typeof message === "string") {
+      this.messages.push({ role: "user", content: message, type: "question" });
+    } else if (Array.isArray(message)) {
+      this.messages.push(...message);
+    } else {
+      this.messages.push(message);
+    }
+    const answer = { role: "assistant", content: "", type: "answer" };
     const openai = new openai_default({
       baseURL: chatUrl,
       apiKey: chatKey,
@@ -6544,26 +6575,29 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
     });
     try {
       const completion2 = await openai.chat.completions.create({
-        messages,
+        messages: this.messages,
         model: chatModel,
         stream: true,
         ...this.data
       });
       for await (const chunk of completion2) {
         if (this.isStopped) {
-          updateText("", "content");
+          updateText("", "stop");
           break;
         }
         const choices = chunk.choices;
-        const text = choices[0].delta.content;
+        const content = choices[0].delta.content;
+        const reasoning_content = choices[0].delta.reasoning_content;
         const finish = this.isStopped = choices[0].finish_reason;
-        if (text || finish) {
-          updateText(text, "content");
-          answer.content += text;
+        updateText(reasoning_content || content || "", content === null ? "reasoning_content" : "content");
+        answer.content += content || "";
+        if (finish) {
+          this.messages.push(answer);
+          updateText("", "stop");
         }
         if (finish && !this.title) {
-          this.getTitle((text2) => {
-            updateText(text2, "title");
+          await this.getTitle((text) => {
+            updateText(text, "title");
           });
         }
       }
@@ -6574,7 +6608,7 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
   }
 };
 
-// src/Commands/AIChat.ts
+// src/Commands/chat.ts
 function chatCommand(self4) {
   self4.settings.chat && self4.addCommand({
     id: "AI Chat",
@@ -6599,11 +6633,11 @@ var PanelChat = class extends import_obsidian6.Modal {
     super(self4.app);
     this.files = /* @__PURE__ */ new Set();
     this.promptName = "AI Chat";
-    this.action = "deafult";
+    this.action = "default";
     this.question = "";
     this.defaultTextAreaHeight = 80;
     this.self = self4;
-    this.chat = new Chat3(self4);
+    this.chat = new AIChatManager(self4);
     this.question = content;
     this.attachmentHandler();
   }
@@ -6612,8 +6646,10 @@ var PanelChat = class extends import_obsidian6.Modal {
     this.setTitle(this.promptName);
     contentEl.appendChild(this.chatArea = createChatArea());
     contentEl.appendChild(this.fileArea = createChatArea());
+    this.chatArea.style.overflow = "auto";
+    this.chat.model = this.self.settings.chatDefaultUsingR1 ? "deepseek-reasoner" : null;
     new import_obsidian6.Setting(contentEl).addTextArea((text) => this.setTextArea(text)).addButton((btn) => this.setSend(btn)).infoEl.style.display = "none";
-    new import_obsidian6.Setting(contentEl).addDropdown((cd) => this.setPrompt(cd)).addButton((btn) => this.setAttachment(btn)).addButton((btn) => this.setHistoryChat(btn)).addButton((btn) => this.setAction(btn));
+    new import_obsidian6.Setting(contentEl).addDropdown((cd) => this.setPrompt(cd)).addButton((btn) => this.deepReasoning(btn)).addButton((btn) => this.setAttachment(btn)).addButton((btn) => this.setHistoryChat(btn)).addButton((btn) => this.setAction(btn));
   }
   attachmentHandler() {
     this.contentEl.onclick = (evt) => {
@@ -6634,7 +6670,7 @@ var PanelChat = class extends import_obsidian6.Modal {
   setSend(btn) {
     this.sendBtn = btn;
     btn.buttonEl.style.marginTop = "auto";
-    btn.buttonEl.style.width = "3rem";
+    btn.buttonEl.style.width = "2rem";
     btn.setIcon("send").setDisabled(!this.question).setCta().onClick(async () => {
       this.textArea.inputEl.style.height = this.defaultTextAreaHeight + "px";
       if (this.promptName.indexOf("in-") === 0) {
@@ -6694,9 +6730,30 @@ var PanelChat = class extends import_obsidian6.Modal {
     cd.setValue("");
     cd.onChange(async (value) => this.choicePrompt(value));
   }
+  deepReasoning(btn) {
+    btn.buttonEl.style.width = "2rem";
+    if (this.chat.model) {
+      btn.setCta();
+      btn.setIcon("circle-dot-dashed");
+    } else {
+      btn.removeCta();
+      btn.setIcon("circle-dashed");
+    }
+    btn.onClick(() => {
+      if (this.chat.model) {
+        this.chat.model = null;
+        btn.removeCta();
+        btn.setIcon("circle-dashed");
+      } else {
+        this.chat.model = "deepseek-reasoner";
+        btn.setCta();
+        btn.setIcon("circle-dot-dashed");
+      }
+    });
+  }
   setAttachment(btn) {
     this.attachmentBtn = btn;
-    btn.buttonEl.style.width = "3rem";
+    btn.buttonEl.style.width = "2rem";
     btn.setIcon("paperclip").onClick(() => {
       new FuzzySuggest(this.app, this.getAttachmentList(), async ({ text }) => {
         if (text) {
@@ -6719,7 +6776,7 @@ var PanelChat = class extends import_obsidian6.Modal {
   }
   setHistoryChat(btn) {
     this.saveBtn = btn;
-    btn.buttonEl.style.width = "3rem";
+    btn.buttonEl.style.width = "2rem";
     const paths = getBooksList(this.self.app, this.self.settings.chatSaveFolder).map(({ text }) => ({
       value: text.basename.split(" - ").shift(),
       text
@@ -6733,7 +6790,7 @@ var PanelChat = class extends import_obsidian6.Modal {
   }
   setAction(btn) {
     this.actionBtn = btn;
-    btn.buttonEl.style.width = "3rem";
+    btn.buttonEl.style.width = "2rem";
     btn.setIcon(AIChatAction_default[0].text.icon).onClick(() => {
       new FuzzySuggest(this.app, AIChatAction_default, async ({ text }) => this.choiceAction(text.name)).open();
     });
@@ -6765,32 +6822,47 @@ var PanelChat = class extends import_obsidian6.Modal {
     }
     let question = this.question || "";
     let list = "";
-    const meesages = [{ role: "user", content: question, type: "question" }];
+    const message = { role: "user", content: question, type: "question", files: [] };
     this.textArea.setValue("");
     for (let file of this.files) {
-      const content = `${file.path}
-${await this.self.app.vault.cachedRead(file)}`;
-      meesages.push({ role: "user", content, type: "file" });
+      const content = await this.self.app.vault.cachedRead(file);
+      message.content = content + "\n\n" + message.content;
+      message.files.push(file.path);
       list += `\u{1F4C4} ${file.path}
 `;
     }
-    this.chatArea.innerHTML += `<hr>${list}<br><br><b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
+    this.chatArea.innerHTML += `<hr>${list}<b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
 ${this.question}
 
 <b><i>${this.promptName}\uFF1A</i></b>
 `;
     this.question = "";
+    let isReasoningContent = true;
+    let isContent = true;
+    let reasoningContentEl;
     this.sendBtn.setIcon("circle-slash");
-    await this.chat.openChat(meesages, (text, type) => {
+    await this.chat.openChat(message, (text, type) => {
       this.files.clear();
       this.fileArea.innerHTML = "";
-      if (type === "content") {
+      if (type === "reasoning_content") {
+        if (isReasoningContent) {
+          reasoningContentEl = document.createElement("span");
+          reasoningContentEl.style.opacity = ".5";
+          this.chatArea.appendChild(reasoningContentEl);
+          isReasoningContent = false;
+        }
+        reasoningContentEl.innerText += text;
+      } else if (type === "content") {
+        if (!isReasoningContent && isContent) {
+          text += "\n\n";
+          isContent = false;
+        }
         this.updateChat(text);
-        setTimeout(() => this.chatArea.scrollTo(0, this.chatArea.scrollHeight), 0);
       } else if (type === "title") {
-        this.setTitle(this.chat.title);
-      }
-      if (!text) {
+        this.chat.title && this.setTitle(this.chat.title);
+      } else if (type === "stop") {
+        isReasoningContent = true;
+        isContent = true;
         this.sendBtn.setIcon("send");
         this.sendBtn.setDisabled(!this.question);
       }
@@ -6887,7 +6959,7 @@ function blockReference(self4, editor, file) {
 
 // src/Commands/completion.ts
 var import_obsidian8 = require("obsidian");
-var chat2 = new Chat3(null);
+var chat2 = new AIChatManager(null);
 var lastPrefix;
 var timer;
 var completionText = "";
@@ -10971,7 +11043,7 @@ var PanelSearchForWord = class extends import_obsidian22.Modal {
     this.title = title;
     this.content = content;
     this.onSubmit = onSubmit;
-    this.chat = new Chat3(self4);
+    this.chat = new AIChatManager(self4);
     this.chat.data.save = false;
   }
   onOpen() {
@@ -11446,6 +11518,7 @@ var DEFAULT_SETTINGS = {
   chatModel: "deepseek-chat",
   chatPromptFolder: "",
   chatSaveFolder: "",
+  chatDefaultUsingR1: false,
   chatWebPageClipping: false,
   chatWebPageClippingFolder: "",
   chatWebPageClippingSummaryTopUp: false,
@@ -11679,6 +11752,13 @@ var ToolboxSettingTab = class extends import_obsidian28.PluginSettingTab {
       );
       createFolderTrackingSetting(new import_obsidian28.Setting(containerEl).setName("Promats Folder"), this.plugin, "chatPromptFolder");
       createFolderTrackingSetting(new import_obsidian28.Setting(containerEl).setName("\u5C06\u5BF9\u8BDD\u4FDD\u5B58\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939"), this.plugin, "chatSaveFolder");
+      new import_obsidian28.Setting(containerEl).setName("\u9ED8\u8BA4\u4F7F\u7528\u63A8\u7406\u6A21\u578B").addToggle(
+        (cd) => cd.setValue(this.plugin.settings.chatDefaultUsingR1).onChange(async (value) => {
+          this.plugin.settings.chatDefaultUsingR1 = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
       new import_obsidian28.Setting(containerEl).setName("\u7F51\u9875\u526A\u85CF").setDesc("\u4E3A\u7F51\u9875\u526A\u85CF\u7B14\u8BB0\u751F\u6210\u6838\u5FC3\u6458\u8981\u548C\u5438\u5F15\u4EBA\u7684\u6807\u9898").addToggle(
         (cd) => cd.setValue(this.plugin.settings.chatWebPageClipping).onChange(async (value) => {
           this.plugin.settings.chatWebPageClipping = value;
@@ -11900,7 +11980,7 @@ function createFolderTrackingSetting(setting, plugin, key) {
 
 // src/Commands/chatWebPageClipping.ts
 var import_obsidian29 = require("obsidian");
-var chat3 = new Chat3(null);
+var chat3 = new AIChatManager(null);
 async function chatWebPageClipping(self4, file) {
   const isMD = isFileInDirectory(file, self4.settings.chatWebPageClippingFolder.split(","));
   if (!isMD)

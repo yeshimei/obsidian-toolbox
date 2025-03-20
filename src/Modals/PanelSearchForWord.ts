@@ -1,11 +1,11 @@
 import { Modal, Setting } from 'obsidian';
-import Chat from 'src/Commands/chat';
 import Toolbox from 'src/main';
 import { createChatArea, editorBlur } from '../helpers';
+import AIChatManager from 'src/Commands/AIChatManager';
 
 export class PanelSearchForWord extends Modal {
   self: Toolbox;
-  chat: Chat;
+  chat: AIChatManager;
   title: string;
   chatArea: HTMLElement;
   chatContent = '';
@@ -17,7 +17,7 @@ export class PanelSearchForWord extends Modal {
     this.title = title;
     this.content = content;
     this.onSubmit = onSubmit;
-    this.chat = new Chat(self);
+    this.chat = new AIChatManager(self);
     this.chat.data.save = false;
   }
 

@@ -2,7 +2,7 @@ import { MarkdownView, Plugin, TFile } from 'obsidian';
 import 'test';
 import test from 'test/Test';
 import adjustReadingPageStyle from './Commands/adjustReadingPageStyle';
-import chatCommand from './Commands/AIChat';
+import chatCommand from './Commands/chat';
 import Block from './Commands/Block';
 import blockReferenceCommand from './Commands/blockReference';
 import completionCommand, { completion } from './Commands/completion';

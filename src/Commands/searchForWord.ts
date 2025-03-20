@@ -76,6 +76,7 @@ async function searchForWord(self: Toolbox, editor: Editor) {
   }).open();
 }
 
+
 function filterChineseAndPunctuation(str: string) {
   const regex = /[\u4e00-\u9fa5。，、；;]/g;
   return str.match(regex).join('');

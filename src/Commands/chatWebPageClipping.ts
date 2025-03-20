@@ -1,9 +1,9 @@
 import { App, Notice, TFile } from 'obsidian';
 import Toolbox from 'src/main';
 import inPrompts from './AIChatInPrompt';
-import Chat from './chat';
 import { getMetadata, isFileInDirectory } from 'src/helpers';
-const chat = new Chat(null);
+import AIChatManager from './AIChatManager';
+const chat = new AIChatManager(null);
 
 export default async function chatWebPageClipping(self: Toolbox, file: TFile) {
   const isMD = isFileInDirectory(file, self.settings.chatWebPageClippingFolder.split(','))

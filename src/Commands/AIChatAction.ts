@@ -1,4 +1,5 @@
-import { MarkdownView } from 'obsidian';
+import { MarkdownView, Notice, TFile } from 'obsidian';
+import { isFileInDirectory } from 'src/helpers';
 
 const actions = [
   {
@@ -32,6 +33,14 @@ const actions = [
       icon: 'link',
       fn: wikiLink
     }
+  },
+  {
+    value: '生成一张卡片笔记 📇',
+    text: {
+      name: 'cardNote',
+      icon: 'notepad-text',
+      fn: cardNote
+    }
   }
 ];
 
@@ -61,4 +70,25 @@ function wikiLink() {
 function notSaveChat() {
   this.chat.stopChat();
   this.chat.saveChatFile && this.self.app.vault.delete(this.chat.saveChatFile);
+}
+
+
+async function cardNote() {
+  const editor = this.self.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+  const name = this.chat.messages.find((message: { type: string }) => message.type === 'question').content;
+  const content = this.chat.messages.find((message: { type: string }) => message.type === 'answer').content;
+  const folder = this.self.settings.cardSaveFolder;
+  let file = this.self.app.vault.getMarkdownFiles().find((file: TFile) => isFileInDirectory(file, folder) && file.basename === name);
+  
+  if (file) {
+    new Notice('卡片笔记已存在');
+  } else {
+    const filepath = `${folder}/${name}.md`;
+    file = await this.self.app.vault.create(filepath, content || '');
+  }
+  if (editor && file) {
+    const text = editor.getSelection();
+    text && editor.replaceSelection(`[[${file.path.slice(0, -3)}|${text}]]`);
+  }
+  this.self.app.workspace.getLeaf(true).openFile(file);
 }

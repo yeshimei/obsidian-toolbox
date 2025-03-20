@@ -1,7 +1,7 @@
 import { TFile } from 'obsidian';
 import { sanitizeFileName } from 'src/helpers';
 import Toolbox from 'src/main';
-import Chat from './chat';
+import Chat from './AIChatManager';
 
 interface InPrompt {
   title: string;
@@ -56,7 +56,7 @@ async function startChat(name: string, self: Toolbox, chat: Chat, c2: (text: str
   await chat.openChat(
     [
       { role: 'system', content: promptContent, type: 'prompt' },
-      { role: 'user', content: content, type: 'file' }
+      { role: 'user', content: content, type: 'content', files: [file.path] }
     ],
     (text: string, type: string) => {
       if (type === 'content') {

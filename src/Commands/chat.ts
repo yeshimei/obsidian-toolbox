@@ -1,254 +1,338 @@
-import { Notice, TFile } from 'obsidian';
-import OpenAI from 'openai';
-import { sanitizeFileName } from 'src/helpers';
+import { ButtonComponent, DropdownComponent, MarkdownView, Modal, Setting, TextAreaComponent, TFile } from 'obsidian';
+import { createChatArea, formatFileSize, getBooksList, getOptionList } from 'src/helpers';
 import Toolbox from 'src/main';
+import FuzzySuggest from 'src/Modals/FuzzySuggest';
+import actions from './AIChatAction';
 import inPrompts from './AIChatInPrompt';
+import { MESSAGE_TYPE } from './AIChatManager';
+import AIChatManager from './AIChatManager';
 
-export type REQUEST_BODY = {
-  frequency_penalty?: number;
-  presence_penalty?: number;
-  max_tokens?: number;
-  temperature?: number;
-  top_p?: number;
-  action?: string;
-  save?: boolean;
-};
-
-export type MESSAGE_TYEP = {
-  content: string;
-  role: 'user' | 'system' | 'assistant';
-  name?: string;
-  prefix?: string;
-  type?: string;
-};
-
-const defaultOpenAioptions = {
-  frequency_penalty: 0,
-  presence_penalty: 0,
-  temperature: 1,
-  top_p: 1,
-  action: 'default',
-  save: true
-};
-
-export default class Chat {
-  data: REQUEST_BODY = { ...defaultOpenAioptions };
-  self: Toolbox;
-  title = '';
-  messages: MESSAGE_TYEP[] = [];
-  promptName: string;
-  promptContent: string;
-  saveChatFile: TFile;
-  isStopped = true;
-  constructor(self: Toolbox) {
-    this.self = self;
-  }
-
-  async getTitle(updateText: (text: string) => void) {
-    await this.openChat({ role: 'user', content: inPrompts['namingTitle'].promptContent, type: 'title' }, async text => {
-      updateText(text);
-      this.title += text;
+export default function chatCommand(self: Toolbox) {
+  self.settings.chat &&
+    self.addCommand({
+      id: 'AI Chat',
+      name: 'AI Chat',
+      icon: 'bot',
+      callback: () => chat(self, null)
     });
+}
 
-    this.messages = this.messages.filter(res => res.type !== 'title');
+export async function chat(self: Toolbox, text: string) {
+  if (!self.settings.chat) return;
+  if (!text) {
+    const editor = self.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+    if (editor) text = editor.getSelection();
+  }
+  new PanelChat(self, text).open();
+}
+
+class PanelChat extends Modal {
+  chat: AIChatManager;
+  self: Toolbox;
+  files: Set<TFile> = new Set();
+  chatArea: HTMLDivElement;
+  fileArea: HTMLDivElement;
+  promptName = 'AI Chat';
+  action = 'default';
+  question = '';
+  sendBtn: ButtonComponent;
+  attachmentBtn: ButtonComponent;
+  saveBtn: ButtonComponent;
+  actionBtn: ButtonComponent;
+  textArea: TextAreaComponent;
+  defaultTextAreaHeight = 80;
+  constructor(self: Toolbox, content: string) {
+    super(self.app);
+    this.self = self;
+    this.chat = new AIChatManager(self);
+    this.question = content;
+    this.attachmentHandler();
   }
 
-  /**
-   * 指定 prompt，根据给定名称从文件系统中读取提示内容及其相关参数
-   * @param name - 要指定的 prompt 名称
-   */
-  async specifyPrompt(name: string): Promise<void> {
-    const path = this.self.settings.chatPromptFolder + '/' + name + '.md';
-    const file = this.self.app.vault.getFiles().find(f => f.path === path);
-    if (!file) {
-      this.data = { ...defaultOpenAioptions };
+  onOpen() {
+    const { contentEl } = this;
+    this.setTitle(this.promptName);
+    
+    contentEl.appendChild((this.chatArea = createChatArea()));
+    contentEl.appendChild((this.fileArea = createChatArea()));
+    this.chatArea.style.overflow = 'auto'
+
+    this.chat.model = this.self.settings.chatDefaultUsingR1 ? 'deepseek-reasoner' : null
+
+    new Setting(contentEl)
+      .addTextArea(text => this.setTextArea(text))
+      // 发送
+      .addButton(btn => this.setSend(btn)).infoEl.style.display = 'none';
+    new Setting(contentEl)
+      // 选择一个 prompt
+      .addDropdown(cd => this.setPrompt(cd))
+      // 打开历史对话
+      .addButton(btn => this.deepReasoning(btn))
+      // 选择一篇笔记作为附件
+      .addButton(btn => this.setAttachment(btn))
+      // 打开历史对话
+      .addButton(btn => this.setHistoryChat(btn))
+      // 选择一个 Action
+      .addButton(btn => this.setAction(btn));
+  }
+
+  attachmentHandler() {
+    this.contentEl.onclick = evt => {
+      const target = evt.target as HTMLElement;
+      if (target.classList.contains('__remove')) {
+        const { path } = target.dataset;
+        const fileToRemove = Array.from(this.files).find((file: TFile) => file.path === path);
+        if (fileToRemove) {
+          this.files.delete(fileToRemove);
+          const size = this.files.size;
+          (target.parentNode as HTMLElement).remove();
+          size ? this.attachmentBtn.setCta() : this.attachmentBtn.removeCta();
+          this.sendBtn.setDisabled(!size);
+        }
+      }
+      
+    };
+  }
+
+  setSend(btn: ButtonComponent) {
+    this.sendBtn = btn;
+    btn.buttonEl.style.marginTop = 'auto';
+    btn.buttonEl.style.width = '2rem';
+    btn
+      .setIcon('send')
+      .setDisabled(!this.question)
+      .setCta()
+      .onClick(async () => {
+        this.textArea.inputEl.style.height = this.defaultTextAreaHeight + 'px';
+
+        if (this.promptName.indexOf('in-') === 0) {
+          const name = this.promptName.split('-').pop();
+          this.clearChat();
+          inPrompts[name].fn(this.self, this.chat, (text, type) => type === 'content' && this.updateChat(text));
+        } else {
+          this.startChat();
+        }
+      });
+  }
+
+  setTextArea(text: TextAreaComponent) {
+    this.textArea = text;
+    text.inputEl.style.width = '100%';
+    text.inputEl.style.height = this.defaultTextAreaHeight + 'px';
+    text.setValue(this.question).onChange(value => {
+      this.sendBtn.setDisabled(!value);
+      this.question = value;
+      text.inputEl.style.height = Math.max(text.inputEl.scrollHeight, this.defaultTextAreaHeight) + 'px';
+    });
+  }
+
+  choiceAction(name: string) {
+    name || (name = 'default');
+    this.action = name;
+    this.actionBtn.setIcon(actions.find(a => a.text.name === name).text.icon);
+    this.action === 'default' ? this.actionBtn.removeCta() : this.actionBtn.setCta();
+  }
+
+  async choicePrompt(value: string) {
+    const isInPrompt = value.indexOf('in-') === 0;
+    const { description, actionName, title } = inPrompts[value.split('-').pop()] || ([] as any);
+    if (value.indexOf('in-') === 0) {
+      this.sendBtn.setDisabled(false);
+      this.textArea.setDisabled(true);
+      this.attachmentBtn.setDisabled(true);
+      this.saveBtn.setDisabled(true);
+      this.textArea.setValue(description);
+    } else {
+      this.sendBtn.setDisabled(!this.question);
+      this.textArea.setDisabled(false);
+      this.attachmentBtn.setDisabled(false);
+      this.saveBtn.setDisabled(false);
+      this.textArea.setValue(this.question);
+    }
+
+    this.promptName = value || 'AI Chat';
+    this.setTitle(isInPrompt ? title : this.promptName);
+    await this.chat.specifyPrompt(value);
+    this.choiceAction(isInPrompt ? actionName : this.chat.data.action);
+  }
+
+  setPrompt(cd: DropdownComponent) {
+    cd.addOption('', '选择 prompt');
+    // 内置 prompt
+    Object.entries(inPrompts).forEach(([key, value]) => {
+      cd.addOption('in-' + key, value.title + '（内置）');
+    });
+    // 用户自定义 prompt
+    getOptionList(this.self.app, this.self.settings.chatPromptFolder).forEach((prompt: any) => {
+      cd.addOption(prompt.value, prompt.name);
+    });
+    cd.setValue('');
+    cd.onChange(async value => this.choicePrompt(value));
+  }
+
+  deepReasoning(btn: ButtonComponent) {
+    btn.buttonEl.style.width = '2rem';
+
+    if (this.chat.model) {
+      btn.setCta();
+      btn.setIcon('circle-dot-dashed');
+    } else {
+      btn.removeCta();
+      btn.setIcon('circle-dashed');
+    }
+
+    btn.onClick(() => {
+      if (this.chat.model) {
+        this.chat.model = null;
+        btn.removeCta();
+        btn.setIcon('circle-dashed');
+      } else {
+        this.chat.model = 'deepseek-reasoner';
+        btn.setCta();
+        btn.setIcon('circle-dot-dashed');
+      }
+    })
+
+  }
+
+  setAttachment(btn: ButtonComponent) {
+    this.attachmentBtn = btn;
+    btn.buttonEl.style.width = '2rem';
+
+    btn.setIcon('paperclip').onClick(() => {
+      new FuzzySuggest(this.app, this.getAttachmentList(), async ({ text }) => {
+        if (text) {
+          const fileSize = formatFileSize(text.stat.size);
+          const size = this.files.size;
+          this.files.add(text);
+          const newSize = this.files.size;
+          newSize ? btn.setCta() : btn.removeCta();
+          this.sendBtn.setDisabled(!newSize);
+          let color = 'unset';
+          if (text.stat.size > 1024 * 1024) {
+            // 大于1M
+            color = '#FF4500'; // 危险色
+          } else if (text.stat.size > 1024 * 100) {
+            // 大于100K
+            color = '#FFA500'; // 警告色
+          }
+          newSize > size && (this.fileArea.innerHTML += `<div>📄 ${text.path} - <span style="color: ${color};">${fileSize}</span> <span style="cursor: pointer;" class="__remove" data-path="${text.path}">🔥</span><br></div>`);
+        }
+      }).open();
+    });
+  }
+
+  setHistoryChat(btn: ButtonComponent) {
+    this.saveBtn = btn;
+    btn.buttonEl.style.width = '2rem';
+    const paths = getBooksList(this.self.app, this.self.settings.chatSaveFolder).map(({ text }) => ({
+      value: text.basename.split(' - ').shift(),
+      text: text
+    }));
+    btn.setIcon('gallery-horizontal-end').onClick(() => {
+      new FuzzySuggest(this.app, paths, async ({ text }) => {
+        this.loadHistoryChat(text.path);
+        btn.setCta();
+      }).open();
+    });
+  }
+
+  setAction(btn: ButtonComponent) {
+    this.actionBtn = btn;
+    btn.buttonEl.style.width = '2rem';
+    btn.setIcon(actions[0].text.icon).onClick(() => {
+      new FuzzySuggest(this.app, actions, async ({ text }) => this.choiceAction(text.name)).open();
+    });
+  }
+
+  getAttachmentList() {
+    const list = getBooksList(this.self.app).map(({ text }) => ({
+      value: text.path + ' - ' + formatFileSize(text.stat.size),
+      text: text
+    }));
+    const currentFile = this.self.app.workspace.getActiveFile();
+    if (currentFile) {
+      list.unshift({
+        text: currentFile,
+        value: currentFile.path + ' - ' + formatFileSize(currentFile.stat.size)
+      });
+    }
+    return list;
+  }
+
+  onClose() {
+    let { contentEl } = this;
+    contentEl.empty();
+    actions.find(a => a.text.name === this.action)?.text?.fn.call(this);
+  }
+
+  async startChat() {
+    if (!this.chat.isStopped) {
+      this.chat.stopChat();
       return;
     }
 
-    this.promptName = name;
-    this.promptContent = (await this.self.app.vault.cachedRead(file)).replace(/---[\s\S]*?---/, '');
-    const frontmatter = this.self.app.metadataCache.getFileCache(file)?.frontmatter || {};
-    this.data.frequency_penalty = Number(frontmatter.frequency_penalty || defaultOpenAioptions.frequency_penalty);
-    this.data.presence_penalty = Number(frontmatter.presence_penalty || defaultOpenAioptions.presence_penalty);
-    this.data.temperature = Number(frontmatter.temperature || defaultOpenAioptions.temperature);
-    this.data.max_tokens = frontmatter.max_tokens ? Number(frontmatter.max_tokens) : null;
-    this.data.top_p = Number(frontmatter.top_p || defaultOpenAioptions.top_p);
-    this.data.action = frontmatter.action || defaultOpenAioptions.action;
-    this.data.save = frontmatter.save === 'false' || frontmatter.save === '0' ? false : true || defaultOpenAioptions.save;
+    let question = this.question || '';
+    let list = '';
+    const message: MESSAGE_TYPE = { role: 'user', content: question, type: 'question', files: [] };
+    this.textArea.setValue('');
+    for (let file of this.files) {
+      const content = await this.self.app.vault.cachedRead(file)
+      message.content = content + '\n\n' + message.content;
+      message.files.push(file.path);
+      list += `📄 ${file.path}\n`;
+    }
+    this.chatArea.innerHTML += `<hr>${list}<b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.promptName}：</i></b>\n`;
+    this.question = '';
+    let isReasoningContent = true
+    let isContent = true
+    let reasoningContentEl: HTMLElement
+    this.sendBtn.setIcon('circle-slash');
+    await this.chat.openChat(message, (text, type) => {
+      this.files.clear();
+      this.fileArea.innerHTML = '';
+      if (type === 'reasoning_content') {
+        if (isReasoningContent) {
+          reasoningContentEl = document.createElement('span') as HTMLElement
+          reasoningContentEl.style.opacity = '.5'
+          this.chatArea.appendChild(reasoningContentEl);
+          isReasoningContent = false
+        }
+        reasoningContentEl.innerText += text;
+      } 
+      else if (type === 'content') {
+        if (!isReasoningContent && isContent) {
+          text += '\n\n';
+          isContent = false
+        }
+        this.updateChat(text);
+      } else if (type === 'title') {
+        this.chat.title && this.setTitle(this.chat.title);
+      } else if (type === 'stop') {
+        isReasoningContent = true
+        isContent = true
+        this.sendBtn.setIcon('send');
+        this.sendBtn.setDisabled(!this.question);
+      }
+    });
   }
 
-  /**
-   * 保存聊天记录
-   * 该方法将当前聊天记录中的消息格式化为文本，并保存为Markdown文件。
-   * @returns {Promise<TFile>} 返回保存的文件路径
-   */
-  async saveChat(): Promise<TFile> {
-    const text = this.messages.reduce((ret, res, i, arr) => {
-      if (res.type === 'question') ret += res.content.trim().replace(/^</, '') + '\n\n';
-      else if (res.type === 'answer') ret += '> ' + res.content.replace(/\n/gm, '\n> ') + '\n\n';
-      else if (res.type === 'file') ret += `[[${res.content.split('\n')[0]}]]${arr[i + 1].type === 'file' ? '\n' : '\n\n'}`;
+  async loadHistoryChat(path: string) {
+    const messages = await this.chat.loadHistoryChat(path);
+    this.setTitle(this.chat.title);
+    this.chatArea.innerHTML = messages.reduce((ret, res, i, arr) => {
+      if (res.type === 'question') ret += `<hr><b><i>叫我包仔：</i></b>\n${res.content}\n\n`;
+      else if (res.type === 'answer') ret += `<b><i>AI Cha：</i></b>\n${res.content}`;
+      else if (res.type === 'file') ret += `📄 ${res.content.split('\n')[0]}${arr[i + 1].type === 'file' ? '\n' : '\n\n'}`;
       return ret;
     }, '');
-    const sanitizedTitle = sanitizeFileName(this.title);
-    if (this.saveChatFile) {
-      await this.self.app.vault.modify(this.saveChatFile, text);
-    } else {
-      const path = this.self.settings.chatSaveFolder + '/' + sanitizedTitle + ' - ' + Date.now() + '.md';
-      this.saveChatFile = await this.self.app.vault.create(path, text);
-    }
-
-    return this.saveChatFile;
   }
 
-  /**
-   * 加载历史聊天记录
-   * @param path - 聊天记录文件的路径
-   * @returns {Promise<MESSAGE_TYEP[]>} 返回聊天记录
-   */
-  async loadHistoryChat(path: string): Promise<MESSAGE_TYEP[]> {
-    const file = this.self.app.vault.getFiles().find(f => f.path === path);
-    if (file) {
-      const content = await this.self.app.vault.cachedRead(file);
-      const messages: MESSAGE_TYEP[] = [];
-      const items = content.split('\n\n').filter(Boolean);
-
-      for (let item of items) {
-        if (item.startsWith('> ')) {
-          messages.push({ role: 'system', content: item.replace(/^> /gm, ''), type: 'answer' });
-        } else {
-          messages.push({ role: 'user', content: item, type: 'question' });
-          continue;
-        }
-
-        const path = item.match(/\[\[(.+?\.md)\]\]/g);
-        if (path) {
-          for (let p of path) {
-            p = p.slice(1, -2);
-            messages.push({ role: 'user', content: `${p}\n${await this.self.app.vault.adapter.read(p)}`, type: 'file' });
-          }
-        }
-      }
-
-      this.messages = messages;
-      this.saveChatFile = file;
-      this.title = file.basename.split(' - ')[0];
-      return messages;
-    }
+  updateChat(content: string) {
+    this.chatArea.innerHTML += content;
   }
 
-  /**
-   * 内容自动补全
-   * @param prefix - 输入文本前缀
-   * @param suffix - 输入文本后缀
-   * @param maxLength -  token 最大长度
-   * @param updateText - 更新文本的回调函数
-   */
-  async FIMCompletion(prefix: string, suffix: string, maxLength: number, updateText: (text: string) => void): Promise<void> {
-    if (!prefix) return;
-    const { chatKey, chatUrl, chatModel } = this.self.settings;
-    const openai = new OpenAI({
-      baseURL: chatUrl,
-      apiKey: chatKey,
-      dangerouslyAllowBrowser: true
-    });
-
-    try {
-      const completion = await openai.completions.create({
-        model: chatModel,
-        prompt: prefix,
-        suffix: suffix,
-        max_tokens: maxLength,
-        ...this.data
-      });
-
-      const text = completion.choices[0].text;
-      updateText(text);
-    } catch (error) {
-      new Notice(error.message);
-    }
-  }
-
-  clearMessage() {
-    this.messages = [];
-  }
-
-  /**
-   * 停止聊天
-   * 将 isStopped 标志设置为 true，表示聊天已停止
-   */
-  async stopChat() {
-    this.isStopped = true;
-  }
-
-  /**
-   * 开启聊天
-   *
-   * @param messgae - 需要发送的消息
-   * @param updateText - 更新聊天内容的回调函数。
-   * @returns Promise<void>
-   */
-  async openChat(messgae: MESSAGE_TYEP[] | MESSAGE_TYEP | string, updateText: (text: string, type: string) => void): Promise<void> {
-    if (!messgae) return;
-    this.isStopped = false;
-    const { chatKey, chatUrl, chatModel } = this.self.settings;
-
-    this.promptContent && this.messages.push({ role: 'system', content: this.promptContent, type: 'prompt' });
-    this.promptContent = null;
-
-    if (typeof messgae === 'string') {
-      messgae = [{ content: messgae, role: 'user', type: 'question' }];
-    } else if (!Array.isArray(messgae)) {
-      messgae = [messgae];
-    }
-
-    // 仅保留最后一个问题
-    let messages = this.messages.filter(res => res.type !== 'question');
-
-    const type = messgae[0].type;
-
-    this.messages = this.messages.concat(messgae);
-    messages = messages.concat(messgae);
-    const answer: MESSAGE_TYEP = { role: 'system', content: '', type: type === 'question' ? 'answer' : type };
-    this.messages.push(answer);
-    messages.push(answer);
-    const openai = new OpenAI({
-      baseURL: chatUrl,
-      apiKey: chatKey,
-      dangerouslyAllowBrowser: true
-    });
-
-    try {
-      const completion = await openai.chat.completions.create({
-        messages,
-        model: chatModel,
-        stream: true,
-        ...this.data
-      });
-
-      for await (const chunk of completion) {
-        if (this.isStopped) {
-          updateText('', 'content');
-          break;
-        }
-
-        const choices = chunk.choices as any;
-        const text = choices[0].delta.content;
-        const finish = (this.isStopped = choices[0].finish_reason);
-        if (text || finish) {
-          updateText(text, 'content');
-          answer.content += text;
-        }
-
-        if (finish && !this.title) {
-          this.getTitle(text => {
-            updateText(text, 'title');
-          });
-        }
-      }
-    } catch (error) {
-      new Notice(error.message);
-    }
-
-    this.data.save && this.isStopped && this.title && (await this.saveChat());
+  clearChat() {
+    this.chatArea.innerHTML = '';
   }
 }

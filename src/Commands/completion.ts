@@ -1,9 +1,9 @@
 import { Editor, MarkdownView } from 'obsidian';
 import { escapeStringForRegex } from 'src/helpers';
 import Toolbox from 'src/main';
-import Chat from './chat';
+import AIChatManager from './AIChatManager';
 
-const chat = new Chat(null);
+const chat = new AIChatManager(null);
 let lastPrefix: string;
 let timer: number;
 let completionText = '';
