@@ -23,8 +23,9 @@ async function relationshipDiagram(editor: Editor, file: TFile) {
   filename = file.basename;
   const lineText = getCursorText(editor);
   const { rawContent, name } = parseLine(lineText);
-  const tree = await processTree(content, rawContent);
-  const context = partition(tree, name || filename);
+  const tree = await processTree(content);
+  const treePart = rawContent ? { children: [findTree(tree, rawContent, 'rawContent')] } : tree;
+  const context = partition(treePart, name || filename);
   await createTempRelationGraph(name || filename, context, tree);
 }
 
@@ -170,9 +171,8 @@ function processChildren(node: any, cmds: any) {
   cmds.push(`  checkout "${node.branchName}"`);
 }
 
-async function processTree(listStr: string, rawContent?: string) {
+async function processTree(listStr: string) {
   let tree = parseListToTree(listStr);
-  tree = rawContent ? { children: [findTree(tree, rawContent, 'rawContent')] } : tree;
   await joinTree(tree, tree);
   forEachTree(tree, '%', placeholder);
   forEachTree(tree, 'i', transformChain);
@@ -244,15 +244,18 @@ function removeTree(originalRoot: any, targetName: string, key = 'name'): any {
   return null;
 }
 
-function getFlattenedPath(tree: any, targetName: string) {
+function getFlattenedPath(tree: any) {
   const paths = [];
-  const target = findTree(tree, targetName);
-  let node = target;
+ 
+  let node = tree;
   while (node.parent) {
+    if (node.type === '-') {
+      paths.pop()
+    }
     paths.push(node.parent);
     node = node.parent;
   }
-  paths.unshift(target);
+  paths.unshift(tree);
   paths.forEach(node => (node.children = []));
   paths.reverse();
   return paths;
@@ -428,8 +431,8 @@ class TempRelationView extends ItemView {
     const target = e.target as HTMLElement;
     const { name, link, branchId } = target.dataset;
     if (target.hasClass('commit-label')) {
-      if (e.ctrlKey) this.truncation(name);
-      else if (e.altKey) this.logicalChain(name);
+      if (e.ctrlKey) this.truncation(name, branchId);
+      else if (e.altKey) this.logicalChain(name, branchId);
       else this.openLink(link);
     }
     if (target.hasClass('commit')) {
@@ -483,16 +486,17 @@ class TempRelationView extends ItemView {
     this.multicolorLabel();
   }
 
-  logicalChain(name: string) {
-    let tree = getFlattenedPath(deepClone(this.gitChart), name);
+  logicalChain(name: string, id: string ) {
+    const copy = findTree(deepClone(this.gitChart), id, 'branchId');
+    let tree = getFlattenedPath(copy);
     if (!tree) return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree);
   }
 
-  truncation(name: string) {
+  truncation(name: string, id: string ) {
     const copy = deepClone(this.gitChart);
     updateTreeCollapseState(copy, []);
-    let tree = findTree(copy, name);
+    let tree = findTree(copy, id, 'branchId');
     if (!tree) return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree);
   }

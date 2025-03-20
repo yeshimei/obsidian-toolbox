@@ -10355,8 +10355,9 @@ async function relationshipDiagram(editor, file) {
   filename = file.basename;
   const lineText = getCursorText(editor);
   const { rawContent, name } = parseLine(lineText);
-  const tree = await processTree(content, rawContent);
-  const context = partition2(tree, name || filename);
+  const tree = await processTree(content);
+  const treePart = rawContent ? { children: [findTree(tree, rawContent, "rawContent")] } : tree;
+  const context = partition2(treePart, name || filename);
   await createTempRelationGraph(name || filename, context, tree);
 }
 function partition2(tree, title, folding = true) {
@@ -10486,9 +10487,8 @@ function processChildren(node, cmds) {
   }
   cmds.push(`  checkout "${node.branchName}"`);
 }
-async function processTree(listStr, rawContent) {
+async function processTree(listStr) {
   let tree = parseListToTree(listStr);
-  tree = rawContent ? { children: [findTree(tree, rawContent, "rawContent")] } : tree;
   await joinTree(tree, tree);
   forEachTree(tree, "%", placeholder);
   forEachTree(tree, "i", transformChain);
@@ -10557,15 +10557,17 @@ function removeTree(originalRoot, targetName, key = "name") {
   }
   return null;
 }
-function getFlattenedPath(tree, targetName) {
+function getFlattenedPath(tree) {
   const paths = [];
-  const target = findTree(tree, targetName);
-  let node = target;
+  let node = tree;
   while (node.parent) {
+    if (node.type === "-") {
+      paths.pop();
+    }
     paths.push(node.parent);
     node = node.parent;
   }
-  paths.unshift(target);
+  paths.unshift(tree);
   paths.forEach((node2) => node2.children = []);
   paths.reverse();
   return paths;
@@ -10721,9 +10723,9 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     const { name, link, branchId } = target.dataset;
     if (target.hasClass("commit-label")) {
       if (e2.ctrlKey)
-        this.truncation(name);
+        this.truncation(name, branchId);
       else if (e2.altKey)
-        this.logicalChain(name);
+        this.logicalChain(name, branchId);
       else
         this.openLink(link);
     }
@@ -10779,16 +10781,17 @@ var TempRelationView = class extends import_obsidian21.ItemView {
     this.format();
     this.multicolorLabel();
   }
-  logicalChain(name) {
-    let tree = getFlattenedPath(deepClone(this.gitChart), name);
+  logicalChain(name, id) {
+    const copy = findTree(deepClone(this.gitChart), id, "branchId");
+    let tree = getFlattenedPath(copy);
     if (!tree)
       return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree);
   }
-  truncation(name) {
+  truncation(name, id) {
     const copy = deepClone(this.gitChart);
     updateTreeCollapseState(copy, []);
-    let tree = findTree(copy, name);
+    let tree = findTree(copy, id, "branchId");
     if (!tree)
       return;
     createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree);
