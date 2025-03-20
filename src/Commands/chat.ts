@@ -302,7 +302,7 @@ class PanelChat extends Modal {
       } 
       else if (type === 'content') {
         if (!isReasoningContent && isContent) {
-          text += '\n\n';
+          text = '\n\n' + text;
           isContent = false
         }
         this.updateChat(text);

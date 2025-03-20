@@ -14,9 +14,16 @@ export default function blockReferenceCommand(self: Toolbox) {
 
 function blockReference(self: Toolbox, editor: Editor, file: TFile) {
   if (!self.settings.blockReference) return;
+  let content 
   let blockId = getBlock(self.app, editor, file, true);
-  let id = Array.isArray(blockId) ? blockId[0].trim() : '^' + blockId;
-  let name = Array.isArray(blockId) ? blockId[0].trim() : file.basename;
-  window.navigator.clipboard.writeText(`[[${file.path.replace('.' + file.extension, '')}#${id}|${name}]]`);
+  if (Array.isArray(blockId)) {
+    const [link, text, tags] = blockId
+    tags.unshift('')
+    content = `[[${file.path.replace('.' + file.extension, '')}#${link.trim()}|${text.trim()}]]${tags.join(' #')}`
+  } else {
+    content = `[[${file.path.replace('.' + file.extension, '')}#^${blockId}|${file.basename.trim()}]]`
+  }
+  window.navigator.clipboard.writeText(content);
   new Notice('块引用已复制至剪切板！');
 }
+

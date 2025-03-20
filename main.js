@@ -869,9 +869,13 @@ function getBlock(app, editor, file, strict = false) {
   }
   const cursor2 = editor.getCursor();
   const lineNumber = cursor2.line;
-  const lineContent = editor.getLine(lineNumber);
+  let lineContent = editor.getLine(lineNumber);
   if (strict && /^#{1,6}\s/.test(lineContent)) {
-    return [lineContent.replace(/^#{1,6}\s/, "")];
+    lineContent = lineContent.replace(/^#{1,6}\s/, "");
+    const link = lineContent.replace(/\[\[|\]\]|#/g, " ").replace(/\s+/g, " ");
+    const text = lineContent.replace(/\[\[|\]\]|#(\S+)/g, "");
+    const tags = lineContent.split(" #").slice(1).map((tag) => tag.trim());
+    return [link, text, tags];
   }
   let blockId = block.id;
   if (!blockId) {
@@ -6854,7 +6858,7 @@ ${this.question}
         reasoningContentEl.innerText += text;
       } else if (type === "content") {
         if (!isReasoningContent && isContent) {
-          text += "\n\n";
+          text = "\n\n" + text;
           isContent = false;
         }
         this.updateChat(text);
@@ -6950,10 +6954,16 @@ function blockReferenceCommand(self4) {
 function blockReference(self4, editor, file) {
   if (!self4.settings.blockReference)
     return;
+  let content;
   let blockId = getBlock(self4.app, editor, file, true);
-  let id = Array.isArray(blockId) ? blockId[0].trim() : "^" + blockId;
-  let name = Array.isArray(blockId) ? blockId[0].trim() : file.basename;
-  window.navigator.clipboard.writeText(`[[${file.path.replace("." + file.extension, "")}#${id}|${name}]]`);
+  if (Array.isArray(blockId)) {
+    const [link, text, tags] = blockId;
+    tags.unshift("");
+    content = `[[${file.path.replace("." + file.extension, "")}#${link.trim()}|${text.trim()}]]${tags.join(" #")}`;
+  } else {
+    content = `[[${file.path.replace("." + file.extension, "")}#^${blockId}|${file.basename.trim()}]]`;
+  }
+  window.navigator.clipboard.writeText(content);
   new import_obsidian7.Notice("\u5757\u5F15\u7528\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
 }
 

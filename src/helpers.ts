@@ -284,9 +284,13 @@ export function getBlock(app: App, editor: Editor, file: TFile, strict = false) 
 
   const cursor2 = editor.getCursor();
   const lineNumber = cursor2.line;
-  const lineContent = editor.getLine(lineNumber);
+  let lineContent = editor.getLine(lineNumber);
   if (strict && /^#{1,6}\s/.test(lineContent)) {
-    return [lineContent.replace(/^#{1,6}\s/, '')];
+    lineContent  = lineContent.replace(/^#{1,6}\s/, '')
+    const link = lineContent.replace(/\[\[|\]\]|#/g, ' ').replace(/\s+/g, ' ')
+    const text = lineContent.replace(/\[\[|\]\]|#(\S+)/g, '')
+    const tags = lineContent.split(' #').slice(1).map(tag => tag.trim());
+    return [link, text, tags];
   }
 
   let blockId = block.id;
