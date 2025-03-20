@@ -247,7 +247,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('👇🏼 翻页')
-      .setDesc('点击下翻，左滑下翻，右滑上翻，长按0.5s进入编辑模式，收起软键盘进入阅读模式')
+      .setDesc('（移动端）点击翻页，左滑下翻，右滑上翻，长按0.5s进入编辑模式，长按2.5s进入全屏模式，收起软键盘进入阅读模式。（桌面端）点击和鼠标滚轮翻页，鼠标右键切换模式')
       .setHeading()
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.flip).onChange(async value => {
@@ -476,14 +476,13 @@ export class ToolboxSettingTab extends PluginSettingTab {
       createFolderTrackingSetting(new Setting(containerEl).setName('将对话保存至哪个文件夹'), this.plugin, 'chatSaveFolder')
 
       
-      new Setting(containerEl).setName('默认使用推理模型').addToggle(cd =>
+      new Setting(containerEl).setName('默认深度思考').addToggle(cd =>
         cd.setValue(this.plugin.settings.chatDefaultUsingR1).onChange(async value => {
           this.plugin.settings.chatDefaultUsingR1 = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-
 
       new Setting(containerEl).setName('网页剪藏').setDesc('为网页剪藏笔记生成核心摘要和吸引人的标题').addToggle(cd =>
         cd.setValue(this.plugin.settings.chatWebPageClipping).onChange(async value => {
@@ -494,7 +493,7 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
       if (this.plugin.settings.chatWebPageClipping) {
-        new Setting(containerEl).setName('网页剪藏 - 跟踪哪些文件夹').addTextArea(cd =>
+        new Setting(containerEl).setName('网页剪藏 - 跟踪文件夹').addTextArea(cd =>
           cd.setValue('' + this.plugin.settings.chatWebPageClippingFolder).onChange(async value => {
             this.plugin.settings.chatWebPageClippingFolder = value;
             await this.plugin.saveSettings();
@@ -762,7 +761,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
     }
   }
 }
-
 
 function createFolderTrackingSetting(setting: Setting, plugin: any, key: string) {
   setting.addDropdown(dropdown => {

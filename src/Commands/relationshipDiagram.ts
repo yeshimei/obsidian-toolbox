@@ -110,6 +110,7 @@ async function joinTree(node: any, root: any) {
         if (d) {
           d.parent = child;
           child.children = child.children.concat(d.children);
+          child.link = d.link
           child.children.forEach((c: any) => {
             c.parent = child;
             c.branchName = child.branchId;

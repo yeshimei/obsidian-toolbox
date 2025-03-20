@@ -10432,6 +10432,7 @@ async function joinTree(node, root) {
         if (d) {
           d.parent = child;
           child.children = child.children.concat(d.children);
+          child.link = d.link;
           child.children.forEach((c2) => {
             c2.parent = child;
             c2.branchName = child.branchId;
@@ -11594,7 +11595,7 @@ var ToolboxSettingTab = class extends import_obsidian28.PluginSettingTab {
         })
       );
     }
-    new import_obsidian28.Setting(containerEl).setName("\u{1F447}\u{1F3FC} \u7FFB\u9875").setDesc("\u70B9\u51FB\u4E0B\u7FFB\uFF0C\u5DE6\u6ED1\u4E0B\u7FFB\uFF0C\u53F3\u6ED1\u4E0A\u7FFB\uFF0C\u957F\u63090.5s\u8FDB\u5165\u7F16\u8F91\u6A21\u5F0F\uFF0C\u6536\u8D77\u8F6F\u952E\u76D8\u8FDB\u5165\u9605\u8BFB\u6A21\u5F0F").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F447}\u{1F3FC} \u7FFB\u9875").setDesc("\uFF08\u79FB\u52A8\u7AEF\uFF09\u70B9\u51FB\u7FFB\u9875\uFF0C\u5DE6\u6ED1\u4E0B\u7FFB\uFF0C\u53F3\u6ED1\u4E0A\u7FFB\uFF0C\u957F\u63090.5s\u8FDB\u5165\u7F16\u8F91\u6A21\u5F0F\uFF0C\u957F\u63092.5s\u8FDB\u5165\u5168\u5C4F\u6A21\u5F0F\uFF0C\u6536\u8D77\u8F6F\u952E\u76D8\u8FDB\u5165\u9605\u8BFB\u6A21\u5F0F\u3002\uFF08\u684C\u9762\u7AEF\uFF09\u70B9\u51FB\u548C\u9F20\u6807\u6EDA\u8F6E\u7FFB\u9875\uFF0C\u9F20\u6807\u53F3\u952E\u5207\u6362\u6A21\u5F0F").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.flip).onChange(async (value) => {
         this.plugin.settings.flip = value;
         await this.plugin.saveSettings();
@@ -11762,7 +11763,7 @@ var ToolboxSettingTab = class extends import_obsidian28.PluginSettingTab {
       );
       createFolderTrackingSetting(new import_obsidian28.Setting(containerEl).setName("Promats Folder"), this.plugin, "chatPromptFolder");
       createFolderTrackingSetting(new import_obsidian28.Setting(containerEl).setName("\u5C06\u5BF9\u8BDD\u4FDD\u5B58\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939"), this.plugin, "chatSaveFolder");
-      new import_obsidian28.Setting(containerEl).setName("\u9ED8\u8BA4\u4F7F\u7528\u63A8\u7406\u6A21\u578B").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u9ED8\u8BA4\u6DF1\u5EA6\u601D\u8003").addToggle(
         (cd) => cd.setValue(this.plugin.settings.chatDefaultUsingR1).onChange(async (value) => {
           this.plugin.settings.chatDefaultUsingR1 = value;
           await this.plugin.saveSettings();
@@ -11777,7 +11778,7 @@ var ToolboxSettingTab = class extends import_obsidian28.PluginSettingTab {
         })
       );
       if (this.plugin.settings.chatWebPageClipping) {
-        new import_obsidian28.Setting(containerEl).setName("\u7F51\u9875\u526A\u85CF - \u8DDF\u8E2A\u54EA\u4E9B\u6587\u4EF6\u5939").addTextArea(
+        new import_obsidian28.Setting(containerEl).setName("\u7F51\u9875\u526A\u85CF - \u8DDF\u8E2A\u6587\u4EF6\u5939").addTextArea(
           (cd) => cd.setValue("" + this.plugin.settings.chatWebPageClippingFolder).onChange(async (value) => {
             this.plugin.settings.chatWebPageClippingFolder = value;
             await this.plugin.saveSettings();
