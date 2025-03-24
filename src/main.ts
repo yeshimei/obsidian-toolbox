@@ -2,9 +2,10 @@ import { MarkdownView, Plugin, TFile } from 'obsidian';
 import 'test';
 import test from 'test/Test';
 import adjustReadingPageStyle from './Commands/adjustReadingPageStyle';
-import chatCommand from './Commands/chat';
 import Block from './Commands/Block';
 import blockReferenceCommand from './Commands/blockReference';
+import chatCommand from './Commands/chat';
+import chatWebPageClipping from './Commands/chatWebPageClipping';
 import completionCommand, { completion } from './Commands/completion';
 import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
 import dialogueCommand from './Commands/dialogue';
@@ -15,7 +16,7 @@ import highlightCommand from './Commands/highlight';
 import passwordCreatorCommand from './Commands/passwordCreator';
 import polysemy from './Commands/polysemy';
 import poster from './Commands/poster';
-import readingDataTracking from './Commands/readingDataTracking';
+import { ReadingDataManager } from './Commands/readingDataTracking';
 import relationshipDiagramCommand from './Commands/relationshipDiagram';
 import reviewOfReadingNote from './Commands/reviewOfReadingNote';
 import searchForWordCommand from './Commands/searchForWord';
@@ -25,22 +26,20 @@ import repositionVideo from './CustomizedCommands/repositionVideo';
 import resourcesToCommand, { resourceTo } from './CustomizedCommands/resourceTo';
 import searchForPlantCommand from './CustomizedCommands/searchForPlant';
 import switchLibrary from './CustomizedCommands/switchLibrary';
-import { debounce, isFileInDirectory } from './helpers';
+import { isFileInDirectory } from './helpers';
 import { DEFAULT_SETTINGS, ToolboxSettings, ToolboxSettingTab } from './settings';
-import { sandbox } from './Commands/sandbox';
-import chatWebPageClipping from './Commands/chatWebPageClipping';
 
 export default class Toolbox extends Plugin {
   encryptionTempData: any;
-  debounceReadDataTracking: Function;
+  readingManager: ReadingDataManager;
   settings: ToolboxSettings;
   startTime: number;
-  
+
   async onload() {
-    this.encryptionTempData = {};
     await this.loadSettings();
-    this.debounceReadDataTracking = debounce(readingDataTracking, this.settings.readDataTrackingDelayTime);
+    this.encryptionTempData = {};
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
+    this.readingManager = new ReadingDataManager(this);
     // 画廊
     gallery(this);
     // 读书笔记回顾

@@ -3,6 +3,7 @@ import { COMMENT_CLASS, editorBlur, FOOTNOTE_CLASS, getBasename, MOBILE_HEADER_C
 import Toolbox from 'src/main';
 import { PanelExhibition } from 'src/Modals/PanelExhibition';
 import { PanelExhibitionHlight } from 'src/Modals/PanelExhibitionHlight';
+import readingDataTracking from './readingDataTracking';
 
 let self: Toolbox;
 let pageTurner: PageTurner;
@@ -12,11 +13,11 @@ export function flipEvent(f: Toolbox, file: TFile) {
   const statusBar = document.querySelector(STATUS_BAR_CLASS) as HTMLElement;
   fullScreen(0, false);
   pageTurner && pageTurner.destroy();
-  statusBar.show()
+  statusBar.show();
   if (!self.settings.flip || !self.hasReadingPage(file)) return;
   const contentEl = self.getView()?.containerEl;
   fullScreen(-1, false);
-  statusBar.hide()
+  statusBar.hide();
   const el = contentEl.querySelector(SOURCE_VIEW_CLASS) as HTMLElement;
   pageTurner = new PageTurner(el, {
     onTurnUp: event => flip(event, el, file),
@@ -28,24 +29,24 @@ export function flipEvent(f: Toolbox, file: TFile) {
 
 function flip(event: MouseEvent | TouchEvent | KeyboardEvent, el: HTMLElement, file: TFile, direction = true) {
   const target = event.target as HTMLElement;
-  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || (Platform.isDesktop && event.type !== 'wheel' );
+  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || (Platform.isDesktop && event.type !== 'wheel');
   if (should) {
-      // 点击划线，显示其评论
-  if (target.hasClass(COMMENT_CLASS.slice(1))) handleCommentClick(target, file);
-  // 点击双链，显示其内容
-  else if (target.hasClass(OUT_LINK_CLASS.slice(1))) handleOutLinkClick(target, file);
-  // 点击脚注，显示其内容
-  else if (target.hasClass(FOOTNOTE_CLASS.slice(1))) handleFootnoteClick(target, file);
-  // 点击其他内容，翻页
-  else scrollPage(el, direction, file)
+    // 点击划线，显示其评论
+    if (target.hasClass(COMMENT_CLASS.slice(1))) handleCommentClick(target, file);
+    // 点击双链，显示其内容
+    else if (target.hasClass(OUT_LINK_CLASS.slice(1))) handleOutLinkClick(target, file);
+    // 点击脚注，显示其内容
+    else if (target.hasClass(FOOTNOTE_CLASS.slice(1))) handleFootnoteClick(target, file);
+    // 点击其他内容，翻页
+    else scrollPage(el, direction, file);
   } else {
-    scrollPage(el, direction, file)
+    scrollPage(el, direction, file);
   }
 }
 
-function scrollPage (el: HTMLElement, direction: boolean, file: TFile) {
+function scrollPage(el: HTMLElement, direction: boolean, file: TFile) {
   el.scrollTop = direction ? el.scrollTop - el.clientHeight - self.settings.fileCorrect : el.scrollTop + el.clientHeight + self.settings.fileCorrect;
-  self.debounceReadDataTracking(self, file);
+  readingDataTracking(self, file);
 }
 
 function fullScreen(mode: boolean | number = null, save = true) {
@@ -238,10 +239,10 @@ export class PageTurner {
   private handleKeydown = (event: KeyboardEvent) => {
     this.handleEvent(event);
     if (event.key === 'ArrowUp') {
-      this.options.onTurnUp(event)
+      this.options.onTurnUp(event);
     } else if (event.key === 'ArrowDown') {
-      this.options.onTurnDown(event)
-    } 
+      this.options.onTurnDown(event);
+    }
   };
 
   private handleMouseDown = (event: MouseEvent) => {

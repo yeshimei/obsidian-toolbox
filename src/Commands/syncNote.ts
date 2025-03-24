@@ -2,6 +2,7 @@ import { md5 } from 'js-md5';
 import { Notice, TFile } from 'obsidian';
 import { uniqueBy } from 'src/helpers';
 import Toolbox from 'src/main';
+import { readingDataSync } from './readingDataTracking';
 
 export default function asyncNoteCommand(self: Toolbox) {
   self.settings.readingNotes &&
@@ -16,7 +17,7 @@ export default function asyncNoteCommand(self: Toolbox) {
           .forEach(file => syncNote(self, file))
     });
 }
-``
+``;
 export async function syncNote(self: Toolbox, file: TFile) {
   if (!self.settings.readingNotes) return;
   let markdown = await self.app.vault.read(file);
@@ -110,4 +111,7 @@ export async function syncNote(self: Toolbox, file: TFile) {
     self.updateMetadata(file, outlinks, highlights, thinks, dialogue);
     new Notice(file.name + ' - 已同步');
   }
+
+  // 同步跟踪数据
+  readingDataSync(self, file);
 }
