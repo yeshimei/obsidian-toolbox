@@ -221,7 +221,12 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.readDataTracking) {
-      createFolderTrackingSetting(new Setting(containerEl).setName('跟踪哪个文件夹'), this.plugin, 'readDataTrackingFolder');
+      new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
+        cd.setValue('' + this.plugin.settings.readDataTrackingFolder).onChange(async value => {
+          this.plugin.settings.readDataTrackingFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
 
       const setting = new Setting(containerEl)
         .setName(`超时 (${this.plugin.settings.readDataTrackingTimeout / 36000}m)`)
@@ -295,8 +300,19 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.searchForWords) {
-      createFolderTrackingSetting(new Setting(containerEl).setName('生词放在哪个文件夹？'), this.plugin, 'wordsSaveFolder');
-      createFolderTrackingSetting(new Setting(containerEl).setName('卡片笔记放在哪个文件夹？'), this.plugin, 'cardSaveFolder');
+      new Setting(containerEl).setName('生词放在哪个文件夹？').addText(cd =>
+        cd.setValue('' + this.plugin.settings.wordsSaveFolder).onChange(async value => {
+          this.plugin.settings.wordsSaveFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl).setName('卡片笔记放在哪个文件夹？').addText(cd =>
+        cd.setValue('' + this.plugin.settings.cardSaveFolder).onChange(async value => {
+          this.plugin.settings.cardSaveFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
     }
 
     new Setting(containerEl)
@@ -335,7 +351,12 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.characterRelationships) {
-      createFolderTrackingSetting(new Setting(containerEl).setName('跟踪哪个文件夹'), this.plugin, 'characterRelationshipsFolder');
+      new Setting(containerEl).setName('跟踪哪个文件夹').addText(cd =>
+        cd.setValue('' + this.plugin.settings.characterRelationshipsFolder).onChange(async value => {
+          this.plugin.settings.characterRelationshipsFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
     }
 
     new Setting(containerEl)
@@ -350,7 +371,12 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.readingNotes) {
-      createFolderTrackingSetting(new Setting(containerEl).setName('同步至哪个文件夹'), this.plugin, 'readingNotesToFolder');
+      new Setting(containerEl).setName('同步至哪个文件夹').addText(cd =>
+        cd.setValue('' + this.plugin.settings.readingNotesToFolder).onChange(async value => {
+          this.plugin.settings.readingNotesToFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
 
       new Setting(containerEl).setName('同步出链').addToggle(cd =>
         cd.setValue(this.plugin.settings.outLink).onChange(async value => {
@@ -478,8 +504,19 @@ export class ToolboxSettingTab extends PluginSettingTab {
         })
       );
 
-      createFolderTrackingSetting(new Setting(containerEl).setName('Promats Folder'), this.plugin, 'chatPromptFolder');
-      createFolderTrackingSetting(new Setting(containerEl).setName('将对话保存至哪个文件夹'), this.plugin, 'chatSaveFolder');
+      new Setting(containerEl).setName('Promats Folder').addText(cd =>
+        cd.setValue('' + this.plugin.settings.chatPromptFolder).onChange(async value => {
+          this.plugin.settings.chatPromptFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
+
+      new Setting(containerEl).setName('将对话保存至哪个文件夹').addText(cd =>
+        cd.setValue('' + this.plugin.settings.chatSaveFolder).onChange(async value => {
+          this.plugin.settings.chatSaveFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
 
       new Setting(containerEl).setName('默认深度思考').addToggle(cd =>
         cd.setValue(this.plugin.settings.chatDefaultUsingR1).onChange(async value => {
@@ -775,22 +812,13 @@ export class ToolboxSettingTab extends PluginSettingTab {
       );
 
     if (this.plugin.settings.sandbox) {
-      createFolderTrackingSetting(new Setting(containerEl).setName('脚本所在文件夹'), this.plugin, 'sandboxFolder');
+      new Setting(containerEl).setName('脚本所在文件夹').addText(cd =>
+        cd.setValue('' + this.plugin.settings.sandboxFolder).onChange(async value => {
+          this.plugin.settings.sandboxFolder = value;
+          await this.plugin.saveSettings();
+        })
+      );
     }
   }
 }
 
-function createFolderTrackingSetting(setting: Setting, plugin: any, key: string) {
-  setting.addDropdown(dropdown => {
-    const folders = [...new Set(plugin.app.vault.getFiles().map((f: TFile) => f.parent?.path || '/'))].sort();
-    dropdown.addOption('', '选择文件夹');
-    folders.forEach((folder: string) => {
-      dropdown.addOption(folder, folder);
-    });
-    dropdown.setValue(plugin.settings[key] || '');
-    dropdown.onChange(async value => {
-      plugin.settings[key] = value;
-      await plugin.saveSettings();
-    });
-  });
-}

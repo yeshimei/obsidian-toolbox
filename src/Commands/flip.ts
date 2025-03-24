@@ -9,12 +9,25 @@ let self: Toolbox;
 let pageTurner: PageTurner;
 
 export function flipEvent(f: Toolbox, file: TFile) {
+    if (!f.settings.flip) return
+    const command = f.addCommand({
+      id: '切换阅读/编辑模式',
+      name: '切换阅读/编辑模式',
+      // icon: pageTurner?.destroyed ? 'circle-dashed' : 'circle',
+      icon: 'repeat',
+      editorCallback: () => {
+        if (!pageTurner) return
+        pageTurner.destroyed = !pageTurner.destroyed
+        // command.icon = pageTurner.destroyed ? 'circle-dashed' : 'circle'
+      }
+    });
+
   self = f;
   const statusBar = document.querySelector(STATUS_BAR_CLASS) as HTMLElement;
   fullScreen(0, false);
   pageTurner && pageTurner.destroy();
   statusBar.show();
-  if (!self.settings.flip || !self.hasReadingPage(file)) return;
+  if (!self.hasReadingPage(file)) return;
   const contentEl = self.getView()?.containerEl;
   fullScreen(-1, false);
   statusBar.hide();
@@ -29,7 +42,7 @@ export function flipEvent(f: Toolbox, file: TFile) {
 
 function flip(event: MouseEvent | TouchEvent | KeyboardEvent, el: HTMLElement, file: TFile, direction = true) {
   const target = event.target as HTMLElement;
-  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || (Platform.isDesktop && event.type !== 'wheel');
+  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || (event.type !== 'wheel');
   if (should) {
     // 点击划线，显示其评论
     if (target.hasClass(COMMENT_CLASS.slice(1))) handleCommentClick(target, file);
@@ -133,9 +146,12 @@ export class PageTurner {
   private touchStartX = 0;
   private touchStartY = 0;
   private isLongPress = false;
+  private isShortPress = false
   private readonly eventOptions = { capture: true, passive: false };
   private timerA: number;
   private timerB: number;
+  private timerC: number;
+  private timerD: number;
 
   constructor(element: HTMLElement, options: PageTurnerOptions) {
     this.element = element;
@@ -159,17 +175,17 @@ export class PageTurner {
       }
     );
 
-    // Touch events
-    this.element.addEventListener('touchstart', this.handleTouchStart, this.eventOptions);
-    this.element.addEventListener('touchmove', this.handleTouchMove, this.eventOptions);
-    this.element.addEventListener('touchend', this.handleTouchEnd, this.eventOptions);
+    if (Platform.isMobile) {
+      // Touch events
+      this.element.addEventListener('touchstart', this.handleTouchStart, this.eventOptions);
+      this.element.addEventListener('touchmove', this.handleTouchMove, this.eventOptions);
+      this.element.addEventListener('touchend', this.handleTouchEnd, this.eventOptions);
+    }
 
     // Wheel events
     this.element.addEventListener('wheel', this.handleWheel, this.eventOptions);
     this.element.addEventListener('click', this.handleClick, this.eventOptions);
     this.element.addEventListener('contextmenu', this.handleContextmenu, this.eventOptions);
-    // this.element.addEventListener('keydown', this.handleKeydown, this.eventOptions);
-
     // Mouse events
     this.element.addEventListener('mousedown', this.handleMouseDown, this.eventOptions);
     this.element.addEventListener('mouseup', this.handleMouseUp, this.eventOptions);
@@ -186,6 +202,9 @@ export class PageTurner {
   private handleTouchStart = (event: TouchEvent) => {
     this.handleEvent(event);
     this.setupLongPressTimers(event);
+    this.isShortPress = false;
+    clearTimeout(this.timerD);
+    this.timerD = window.setTimeout(() => this.isShortPress = true, 100); 
     const touch = event.touches[0];
     this.touchStartX = touch.clientX;
     this.touchStartY = touch.clientY;
@@ -215,7 +234,7 @@ export class PageTurner {
         deltaX > 0 ? this.options.onTurnUp(event) : this.options.onTurnDown(event);
       }
       this.isTouchMoving = false;
-    } else if (!this.isLongPress) {
+    } else if (!this.isLongPress && !this.isShortPress) {
       this.handlePageTurn(event);
     }
   };
@@ -236,25 +255,19 @@ export class PageTurner {
     event.stopImmediatePropagation();
   };
 
-  private handleKeydown = (event: KeyboardEvent) => {
-    this.handleEvent(event);
-    if (event.key === 'ArrowUp') {
-      this.options.onTurnUp(event);
-    } else if (event.key === 'ArrowDown') {
-      this.options.onTurnDown(event);
-    }
-  };
-
   private handleMouseDown = (event: MouseEvent) => {
     this.setupLongPressTimers(event);
     this.handleEvent(event);
+    this.isShortPress = false;
+    clearTimeout(this.timerC);
+    this.timerC = window.setTimeout(() => this.isShortPress = true, 100); 
   };
 
   private handleMouseUp = (event: MouseEvent) => {
     this.clearLongPressTimers();
     this.handleEvent(event);
     if (event.button === 0) {
-      if (!this.isLongPress) {
+      if (!this.isLongPress && !this.isShortPress) {
         this.handlePageTurn(event);
       }
     } else if (event.button === 2) {

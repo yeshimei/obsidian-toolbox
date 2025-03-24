@@ -83,7 +83,6 @@ export class ReadingDataManager {
   }
   private async ensureDataFile() {
     const dirPath = this.dataPath.split('/').slice(0, -1).join('/');
-    console.log(dirPath);
     if (!(await this.self.app.vault.adapter.exists(dirPath))) {
       await this.self.app.vault.adapter.mkdir(dirPath);
     }

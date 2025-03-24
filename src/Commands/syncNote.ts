@@ -40,7 +40,7 @@ export async function syncNote(self: Toolbox, file: TFile) {
   }
 
   // 书评
-  let { bookReview } = frontmatter;
+  let { bookReview, readingTime } = frontmatter;
   bookReview && (content += `\n\n# 书评 \n\n > [!tip] ${bookReview}${self.settings.blockId ? ' ^' + md5(bookReview) : ''}`);
 
   // 讨论
@@ -101,9 +101,13 @@ export async function syncNote(self: Toolbox, file: TFile) {
 
   if (readingNoteFile) {
     const sourceContent = await self.app.vault.read(readingNoteFile as TFile);
-    if (sourceContent !== content) {
+    const t = self.readingManager.load(file.path)?.readingTime
+    const isSameReadingTime =  t && readingTime && t!== readingTime 
+    if (sourceContent !== content || isSameReadingTime) {
       self.app.vault.modify(readingNoteFile as TFile, content);
       self.updateMetadata(file, outlinks, highlights, thinks, dialogue);
+      // 同步跟踪数据
+      readingDataSync(self, file);  
       new Notice(file.name + ' - 已同步');
     }
   } else {
@@ -112,6 +116,5 @@ export async function syncNote(self: Toolbox, file: TFile) {
     new Notice(file.name + ' - 已同步');
   }
 
-  // 同步跟踪数据
-  readingDataSync(self, file);
+  
 }
