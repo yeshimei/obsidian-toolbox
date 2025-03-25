@@ -9,18 +9,18 @@ let self: Toolbox;
 let pageTurner: PageTurner;
 
 export function flipEvent(f: Toolbox, file: TFile) {
-    if (!f.settings.flip) return
-    const command = f.addCommand({
-      id: '切换阅读/编辑模式',
-      name: '切换阅读/编辑模式',
-      // icon: pageTurner?.destroyed ? 'circle-dashed' : 'circle',
-      icon: 'repeat',
-      editorCallback: () => {
-        if (!pageTurner) return
-        pageTurner.destroyed = !pageTurner.destroyed
-        // command.icon = pageTurner.destroyed ? 'circle-dashed' : 'circle'
-      }
-    });
+  if (!f.settings.flip) return;
+  const command = f.addCommand({
+    id: '切换阅读/编辑模式',
+    name: '切换阅读/编辑模式',
+    // icon: pageTurner?.destroyed ? 'circle-dashed' : 'circle',
+    icon: 'repeat',
+    editorCallback: () => {
+      if (!pageTurner) return;
+      pageTurner.destroyed = !pageTurner.destroyed;
+      // command.icon = pageTurner.destroyed ? 'circle-dashed' : 'circle'
+    }
+  });
 
   self = f;
   const statusBar = document.querySelector(STATUS_BAR_CLASS) as HTMLElement;
@@ -42,7 +42,7 @@ export function flipEvent(f: Toolbox, file: TFile) {
 
 function flip(event: MouseEvent | TouchEvent | KeyboardEvent, el: HTMLElement, file: TFile, direction = true) {
   const target = event.target as HTMLElement;
-  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || (event.type !== 'wheel');
+  const should = (!pageTurner.isTouchMoving && Platform.isMobile) || event.type !== 'wheel';
   if (should) {
     // 点击划线，显示其评论
     if (target.hasClass(COMMENT_CLASS.slice(1))) handleCommentClick(target, file);
@@ -146,7 +146,7 @@ export class PageTurner {
   private touchStartX = 0;
   private touchStartY = 0;
   private isLongPress = false;
-  private isShortPress = false
+  private isShortPress = false;
   private readonly eventOptions = { capture: true, passive: false };
   private timerA: number;
   private timerB: number;
@@ -204,7 +204,7 @@ export class PageTurner {
     this.setupLongPressTimers(event);
     this.isShortPress = false;
     clearTimeout(this.timerD);
-    this.timerD = window.setTimeout(() => this.isShortPress = true, 100); 
+    this.timerD = window.setTimeout(() => (this.isShortPress = true), 300);
     const touch = event.touches[0];
     this.touchStartX = touch.clientX;
     this.touchStartY = touch.clientY;
@@ -260,7 +260,7 @@ export class PageTurner {
     this.handleEvent(event);
     this.isShortPress = false;
     clearTimeout(this.timerC);
-    this.timerC = window.setTimeout(() => this.isShortPress = true, 100); 
+    this.timerC = window.setTimeout(() => (this.isShortPress = true), 300);
   };
 
   private handleMouseUp = (event: MouseEvent) => {
