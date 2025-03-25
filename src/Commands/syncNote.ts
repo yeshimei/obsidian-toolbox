@@ -101,13 +101,13 @@ export async function syncNote(self: Toolbox, file: TFile) {
 
   if (readingNoteFile) {
     const sourceContent = await self.app.vault.read(readingNoteFile as TFile);
-    const t = self.readingManager.load(file.path)?.readingTime
-    const isSameReadingTime =  t && readingTime && t!== readingTime 
+    const t = self.readingManager.load(file.path)?.readingTime;
+    const isSameReadingTime = t && t !== readingTime;
     if (sourceContent !== content || isSameReadingTime) {
       self.app.vault.modify(readingNoteFile as TFile, content);
       self.updateMetadata(file, outlinks, highlights, thinks, dialogue);
       // 同步跟踪数据
-      readingDataSync(self, file);  
+      readingDataSync(self, file);
       new Notice(file.name + ' - 已同步');
     }
   } else {
@@ -115,6 +115,4 @@ export async function syncNote(self: Toolbox, file: TFile) {
     self.updateMetadata(file, outlinks, highlights, thinks, dialogue);
     new Notice(file.name + ' - 已同步');
   }
-
-  
 }

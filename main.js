@@ -11270,7 +11270,7 @@ async function syncNote(self4, file) {
   if (readingNoteFile) {
     const sourceContent = await self4.app.vault.read(readingNoteFile);
     const t3 = (_a2 = self4.readingManager.load(file.path)) == null ? void 0 : _a2.readingTime;
-    const isSameReadingTime = t3 && readingTime && t3 !== readingTime;
+    const isSameReadingTime = t3 && t3 !== readingTime;
     if (sourceContent !== content || isSameReadingTime) {
       self4.app.vault.modify(readingNoteFile, content);
       self4.updateMetadata(file, outlinks, highlights, thinks, dialogue2);
