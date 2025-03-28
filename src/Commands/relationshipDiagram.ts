@@ -82,7 +82,7 @@ function transformChain(child: any): void {
   for (let i = 0; i < children.length - 1; i++) {
     const currentNode = children[i];
     const nextNode = children[i + 1];
-    currentNode.children.unshift(nextNode);
+    currentNode.children.push(nextNode);
     nextNode.parent = currentNode;
     nextNode.branchName = currentNode.branchId;
     nextNode.level = currentNode.level + 1;
