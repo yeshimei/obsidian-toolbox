@@ -703,7 +703,7 @@ var videoSuffix = ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm"];
 function isFileInDirectory(file, directoryPath) {
   if (!Array.isArray(directoryPath))
     directoryPath = [directoryPath];
-  return directoryPath.some((p) => file && file.extension === "md" && file.parent.path === p.trim());
+  return directoryPath.some((p) => file && file.extension === "md" && file.parent.path.startsWith(p));
 }
 function getMetadata(file, key) {
   var _a2, _b;
@@ -1374,8 +1374,8 @@ function inner_stringify(object, prefix, generateArrayPrefix, commaRoundTrip, al
   } else if (is_array2(filter)) {
     obj_keys = filter;
   } else {
-    const keys = Object.keys(obj);
-    obj_keys = sort ? keys.sort(sort) : keys;
+    const keys2 = Object.keys(obj);
+    obj_keys = sort ? keys2.sort(sort) : keys2;
   }
   const encoded_prefix = encodeDotInKeys ? String(prefix).replace(/\./g, "%2E") : String(prefix);
   const adjusted_prefix = commaRoundTrip && is_array2(obj) && obj.length === 1 ? encoded_prefix + "[]" : encoded_prefix;
@@ -1494,7 +1494,7 @@ function stringify(object, opts = {}) {
     filter = options.filter;
     obj_keys = filter;
   }
-  const keys = [];
+  const keys2 = [];
   if (typeof obj !== "object" || obj === null) {
     return "";
   }
@@ -1512,7 +1512,7 @@ function stringify(object, opts = {}) {
     if (options.skipNulls && obj[key] === null) {
       continue;
     }
-    push_to_array(keys, inner_stringify(
+    push_to_array(keys2, inner_stringify(
       obj[key],
       key,
       // @ts-expect-error
@@ -1534,7 +1534,7 @@ function stringify(object, opts = {}) {
       sideChannel
     ));
   }
-  const joined = keys.join(options.delimiter);
+  const joined = keys2.join(options.delimiter);
   let prefix = options.addQueryPrefix === true ? "?" : "";
   if (options.charsetSentinel) {
     if (options.charset === "iso-8859-1") {
@@ -9828,13 +9828,18 @@ var PanelExhibitionHlight = class extends import_obsidian16.Modal {
 };
 
 // src/Commands/readingDataTracking.ts
+var keys = ["readingProgress", "readingTime", "readingDate", "completionDate", "readingTimeFormat"];
 async function readingDataTracking(self4, file) {
   var _a2;
   if (!self4.settings.readDataTracking || !self4.hasReadingPage(file))
     return;
   const el = document.querySelector(SOURCE_VIEW_CLASS);
   const frontmatter = ((_a2 = self4.app.metadataCache.getFileCache(file)) == null ? void 0 : _a2.frontmatter) || {};
-  const readingData = allowlist(self4.readingManager.load(file.path) || frontmatter, ["readingProgress", "readingTime", "readingDate", "completionDate", "readingTimeFormat"]);
+  let readingData = self4.readingManager.load(file.path);
+  if (!readingData || (frontmatter == null ? void 0 : frontmatter.readingTime) > (readingData == null ? void 0 : readingData.readingTime)) {
+    readingData = frontmatter;
+  }
+  readingData = allowlist(readingData, keys);
   let { readingProgress = 0, readingDate, completionDate } = readingData;
   if (readingDate && !completionDate) {
     readingData.readingProgress = computerReadingProgress(el);
@@ -9872,16 +9877,16 @@ async function readingDataTracking(self4, file) {
   }
 }
 async function readingDataSync(self4, file) {
-  const readingData = self4.readingManager.load(file.path);
+  const readingData = allowlist(self4.readingManager.load(file.path), keys);
   if (!readingData)
     return;
   for (let key in readingData) {
     await self4.updateFrontmatter(file, key, readingData[key]);
   }
 }
-function allowlist(obj, keys) {
+function allowlist(obj, keys2) {
   return Object.keys(obj).reduce((acc, key) => {
-    if (keys.includes(key)) {
+    if (keys2.includes(key)) {
       acc[key] = obj[key];
     }
     return acc;
@@ -10459,12 +10464,24 @@ function relationshipDiagramCommand(f2) {
 async function relationshipDiagram(editor, file) {
   const content = await self3.app.vault.read(file);
   filename = file.basename;
-  const lineText = getCursorText(editor);
-  const { rawContent, name } = parseLine(lineText);
   const tree = await processTree(content);
-  const treePart = rawContent ? { children: [findTree(tree, rawContent, "rawContent")] } : tree;
-  const context = partition2(treePart, name || filename);
-  await createTempRelationGraph(name || filename, context, tree);
+  const part = getPart(editor, tree);
+  const treePart = part ? { children: [part] } : tree;
+  const name = part ? treePart.children[0].name : filename;
+  const context = partition2(treePart, name);
+  await createTempRelationGraph(name, context, tree, treePart);
+}
+function getPart(editor, tree) {
+  const cursor = editor.getCursor();
+  let line = cursor.line;
+  let lineText = editor.getLine(cursor.line);
+  let type = parseLine(lineText).type;
+  while (type === "l" || type === "%") {
+    line++;
+    lineText = editor.getLine(line);
+    type = parseLine(lineText).type;
+  }
+  return findTree(tree, line, "line");
 }
 function partition2(tree, title, folding = true) {
   if (self3.settings.gitChartPartition && title === filename) {
@@ -10602,10 +10619,12 @@ async function processTree(listStr) {
   return tree;
 }
 function parseListToTree(str2) {
-  const lines = str2.split("\n").filter((l2) => l2.trim());
+  const lines = str2.split("\n");
   const root = { children: [] };
   const stack = [{ node: root, level: -1 }];
-  for (const line of lines) {
+  for (const [i2, line] of Array.from(lines).entries()) {
+    if (line.trim() === "")
+      continue;
     let lineData = parseLine(line);
     const { level, name } = lineData;
     if (!name)
@@ -10614,7 +10633,7 @@ function parseListToTree(str2) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode = Object.assign({}, lineData, { children: [], branchName: (parent == null ? void 0 : parent.branchId) || "default", parent: level === 0 ? null : parent });
+    const newNode = Object.assign({}, lineData, { line: i2, children: [], branchName: (parent == null ? void 0 : parent.branchId) || "default", parent: level === 0 ? null : parent });
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
@@ -10678,11 +10697,6 @@ function getFlattenedPath(tree) {
   paths.reverse();
   return paths;
 }
-function getCursorText(editor) {
-  const cursor = editor.getCursor();
-  const lineText = editor.getLine(cursor.line);
-  return lineText;
-}
 function parseLine(line) {
   var _a2;
   const level = line.match(/^(\t*)/)[0].length;
@@ -10719,7 +10733,7 @@ function parseLine(line) {
     rawContent: line
   };
 }
-async function createTempRelationGraph(title, content, gitChartData) {
+async function createTempRelationGraph(title, content, gitChartData, part) {
   const tempViewType = String(Date.now());
   self3.app.workspace.detachLeavesOfType(tempViewType);
   const leaf = self3.app.workspace.getLeaf("tab");
@@ -10727,17 +10741,18 @@ async function createTempRelationGraph(title, content, gitChartData) {
     type: tempViewType,
     active: true
   });
-  self3.registerView(tempViewType, (leaf2) => new TempRelationView(leaf2, title, content, gitChartData));
+  self3.registerView(tempViewType, (leaf2) => new TempRelationView(leaf2, title, content, gitChartData, part));
   self3.app.workspace.revealLeaf(leaf);
 }
 var TempRelationView = class extends import_obsidian22.ItemView {
-  constructor(leaf, title, content, gitChart) {
+  constructor(leaf, title, content, gitChart, part) {
     super(leaf);
     this.splitLeaf = null;
     this.hideBranchNames = [];
     this.title = title;
     this.content = content;
     this.gitChart = gitChart;
+    this.part = part;
     this.hideBranchNames = this.hideBranchNames.concat(hideBranchNames);
     hideBranchNames = [];
   }
@@ -10881,7 +10896,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
   async exhibitionBranch(id) {
     this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter((n) => n !== id) : [...this.hideBranchNames, id];
     updateTreeCollapseState(this.gitChart, this.hideBranchNames);
-    const content = partition2(this.gitChart, this.title, false);
+    const content = partition2(this.part, this.title, false);
     this.viewEl.empty();
     await render(self3.app, content, this.viewEl);
     this.format();
@@ -10892,7 +10907,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     let tree = getFlattenedPath(copy);
     if (!tree)
       return;
-    createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree);
+    createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree, this.part);
   }
   truncation(name, id) {
     const copy = deepClone(this.gitChart);
@@ -10900,7 +10915,7 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     let tree = findTree(copy, id, "branchId");
     if (!tree)
       return;
-    createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree);
+    createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree, this.part);
   }
   getLink(nodes, name) {
     var _a2;
@@ -11548,9 +11563,9 @@ function extractChineseParts(inputString) {
   const chineseParts = inputString.match(/[\u4e00-\u9fa5]+/g).reverse();
   const yamlObject = {};
   const sy = chineseParts.shift();
-  const keys = ["\u4E9A\u95E8", "\u7EB2", "\u4E9A\u7EB2", "\u8D85\u76EE", "\u79D1", "\u5C5E"];
-  for (let i2 = 0; i2 < keys.length; i2++) {
-    yamlObject[keys[i2]] = chineseParts.find((text) => text.indexOf(keys[i2]) > -1) || "";
+  const keys2 = ["\u4E9A\u95E8", "\u7EB2", "\u4E9A\u7EB2", "\u8D85\u76EE", "\u79D1", "\u5C5E"];
+  for (let i2 = 0; i2 < keys2.length; i2++) {
+    yamlObject[keys2[i2]] = chineseParts.find((text) => text.indexOf(keys2[i2]) > -1) || "";
   }
   yamlObject["\u76EE"] = chineseParts.find((text) => text.slice(-1) === "\u76EE" && text.slice(-2) !== "\u8D85\u76EE") || "";
   return `${plantClassificationSystem[sy]}

@@ -2,12 +2,16 @@ import { TFile } from 'obsidian';
 import { computerReadingProgress, msTo, SOURCE_VIEW_CLASS, today } from 'src/helpers';
 import Toolbox from 'src/main';
 import Confirm from 'src/Modals/Confirm';
-
+const keys = ['readingProgress', 'readingTime', 'readingDate', 'completionDate', 'readingTimeFormat']
 export default async function readingDataTracking(self: Toolbox, file: TFile) {
   if (!self.settings.readDataTracking || !self.hasReadingPage(file)) return;
   const el = document.querySelector(SOURCE_VIEW_CLASS);
   const frontmatter = self.app.metadataCache.getFileCache(file)?.frontmatter || {};
-  const readingData = allowlist(self.readingManager.load(file.path) || frontmatter, ['readingProgress', 'readingTime', 'readingDate', 'completionDate', 'readingTimeFormat']) as any;
+  let readingData = self.readingManager.load(file.path)
+  if (!readingData || frontmatter?.readingTime > readingData?.readingTime) {
+    readingData = frontmatter
+  }
+  readingData = allowlist(readingData, keys)
   let { readingProgress = 0, readingDate, completionDate } = readingData;
   if (readingDate && !completionDate) {
     // 阅读进度
@@ -52,7 +56,7 @@ export default async function readingDataTracking(self: Toolbox, file: TFile) {
 }
 
 export async function readingDataSync(self: Toolbox, file: TFile) {
-  const readingData = self.readingManager.load(file.path);
+  const readingData = allowlist(self.readingManager.load(file.path), keys)
   if (!readingData) return;
   for (let key in readingData) {
     await self.updateFrontmatter(file, key, readingData[key]);

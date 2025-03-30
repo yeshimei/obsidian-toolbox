@@ -13,7 +13,7 @@ export const videoSuffix = ['mp4', 'mkv', 'avi', 'mov', 'wmv', 'flv', 'webm'];
 
 export function isFileInDirectory (file: TFile, directoryPath: string | string[]): boolean {
   if (!Array.isArray(directoryPath)) directoryPath = [directoryPath];
-  return directoryPath.some(p => file && file.extension === 'md' && file.parent.path === p.trim());
+  return directoryPath.some(p => file && file.extension === 'md' && file.parent.path.startsWith(p));
 }
 
 export function getMetadata(file: TFile, key: string) {

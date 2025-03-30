@@ -21,13 +21,28 @@ export default function relationshipDiagramCommand(f: Toolbox) {
 async function relationshipDiagram(editor: Editor, file: TFile) {
   const content = await self.app.vault.read(file);
   filename = file.basename;
-  const lineText = getCursorText(editor);
-  const { rawContent, name } = parseLine(lineText);
   const tree = await processTree(content);
-  const treePart = rawContent ? { children: [findTree(tree, rawContent, 'rawContent')] } : tree;
-  const context = partition(treePart, name || filename);
-  await createTempRelationGraph(name || filename, context, tree);
+  const part = getPart(editor, tree)
+  const treePart = part ? { children: [part] } : tree;
+  const name = part ? treePart.children[0].name : filename;
+  const context = partition(treePart, name);
+  await createTempRelationGraph(name, context, tree, treePart);
 }
+
+
+function getPart (editor: Editor, tree: any) {
+  const cursor = editor.getCursor();
+  let line = cursor.line;
+  let lineText = editor.getLine(cursor.line);
+  let type  = parseLine(lineText).type
+    while (type === 'l' || type === '%') {
+      line++
+      lineText = editor.getLine(line);
+      type = parseLine(lineText).type
+    }
+  return findTree(tree, line, 'line')
+}
+
 
 function partition(tree: any, title: string, folding = true) {
   if (self.settings.gitChartPartition && title === filename) {
@@ -181,10 +196,11 @@ async function processTree(listStr: string) {
 }
 
 function parseListToTree(str: string) {
-  const lines = str.split('\n').filter(l => l.trim());
+  const lines = str.split('\n');
   const root: any = { children: [] };
   const stack = [{ node: root, level: -1 }];
-  for (const line of lines) {
+  for (const [i, line] of Array.from(lines).entries()) {
+    if (line.trim() === '') continue;
     let lineData = parseLine(line);
     const { level, name } = lineData;
     if (!name) continue;
@@ -193,7 +209,7 @@ function parseListToTree(str: string) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode: any = Object.assign({}, lineData, { children: [], branchName: parent?.branchId || 'default', parent: level === 0 ? null : parent });
+    const newNode: any = Object.assign({}, lineData, { line: i, children: [], branchName: parent?.branchId || 'default', parent: level === 0 ? null : parent });
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
@@ -218,7 +234,7 @@ function updateTreeCollapseState(tree: any, hideBranchNames: string[]) {
   traverse(tree);
 }
 
-function findTree(originalRoot: any, targetName: string, key = 'name'): any {
+function findTree(originalRoot: any, targetName: any, key = 'name'): any {
   for (const child of originalRoot.children) {
     if (child[key] === targetName) return child;
     if (child.children.length > 0) {
@@ -302,7 +318,7 @@ function parseLine(line: string) {
   };
 }
 
-async function createTempRelationGraph(title: string, content: string, gitChartData: any) {
+async function createTempRelationGraph(title: string, content: string, gitChartData: any, part: any) {
   const tempViewType = String(Date.now());
 
   self.app.workspace.detachLeavesOfType(tempViewType);
@@ -313,7 +329,7 @@ async function createTempRelationGraph(title: string, content: string, gitChartD
     active: true
   });
 
-  self.registerView(tempViewType, (leaf: WorkspaceLeaf) => new TempRelationView(leaf, title, content, gitChartData) as any);
+  self.registerView(tempViewType, (leaf: WorkspaceLeaf) => new TempRelationView(leaf, title, content, gitChartData, part) as any);
   self.app.workspace.revealLeaf(leaf);
 }
 
@@ -327,11 +343,13 @@ class TempRelationView extends ItemView {
   splitLeaf: WorkspaceLeaf | null = null;
   gitChart: any;
   hideBranchNames: string[] = [];
-  constructor(leaf: WorkspaceLeaf, title: string, content: string, gitChart: any) {
+  part: any;
+  constructor(leaf: WorkspaceLeaf, title: string, content: string, gitChart: any, part: any) {
     super(leaf);
     this.title = title;
     this.content = content;
     this.gitChart = gitChart;
+    this.part = part;
     this.hideBranchNames = this.hideBranchNames.concat(hideBranchNames);
     hideBranchNames = [];
   }
@@ -479,7 +497,7 @@ class TempRelationView extends ItemView {
   async exhibitionBranch(id: string) {
     this.hideBranchNames = this.hideBranchNames.includes(id) ? this.hideBranchNames.filter(n => n !== id) : [...this.hideBranchNames, id];
     updateTreeCollapseState(this.gitChart, this.hideBranchNames);
-    const content = partition(this.gitChart, this.title, false);
+    const content = partition(this.part, this.title, false);
     this.viewEl.empty();
     await render(self.app, content, this.viewEl);
     this.format();
@@ -490,7 +508,7 @@ class TempRelationView extends ItemView {
     const copy = findTree(deepClone(this.gitChart), id, 'branchId');
     let tree = getFlattenedPath(copy);
     if (!tree) return;
-    createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree);
+    createTempRelationGraph(name, generateGitgraphFromList({ children: tree }, name), tree, this.part);
   }
 
   truncation(name: string, id: string ) {
@@ -498,7 +516,7 @@ class TempRelationView extends ItemView {
     updateTreeCollapseState(copy, []);
     let tree = findTree(copy, id, 'branchId');
     if (!tree) return;
-    createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree);
+    createTempRelationGraph(name, generateGitgraphFromList({ children: [tree] }, name), tree, this.part);
   }
 
   getLink(nodes: any, name: string): string {
