@@ -210,7 +210,6 @@ export default class AIChatManager {
     } else {
       this.messages.push(message);
     }
-
     const answer: MESSAGE_TYPE = { role: 'assistant', content: '', type: 'answer' };
     const openai = new OpenAI({
       baseURL: chatUrl,

@@ -86,6 +86,8 @@ export interface ToolboxSettings {
 
   poster: boolean;
 
+  footnoteRenumbering: boolean;
+
   gitChart: boolean;
   gitChartMultiColorLabel: boolean;
   gitChartPartition: boolean;
@@ -178,6 +180,8 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   gallery: false,
 
   poster: false,
+
+  footnoteRenumbering: false,
 
   gitChart: false,
   gitChartMultiColorLabel: false,
@@ -707,6 +711,14 @@ export class ToolboxSettingTab extends PluginSettingTab {
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.polysemy).onChange(async value => {
           this.plugin.settings.polysemy = value;
+          await this.plugin.saveSettings();
+          this.display();
+        })
+      );
+      
+      new Setting(containerEl).setName('🏷️ 脚注重编号').addToggle(cd =>
+        cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async value => {
+          this.plugin.settings.footnoteRenumbering = value;
           await this.plugin.saveSettings();
           this.display();
         })

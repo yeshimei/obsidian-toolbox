@@ -579,7 +579,7 @@ __export(main_exports, {
   default: () => Toolbox
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian30 = require("obsidian");
+var import_obsidian31 = require("obsidian");
 
 // test/index.ts
 var import_obsidian = require("obsidian");
@@ -6673,12 +6673,71 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
 
 // src/Commands/chat.ts
 function chatCommand(self4) {
-  self4.settings.chat && self4.addCommand({
+  if (!self4.settings.chat)
+    return;
+  self4.addCommand({
     id: "AI Chat",
     name: "AI Chat",
     icon: "bot",
     callback: () => chat(self4, null)
   });
+  self4.addCommand({
+    id: "AI\u603B\u7ED3",
+    name: "AI\u603B\u7ED3",
+    icon: "book-minus",
+    callback: () => getContent(self4, "AI\u603B\u7ED3", "\u751F\u6210\u7B80\u6D01\u660E\u4E86\u7684\u6458\u8981\uFF0C\u4FDD\u6301\u5BF9\u539F\u6587\u7684\u4FE1\u606F\u5B8C\u6574\uFF0C\u4E0D\u8981\u9057\u6F0F\uFF0C\u4E5F\u4E0D\u8981\u591A\u589E\u5185\u5BB9")
+  });
+  self4.addCommand({
+    id: "AI\u6DA6\u8272",
+    name: "AI\u6DA6\u8272",
+    icon: "brush",
+    callback: () => getContent(self4, "AI\u6DA6\u8272", "\u4F60\u662F\u4E00\u4F4D\u4E13\u4E1A\u7684\u6587\u672C\u6DA6\u8272\u52A9\u624B\uFF0C\u81F4\u529B\u4E8E\u63D0\u5347\u6587\u672C\u7684\u6E05\u6670\u5EA6\u3001\u6D41\u7545\u6027\u548C\u5438\u5F15\u529B\u3002\u8BC6\u522B\u5E76\u4FEE\u6B63\u8BED\u6CD5\u9519\u8BEF\u3001\u62FC\u5199\u9519\u8BEF\u548C\u6807\u70B9\u9519\u8BEF\u3002\u4F18\u5316\u53E5\u5B50\u7ED3\u6784\uFF0C\u4F7F\u8868\u8FBE\u66F4\u52A0\u7B80\u6D01\u6709\u529B\u3002\u63D0\u5347\u6587\u672C\u7684\u903B\u8F91\u6027\u548C\u8FDE\u8D2F\u6027\uFF0C\u786E\u4FDD\u5185\u5BB9\u6613\u4E8E\u7406\u89E3\u3002")
+  });
+}
+async function getContent(self4, name, description) {
+  var _a2;
+  const aiChat = new AIChatManager(self4);
+  const editor = (_a2 = self4.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView)) == null ? void 0 : _a2.editor;
+  if (!editor)
+    return;
+  const cursor = editor.getCursor();
+  const text = editor.getLine(cursor.line);
+  let wikiText = text;
+  let isWiki = false;
+  const WIKI_LINK_REGEX = /\[\[([^#\|]*?)(?:#\^([\w-]+))?(?:\|.*?)?\]\]/;
+  const match = text.match(WIKI_LINK_REGEX);
+  const [fullMatch, fileName, blockId] = match || [];
+  if (match) {
+    isWiki = true;
+    const targetFile = self4.app.metadataCache.getFirstLinkpathDest(fileName, "");
+    if (!targetFile)
+      return;
+    const content = await self4.app.vault.read(targetFile);
+    wikiText = findBlockContent(content, blockId);
+  }
+  let textToSummarize = "";
+  aiChat.promptContent = description;
+  new import_obsidian7.Notice(`\u8BF7\u7A0D\u7B49\uFF0C\u6B63\u5728\u8FDB\u884C${name}...`);
+  aiChat.openChat(wikiText, async (t2, type, reasoning_content) => {
+    if (type === "content")
+      textToSummarize += t2;
+    if (type === "stop")
+      editor.replaceRange(
+        isWiki ? `[[${fileName}#^${blockId}|${textToSummarize}]] ` : textToSummarize,
+        { line: cursor.line, ch: 0 },
+        { line: cursor.line, ch: text.length }
+      );
+  });
+}
+function findBlockContent(content, blockId) {
+  const lines = content.split("\n");
+  const blockRegex = new RegExp(`${blockId}$`);
+  for (let i2 = 0; i2 < lines.length; i2++) {
+    const line = lines[i2].trim();
+    if (blockRegex.test(line)) {
+      return line.replace(/\s*\^[\w-]+$/, "").trim();
+    }
+  }
 }
 async function chat(self4, text) {
   var _a2;
@@ -11677,6 +11736,7 @@ var DEFAULT_SETTINGS = {
   encryptionRememberPassMode: "notSave",
   gallery: false,
   poster: false,
+  footnoteRenumbering: false,
   gitChart: false,
   gitChartMultiColorLabel: false,
   gitChartPartition: false,
@@ -12065,6 +12125,13 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         this.display();
       })
     );
+    new import_obsidian29.Setting(containerEl).setName("\u{1F3F7}\uFE0F \u811A\u6CE8\u91CD\u7F16\u53F7").addToggle(
+      (cd) => cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async (value) => {
+        this.plugin.settings.footnoteRenumbering = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
     new import_obsidian29.Setting(containerEl).setName("\u{1F4CC} \u5757\u5F15\u7528").setDesc("\u83B7\u53D6\u5149\u6807\u6240\u5728\u884C\uFF08\u5757\uFF09\u7684\u53CC\u94FE\uFF0C\u65B9\u4FBF\u590D\u5236\u5230\u5730\u65B9\u4F7F\u7528").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.blockReference).onChange(async (value) => {
         this.plugin.settings.blockReference = value;
@@ -12139,8 +12206,30 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
   }
 };
 
+// src/Commands/renumberFootnote.ts
+var import_obsidian30 = require("obsidian");
+function renumberFootnoteCommand(self4) {
+  self4.settings.footnoteRenumbering && self4.addCommand({
+    id: "\u811A\u6CE8\u91CD\u7F16\u53F7",
+    name: "\u811A\u6CE8\u91CD\u7F16\u53F7",
+    icon: "footprints",
+    editorCallback: async (editor, view) => renumberFootnote(self4, view.file)
+  });
+}
+async function renumberFootnote(self4, file) {
+  if (!self4.settings.footnoteRenumbering)
+    return;
+  let content = await self4.app.vault.read(file);
+  let footnoteIndex = 1;
+  let referenceIndex = 1;
+  content = content.replace(/\[\^(\d+)\][^:]/g, () => `[^${footnoteIndex++}]`);
+  content = content.replace(/\[\^(\d+)\]:/g, () => `[^${referenceIndex++}]:`);
+  await self4.app.vault.modify(file, content);
+  new import_obsidian30.Notice(`\u5DF2\u4E3A${footnoteIndex - 1}\u4E2A\u811A\u6CE8\u91CD\u65B0\u7F16\u53F7`);
+}
+
 // src/main.ts
-var Toolbox = class extends import_obsidian30.Plugin {
+var Toolbox = class extends import_obsidian31.Plugin {
   async onload() {
     await this.loadSettings();
     this.encryptionTempData = {};
@@ -12157,6 +12246,7 @@ var Toolbox = class extends import_obsidian30.Plugin {
     encryptPopUpCommand(this);
     decryptPopUpCommand(this);
     passwordCreatorCommand(this);
+    renumberFootnoteCommand(this);
     blockReferenceCommand(this);
     resourcesToCommand(this);
     searchForPlantCommand(this);
@@ -12214,7 +12304,7 @@ var Toolbox = class extends import_obsidian30.Plugin {
     this.updateFrontmatter(file, "dialogue", dialogue2);
   }
   getView() {
-    return this.app.workspace.getActiveViewOfType(import_obsidian30.MarkdownView);
+    return this.app.workspace.getActiveViewOfType(import_obsidian31.MarkdownView);
   }
   getEditor() {
     var _a2;

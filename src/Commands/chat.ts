@@ -1,4 +1,4 @@
-import { ButtonComponent, DropdownComponent, MarkdownView, Modal, Setting, TextAreaComponent, TFile } from 'obsidian';
+import { ButtonComponent, DropdownComponent, MarkdownView, Modal, Notice, Setting, TextAreaComponent, TFile } from 'obsidian';
 import { createChatArea, formatFileSize, getBooksList, getOptionList } from 'src/helpers';
 import Toolbox from 'src/main';
 import FuzzySuggest from 'src/Modals/FuzzySuggest';
@@ -8,13 +8,75 @@ import { MESSAGE_TYPE } from './AIChatManager';
 import AIChatManager from './AIChatManager';
 
 export default function chatCommand(self: Toolbox) {
-  self.settings.chat &&
+  
+  if (!self.settings.chat) return
     self.addCommand({
       id: 'AI Chat',
       name: 'AI Chat',
       icon: 'bot',
       callback: () => chat(self, null)
     });
+
+    self.addCommand({
+      id: 'AI总结',
+      name: 'AI总结',
+      icon: 'book-minus',
+      callback: () => getContent(self, 'AI总结', '生成简洁明了的摘要，保持对原文的信息完整，不要遗漏，也不要多增内容')
+    });
+
+    self.addCommand({
+      id: 'AI润色',
+      name: 'AI润色',
+      icon: 'brush',
+      callback: () => getContent(self, 'AI润色', '你是一位专业的文本润色助手，致力于提升文本的清晰度、流畅性和吸引力。识别并修正语法错误、拼写错误和标点错误。优化句子结构，使表达更加简洁有力。提升文本的逻辑性和连贯性，确保内容易于理解。')
+    });
+}
+
+
+async function getContent (self: Toolbox, name: string, description: string) {
+  const aiChat = new AIChatManager(self);
+  const editor = self.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+  if (!editor) return;
+  const cursor = editor.getCursor();
+  const text = editor.getLine(cursor.line);
+  let wikiText = text;
+  let isWiki  = false
+
+  const WIKI_LINK_REGEX = /\[\[([^#\|]*?)(?:#\^([\w-]+))?(?:\|.*?)?\]\]/
+  const match = text.match(WIKI_LINK_REGEX)
+  const [fullMatch, fileName, blockId] = match || [];
+  if (match) {
+    isWiki = true
+    const targetFile = self.app.metadataCache.getFirstLinkpathDest(fileName, '');
+    if (!targetFile) return 
+    const content = await self.app.vault.read(targetFile);
+    wikiText = findBlockContent(content, blockId);
+  }
+
+  let textToSummarize = '';
+  aiChat.promptContent = description; 
+  new Notice(`请稍等，正在进行${name}...`);
+  aiChat.openChat(wikiText, async (t, type, reasoning_content) => {
+    if (type === 'content') textToSummarize += t;
+    if (type === 'stop') editor.replaceRange(
+      isWiki ? `[[${fileName}#^${blockId}|${textToSummarize}]] ` : textToSummarize ,
+        { line: cursor.line, ch: 0 }, 
+        { line: cursor.line, ch: text.length }
+      );
+  });
+}
+
+// 在文件内容中查找块ID对应的文本
+function findBlockContent(content: string, blockId: string): string {
+  const lines = content.split('\n');
+  const blockRegex = new RegExp(`${blockId}$`);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (blockRegex.test(line)) {
+      return line.replace(/\s*\^[\w-]+$/, '').trim()
+    }
+  }
 }
 
 export async function chat(self: Toolbox, text: string) {

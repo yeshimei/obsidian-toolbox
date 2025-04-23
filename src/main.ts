@@ -28,6 +28,7 @@ import searchForPlantCommand from './CustomizedCommands/searchForPlant';
 import switchLibrary from './CustomizedCommands/switchLibrary';
 import { isFileInDirectory } from './helpers';
 import { DEFAULT_SETTINGS, ToolboxSettings, ToolboxSettingTab } from './settings';
+import renumberFootnoteCommand from './Commands/renumberFootnote';
 
 export default class Toolbox extends Plugin {
   encryptionTempData: any;
@@ -62,6 +63,8 @@ export default class Toolbox extends Plugin {
     decryptPopUpCommand(this);
     // 密码创建器
     passwordCreatorCommand(this);
+    // 脚注重编号
+    renumberFootnoteCommand(this);
     // 块引用
     blockReferenceCommand(this);
     // 移动当前笔记中的资源至指定文件夹
