@@ -6685,48 +6685,58 @@ function chatCommand(self4) {
     id: "AI\u603B\u7ED3",
     name: "AI\u603B\u7ED3",
     icon: "book-minus",
-    callback: () => getContent(self4, "AI\u603B\u7ED3", "\u751F\u6210\u7B80\u6D01\u660E\u4E86\u7684\u6458\u8981\uFF0C\u4FDD\u6301\u5BF9\u539F\u6587\u7684\u4FE1\u606F\u5B8C\u6574\uFF0C\u4E0D\u8981\u9057\u6F0F\uFF0C\u4E5F\u4E0D\u8981\u591A\u589E\u5185\u5BB9")
+    callback: () => AiQuick(self4, "AI\u603B\u7ED3", "\u751F\u6210\u7B80\u6D01\u660E\u4E86\u7684\u6458\u8981\uFF0C\u4FDD\u6301\u5BF9\u539F\u6587\u7684\u4FE1\u606F\u5B8C\u6574\uFF0C\u4E0D\u8981\u9057\u6F0F\uFF0C\u4E5F\u4E0D\u8981\u591A\u589E\u5185\u5BB9")
   });
   self4.addCommand({
     id: "AI\u6DA6\u8272",
     name: "AI\u6DA6\u8272",
     icon: "brush",
-    callback: () => getContent(self4, "AI\u6DA6\u8272", "\u4F60\u662F\u4E00\u4F4D\u4E13\u4E1A\u7684\u6587\u672C\u6DA6\u8272\u52A9\u624B\uFF0C\u81F4\u529B\u4E8E\u63D0\u5347\u6587\u672C\u7684\u6E05\u6670\u5EA6\u3001\u6D41\u7545\u6027\u548C\u5438\u5F15\u529B\u3002\u8BC6\u522B\u5E76\u4FEE\u6B63\u8BED\u6CD5\u9519\u8BEF\u3001\u62FC\u5199\u9519\u8BEF\u548C\u6807\u70B9\u9519\u8BEF\u3002\u4F18\u5316\u53E5\u5B50\u7ED3\u6784\uFF0C\u4F7F\u8868\u8FBE\u66F4\u52A0\u7B80\u6D01\u6709\u529B\u3002\u63D0\u5347\u6587\u672C\u7684\u903B\u8F91\u6027\u548C\u8FDE\u8D2F\u6027\uFF0C\u786E\u4FDD\u5185\u5BB9\u6613\u4E8E\u7406\u89E3\u3002")
+    callback: () => AiQuick(self4, "AI\u6DA6\u8272", "\u4F60\u662F\u4E00\u4F4D\u4E13\u4E1A\u7684\u6587\u672C\u6DA6\u8272\u52A9\u624B\uFF0C\u81F4\u529B\u4E8E\u63D0\u5347\u6587\u672C\u7684\u6E05\u6670\u5EA6\u3001\u6D41\u7545\u6027\u548C\u5438\u5F15\u529B\u3002\u8BC6\u522B\u5E76\u4FEE\u6B63\u8BED\u6CD5\u9519\u8BEF\u3001\u62FC\u5199\u9519\u8BEF\u548C\u6807\u70B9\u9519\u8BEF\u3002\u4F18\u5316\u53E5\u5B50\u7ED3\u6784\uFF0C\u4F7F\u8868\u8FBE\u66F4\u52A0\u7B80\u6D01\u6709\u529B\u3002\u63D0\u5347\u6587\u672C\u7684\u903B\u8F91\u6027\u548C\u8FDE\u8D2F\u6027\uFF0C\u786E\u4FDD\u5185\u5BB9\u6613\u4E8E\u7406\u89E3\u3002")
   });
 }
-async function getContent(self4, name, description) {
+async function AiQuick(toolbox, operationName, promptDescription) {
   var _a2;
-  const aiChat = new AIChatManager(self4);
-  const editor = (_a2 = self4.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView)) == null ? void 0 : _a2.editor;
-  if (!editor)
+  const aiProcessor = new AIChatManager(toolbox);
+  const activeEditor = (_a2 = toolbox.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView)) == null ? void 0 : _a2.editor;
+  if (!activeEditor)
     return;
-  const cursor = editor.getCursor();
-  const text = editor.getLine(cursor.line);
-  let wikiText = text;
-  let isWiki = false;
-  const WIKI_LINK_REGEX = /\[\[([^#\|]*?)(?:#\^([\w-]+))?(?:\|.*?)?\]\]/;
-  const match = text.match(WIKI_LINK_REGEX);
-  const [fullMatch, fileName, blockId] = match || [];
-  if (match) {
-    isWiki = true;
-    const targetFile = self4.app.metadataCache.getFirstLinkpathDest(fileName, "");
-    if (!targetFile)
+  const cursorPosition = activeEditor.getCursor();
+  const currentLineText = activeEditor.getLine(cursorPosition.line);
+  let contentToProcess = currentLineText;
+  let isWikiLink = false;
+  const WIKI_LINK_PATTERN = /\[\[([^#\|]*?)(?:#\^([\w-]+))?(?:\|.*?)?\]\]/;
+  const wikiLinkMatch = currentLineText.match(WIKI_LINK_PATTERN);
+  const [_, targetFileName, targetBlockId] = wikiLinkMatch || [];
+  let linkedFile;
+  if (wikiLinkMatch) {
+    isWikiLink = true;
+    linkedFile = toolbox.app.metadataCache.getFirstLinkpathDest(targetFileName, "");
+    if (!linkedFile)
       return;
-    const content = await self4.app.vault.read(targetFile);
-    wikiText = findBlockContent(content, blockId);
+    const fileContent = await toolbox.app.vault.read(linkedFile);
+    contentToProcess = findBlockContent(fileContent, targetBlockId);
   }
-  let textToSummarize = "";
-  aiChat.promptContent = description;
-  new import_obsidian7.Notice(`\u8BF7\u7A0D\u7B49\uFF0C\u6B63\u5728\u8FDB\u884C${name}...`);
-  aiChat.openChat(wikiText, async (t2, type, reasoning_content) => {
-    if (type === "content")
-      textToSummarize += t2;
-    if (type === "stop")
-      editor.replaceRange(
-        isWiki ? `[[${fileName}#^${blockId}|${textToSummarize}]] ` : textToSummarize,
-        { line: cursor.line, ch: 0 },
-        { line: cursor.line, ch: text.length }
+  contentToProcess = contentToProcess.replace(/%%.+?%%/g, "");
+  let accumulatedResult = "";
+  aiProcessor.promptContent = promptDescription;
+  const noticeBaseMessage = `${linkedFile ? "\u300A" + linkedFile.basename + "\u300B\n\n" : ""}${contentToProcess}
+
+[${operationName}]
+`;
+  const notice = new import_obsidian7.Notice(noticeBaseMessage, 0);
+  aiProcessor.openChat(contentToProcess, async (contentChunk, messageType) => {
+    if (messageType === "content") {
+      accumulatedResult += contentChunk;
+      notice.setMessage(noticeBaseMessage + accumulatedResult);
+    }
+    if (messageType === "stop") {
+      const processedContent = isWikiLink ? `[[${targetFileName}#^${targetBlockId}|${accumulatedResult}]] ` : accumulatedResult;
+      activeEditor.replaceRange(
+        processedContent,
+        { line: cursorPosition.line, ch: 0 },
+        { line: cursorPosition.line, ch: currentLineText.length }
       );
+    }
   });
 }
 function findBlockContent(content, blockId) {

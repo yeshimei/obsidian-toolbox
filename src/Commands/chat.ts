@@ -21,52 +21,65 @@ export default function chatCommand(self: Toolbox) {
       id: 'AI总结',
       name: 'AI总结',
       icon: 'book-minus',
-      callback: () => getContent(self, 'AI总结', '生成简洁明了的摘要，保持对原文的信息完整，不要遗漏，也不要多增内容')
+      callback: () => AiQuick(self, 'AI总结', '生成简洁明了的摘要，保持对原文的信息完整，不要遗漏，也不要多增内容')
     });
 
     self.addCommand({
       id: 'AI润色',
       name: 'AI润色',
       icon: 'brush',
-      callback: () => getContent(self, 'AI润色', '你是一位专业的文本润色助手，致力于提升文本的清晰度、流畅性和吸引力。识别并修正语法错误、拼写错误和标点错误。优化句子结构，使表达更加简洁有力。提升文本的逻辑性和连贯性，确保内容易于理解。')
+      callback: () => AiQuick(self, 'AI润色', '你是一位专业的文本润色助手，致力于提升文本的清晰度、流畅性和吸引力。识别并修正语法错误、拼写错误和标点错误。优化句子结构，使表达更加简洁有力。提升文本的逻辑性和连贯性，确保内容易于理解。')
     });
 }
 
 
-async function getContent (self: Toolbox, name: string, description: string) {
-  const aiChat = new AIChatManager(self);
-  const editor = self.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
-  if (!editor) return;
-  const cursor = editor.getCursor();
-  const text = editor.getLine(cursor.line);
-  let wikiText = text;
-  let isWiki  = false
+async function AiQuick(toolbox: Toolbox, operationName: string, promptDescription: string) {
+  const aiProcessor = new AIChatManager(toolbox);
+  const activeEditor = toolbox.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
+  if (!activeEditor) return;
+  
+  const cursorPosition = activeEditor.getCursor();
+  const currentLineText = activeEditor.getLine(cursorPosition.line);
+  let contentToProcess = currentLineText;
+  let isWikiLink = false;
 
-  const WIKI_LINK_REGEX = /\[\[([^#\|]*?)(?:#\^([\w-]+))?(?:\|.*?)?\]\]/
-  const match = text.match(WIKI_LINK_REGEX)
-  const [fullMatch, fileName, blockId] = match || [];
-  if (match) {
-    isWiki = true
-    const targetFile = self.app.metadataCache.getFirstLinkpathDest(fileName, '');
-    if (!targetFile) return 
-    const content = await self.app.vault.read(targetFile);
-    wikiText = findBlockContent(content, blockId);
+  const WIKI_LINK_PATTERN = /\[\[([^#\|]*?)(?:#\^([\w-]+))?(?:\|.*?)?\]\]/;
+  const wikiLinkMatch = currentLineText.match(WIKI_LINK_PATTERN);
+  const [_, targetFileName, targetBlockId] = wikiLinkMatch || [];
+  let linkedFile
+  if (wikiLinkMatch) {
+    isWikiLink = true;
+    linkedFile = toolbox.app.metadataCache.getFirstLinkpathDest(targetFileName, '');
+    if (!linkedFile) return;
+    
+    const fileContent = await toolbox.app.vault.read(linkedFile);
+    contentToProcess = findBlockContent(fileContent, targetBlockId);
   }
 
-  let textToSummarize = '';
-  aiChat.promptContent = description; 
-  new Notice(`请稍等，正在进行${name}...`);
-  aiChat.openChat(wikiText, async (t, type, reasoning_content) => {
-    if (type === 'content') textToSummarize += t;
-    if (type === 'stop') editor.replaceRange(
-      isWiki ? `[[${fileName}#^${blockId}|${textToSummarize}]] ` : textToSummarize ,
-        { line: cursor.line, ch: 0 }, 
-        { line: cursor.line, ch: text.length }
+  contentToProcess = contentToProcess.replace(/%%.+?%%/g, '');
+  let accumulatedResult = '';
+  aiProcessor.promptContent = promptDescription;
+  const noticeBaseMessage = `${linkedFile ? '《' + linkedFile.basename + '》\n\n' : ''}${contentToProcess}\n\n[${operationName}]\n`
+  const notice = new Notice(noticeBaseMessage, 0);
+  aiProcessor.openChat(contentToProcess, async (contentChunk, messageType) => {
+    if (messageType === 'content') {
+      accumulatedResult += contentChunk;
+      notice.setMessage(noticeBaseMessage + accumulatedResult)
+    }
+    if (messageType === 'stop') {
+      const processedContent = isWikiLink 
+        ? `[[${targetFileName}#^${targetBlockId}|${accumulatedResult}]] `
+        : accumulatedResult;
+
+      activeEditor.replaceRange(
+        processedContent,
+        { line: cursorPosition.line, ch: 0 },
+        { line: cursorPosition.line, ch: currentLineText.length }
       );
+    }
   });
 }
 
-// 在文件内容中查找块ID对应的文本
 function findBlockContent(content: string, blockId: string): string {
   const lines = content.split('\n');
   const blockRegex = new RegExp(`${blockId}$`);
