@@ -21,7 +21,7 @@ export default function chatCommand(self: Toolbox) {
       id: 'AI总结',
       name: 'AI总结',
       icon: 'book-minus',
-      callback: () => AiQuick(self, 'AI总结', '生成简洁明了的摘要，保持对原文的信息完整，不要遗漏，也不要多增内容')
+      callback: () => AiQuick(self, 'AI总结', '使用一段话生成简洁明了的摘要，保持对原文的信息完整，不要遗漏，也不要多增内容')
     });
 
     self.addCommand({
@@ -59,6 +59,7 @@ async function AiQuick(toolbox: Toolbox, operationName: string, promptDescriptio
   contentToProcess = contentToProcess.replace(/%%.+?%%/g, '');
   let accumulatedResult = '';
   aiProcessor.promptContent = promptDescription;
+  aiProcessor.data.save = false
   const noticeBaseMessage = `${linkedFile ? '《' + linkedFile.basename + '》\n\n' : ''}${contentToProcess}\n\n[${operationName}]\n`
   const notice = new Notice(noticeBaseMessage, 0);
   aiProcessor.openChat(contentToProcess, async (contentChunk, messageType) => {

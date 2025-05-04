@@ -6685,7 +6685,7 @@ function chatCommand(self4) {
     id: "AI\u603B\u7ED3",
     name: "AI\u603B\u7ED3",
     icon: "book-minus",
-    callback: () => AiQuick(self4, "AI\u603B\u7ED3", "\u751F\u6210\u7B80\u6D01\u660E\u4E86\u7684\u6458\u8981\uFF0C\u4FDD\u6301\u5BF9\u539F\u6587\u7684\u4FE1\u606F\u5B8C\u6574\uFF0C\u4E0D\u8981\u9057\u6F0F\uFF0C\u4E5F\u4E0D\u8981\u591A\u589E\u5185\u5BB9")
+    callback: () => AiQuick(self4, "AI\u603B\u7ED3", "\u4F7F\u7528\u4E00\u6BB5\u8BDD\u751F\u6210\u7B80\u6D01\u660E\u4E86\u7684\u6458\u8981\uFF0C\u4FDD\u6301\u5BF9\u539F\u6587\u7684\u4FE1\u606F\u5B8C\u6574\uFF0C\u4E0D\u8981\u9057\u6F0F\uFF0C\u4E5F\u4E0D\u8981\u591A\u589E\u5185\u5BB9")
   });
   self4.addCommand({
     id: "AI\u6DA6\u8272",
@@ -6719,6 +6719,7 @@ async function AiQuick(toolbox, operationName, promptDescription) {
   contentToProcess = contentToProcess.replace(/%%.+?%%/g, "");
   let accumulatedResult = "";
   aiProcessor.promptContent = promptDescription;
+  aiProcessor.data.save = false;
   const noticeBaseMessage = `${linkedFile ? "\u300A" + linkedFile.basename + "\u300B\n\n" : ""}${contentToProcess}
 
 [${operationName}]
