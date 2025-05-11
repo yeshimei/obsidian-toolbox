@@ -12,19 +12,24 @@ export default async function chatWebPageClipping(self: Toolbox, file: TFile) {
   let title = getMetadata(file, 'title') || '';
   let summary = getMetadata(file, 'summary') || '';
   let content = await self.app.vault.read(file);
+  let t: Notice
   if (!content) return;
   if (!summary) {
-    const t = new Notice(`正在为笔记生成摘要`);
-    await inPrompts.summarizeNote.fn(self, chat, text => summary += text);
-    t.hide();
-    new Notice(`已为笔记生成摘要`);
+    const tt = title ? title + '\n\n' : ''
+    t = new Notice(`${tt}正在为笔记生成摘要`, 0);
+    await inPrompts.summarizeNote.fn(self, chat, text => {
+      summary += text
+      t.setMessage(`${tt}${summary}`)
+    });
   }
 
   if (!title) {
-    const t = new Notice(`正在为笔记生成标题`);
-    await inPrompts.namingTitle.fn(self, chat, text => title += text);
-    t.hide();
-    new Notice(`已为笔记生成标题`);
+    if (!t) t = new Notice(`正在为笔记生成标题\n\n${summary}`, 0);
+    else t.setMessage(`正在为笔记生成标题\n\n${summary}`);
+    await inPrompts.namingTitle.fn(self, chat, text => {
+      title += text
+      t.setMessage(`${title}\n\n${summary}`);
+    });
   }
 }
 

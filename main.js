@@ -7056,19 +7056,32 @@ async function chatWebPageClipping(self4, file) {
   let title = getMetadata(file, "title") || "";
   let summary = getMetadata(file, "summary") || "";
   let content = await self4.app.vault.read(file);
+  let t2;
   if (!content)
     return;
   if (!summary) {
-    const t2 = new import_obsidian8.Notice(`\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6458\u8981`);
-    await AIChatInPrompt_default.summarizeNote.fn(self4, chat2, (text) => summary += text);
-    t2.hide();
-    new import_obsidian8.Notice(`\u5DF2\u4E3A\u7B14\u8BB0\u751F\u6210\u6458\u8981`);
+    const tt = title ? title + "\n\n" : "";
+    t2 = new import_obsidian8.Notice(`${tt}\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6458\u8981`, 0);
+    await AIChatInPrompt_default.summarizeNote.fn(self4, chat2, (text) => {
+      summary += text;
+      t2.setMessage(`${tt}${summary}`);
+    });
   }
   if (!title) {
-    const t2 = new import_obsidian8.Notice(`\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6807\u9898`);
-    await AIChatInPrompt_default.namingTitle.fn(self4, chat2, (text) => title += text);
-    t2.hide();
-    new import_obsidian8.Notice(`\u5DF2\u4E3A\u7B14\u8BB0\u751F\u6210\u6807\u9898`);
+    if (!t2)
+      t2 = new import_obsidian8.Notice(`\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6807\u9898
+
+${summary}`, 0);
+    else
+      t2.setMessage(`\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6807\u9898
+
+${summary}`);
+    await AIChatInPrompt_default.namingTitle.fn(self4, chat2, (text) => {
+      title += text;
+      t2.setMessage(`${title}
+
+${summary}`);
+    });
   }
 }
 
