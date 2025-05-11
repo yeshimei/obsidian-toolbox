@@ -929,9 +929,28 @@ function adjustReadingPageStyle(self4, file) {
     return;
   if (self4.settings.readingPageStyles && self4.hasReadingPage(file)) {
     el.style.fontSize = self4.settings.fontSize + "px";
+    hideElementScrollbar(el);
   } else {
     el.style.fontSize = "unset";
+    el.classList.remove("hide-scrollbar");
   }
+}
+function hideElementScrollbar(element) {
+  if (!document.getElementById("hide-scrollbar-style")) {
+    const style = document.createElement("style");
+    style.id = "hide-scrollbar-style";
+    style.textContent = `
+          .hide-scrollbar {
+              scrollbar-width: none; /* Firefox */
+              -ms-overflow-style: none; /* IE/Edge */
+          }
+          .hide-scrollbar::-webkit-scrollbar {
+              display: none; /* Chrome/Safari/Webkit */
+          }
+      `;
+    document.head.appendChild(style);
+  }
+  element.classList.add("hide-scrollbar");
 }
 
 // src/Commands/Block.ts

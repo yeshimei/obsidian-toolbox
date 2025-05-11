@@ -9,7 +9,35 @@ export default function adjustReadingPageStyle(self: Toolbox, file: TFile) {
   if (!el) return;
   if (self.settings.readingPageStyles && self.hasReadingPage(file)) {
     el.style.fontSize = self.settings.fontSize + 'px';
+    hideElementScrollbar(el);
   } else {
     el.style.fontSize = 'unset';
+    el.classList.remove('hide-scrollbar');
   }
+}
+
+
+/**
+ * 隐藏指定元素的滚动条（保留滚动功能）
+ * @param {HTMLElement} element 需要隐藏滚动条的 DOM 元素
+ */
+function hideElementScrollbar(element: HTMLElement) {
+  // 创建全局样式（仅需执行一次）
+  if (!document.getElementById('hide-scrollbar-style')) {
+      const style = document.createElement('style');
+      style.id = 'hide-scrollbar-style';
+      style.textContent = `
+          .hide-scrollbar {
+              scrollbar-width: none; /* Firefox */
+              -ms-overflow-style: none; /* IE/Edge */
+          }
+          .hide-scrollbar::-webkit-scrollbar {
+              display: none; /* Chrome/Safari/Webkit */
+          }
+      `;
+      document.head.appendChild(style);
+  }
+  
+  // 添加隐藏滚动条类
+  element.classList.add('hide-scrollbar');
 }
