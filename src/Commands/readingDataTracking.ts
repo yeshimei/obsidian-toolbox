@@ -54,9 +54,14 @@ export default async function readingDataTracking(self: Toolbox, file: TFile) {
     await readingDataSync(self, file);
   }
 }
-
 export async function readingDataSync(self: Toolbox, file: TFile) {
-  const readingData = allowlist(self.readingManager.load(file.path), keys)
+  let { frontmatter } = self.app.metadataCache.getFileCache(file) as any;
+  let { readingTime } = frontmatter;
+  let readingData = allowlist(self.readingManager.load(file.path) || {}, keys)
+  if (!readingData?.readingTime || readingTime > readingData.readingTime) {
+    readingData = allowlist(frontmatter, keys)
+    self.readingManager.save(file.path, readingData);
+  }
   if (!readingData) return;
   for (let key in readingData) {
     await self.updateFrontmatter(file, key, readingData[key]);

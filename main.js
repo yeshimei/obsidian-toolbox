@@ -9979,7 +9979,13 @@ async function readingDataTracking(self4, file) {
   }
 }
 async function readingDataSync(self4, file) {
-  const readingData = allowlist(self4.readingManager.load(file.path), keys);
+  let { frontmatter } = self4.app.metadataCache.getFileCache(file);
+  let { readingTime } = frontmatter;
+  let readingData = allowlist(self4.readingManager.load(file.path) || {}, keys);
+  if (!(readingData == null ? void 0 : readingData.readingTime) || readingTime > readingData.readingTime) {
+    readingData = allowlist(frontmatter, keys);
+    self4.readingManager.save(file.path, readingData);
+  }
   if (!readingData)
     return;
   for (let key in readingData) {
@@ -11475,7 +11481,7 @@ async function syncNote(self4, file) {
   if (readingNoteFile) {
     const sourceContent = await self4.app.vault.read(readingNoteFile);
     const t3 = (_a2 = self4.readingManager.load(file.path)) == null ? void 0 : _a2.readingTime;
-    const isSameReadingTime = t3 && t3 !== readingTime;
+    const isSameReadingTime = t3 !== readingTime;
     if (sourceContent !== content || isSameReadingTime) {
       self4.app.vault.modify(readingNoteFile, content);
       self4.updateMetadata(file, outlinks, highlights, thinks, dialogue2);
