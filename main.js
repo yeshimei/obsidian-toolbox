@@ -703,7 +703,7 @@ var videoSuffix = ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm"];
 function isFileInDirectory(file, directoryPath) {
   if (!Array.isArray(directoryPath))
     directoryPath = [directoryPath];
-  return directoryPath.some((p) => file && file.extension === "md" && file.parent.path.startsWith(p));
+  return directoryPath.some((p) => p && file && file.extension === "md" && file.parent.path.startsWith(p));
 }
 function getMetadata(file, key) {
   var _a2, _b;
