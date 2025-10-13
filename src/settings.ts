@@ -72,19 +72,6 @@ export interface ToolboxSettings {
 
   blockReference: boolean;
 
-  encryption: boolean;
-  encryptionSupportImage: boolean;
-  encryptionImageCompress: boolean;
-  encryptionImageCompressMaxSize: number;
-  encryptionImageCompressLongScreenshotRatio: number;
-  encryptionImageCompressPreserveExif: boolean;
-
-  encryptionSupportVideo: boolean;
-  encryptionChunkSize: number;
-  encryptionRememberPassMode: 'always' | 'disposable' | 'notSave';
-
-  gallery: boolean;
-
   poster: boolean;
 
   footnoteRenumbering: boolean;
@@ -93,9 +80,6 @@ export interface ToolboxSettings {
   gitChartMultiColorLabel: boolean;
   gitChartPartition: boolean;
   gitChartPartitionFolding: boolean;
-
-  sandbox: boolean;
-  sandboxFolder: string;
 
   resourceTo: boolean;
   searchForPlants: boolean;
@@ -169,18 +153,6 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
 
   blockReference: false,
 
-  encryption: false,
-  encryptionSupportImage: true,
-  encryptionImageCompress: false,
-  encryptionImageCompressMaxSize: 2,
-  encryptionImageCompressLongScreenshotRatio: 3,
-  encryptionImageCompressPreserveExif: true,
-  encryptionSupportVideo: false,
-  encryptionChunkSize: 1024 * 1024 * 1024,
-  encryptionRememberPassMode: 'notSave',
-
-  gallery: false,
-
   poster: false,
 
   footnoteRenumbering: false,
@@ -189,9 +161,6 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   gitChartMultiColorLabel: false,
   gitChartPartition: false,
   gitChartPartitionFolding: false,
-
-  sandbox: false,
-  sandboxFolder: '',
 
   resourceTo: false,
   searchForPlants: false,
@@ -584,102 +553,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
     }
 
     new Setting(containerEl)
-      .setName('🔒 笔记加密')
-      .setDesc('本功能还处于测试阶段，请做好备份，避免因意外情况导致数据损坏或丢失。')
-      .setHeading()
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.encryption).onChange(async value => {
-          this.plugin.settings.encryption = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    if (this.plugin.settings.encryption) {
-      new Setting(containerEl).setName('记住密码').addDropdown(cd =>
-        cd
-          .addOption('notSave', '不保存')
-          .addOption('disposable', '软件运行时')
-          .addOption('always', '永久')
-          .setValue(this.plugin.settings.encryptionRememberPassMode)
-          .onChange(async value => {
-            this.plugin.settings.encryptionRememberPassMode = value as 'always' | 'disposable' | 'notSave';
-            await this.plugin.saveSettings();
-            this.display();
-          })
-      );
-
-      new Setting(containerEl).setName('支持图片').addToggle(cd =>
-        cd.setValue(this.plugin.settings.encryptionSupportImage).onChange(async value => {
-          this.plugin.settings.encryptionSupportImage = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-      if (this.plugin.settings.encryptionSupportImage) {
-        new Setting(containerEl)
-          .setName('压缩图片')
-          .setDesc('有损压缩，大幅提升加解密速度。开启此选项，原图将备份，笔记内的图片换为压缩图，首次加密会耗时更长。关闭此选项，再进行一次加密或解密后还原原图。')
-          .addToggle(cd =>
-            cd.setValue(this.plugin.settings.encryptionImageCompress).onChange(async value => {
-              this.plugin.settings.encryptionImageCompress = value;
-              await this.plugin.saveSettings();
-              this.display();
-            })
-          );
-
-        if (this.plugin.settings.encryptionImageCompress) {
-          new Setting(containerEl).setName('压缩图片 - 压缩后的图片大小尽量不超过（mb）').addText(cd =>
-            cd.setValue('' + this.plugin.settings.encryptionImageCompressMaxSize).onChange(async value => {
-              this.plugin.settings.encryptionImageCompressMaxSize = Number(value);
-              await this.plugin.saveSettings();
-            })
-          );
-
-          new Setting(containerEl)
-            .setName('压缩图片 - 长图比率')
-            .setDesc('对长图进行浅压缩，以避免过于模糊')
-            .addText(cd =>
-              cd.setValue('' + this.plugin.settings.encryptionImageCompressLongScreenshotRatio).onChange(async value => {
-                this.plugin.settings.encryptionImageCompressLongScreenshotRatio = Number(value);
-                await this.plugin.saveSettings();
-              })
-            );
-
-          new Setting(containerEl)
-            .setName('压缩图片 - 保留exif')
-            .setDesc('图像的元数据。如焦距，地理位置信息等')
-            .addToggle(cd =>
-              cd.setValue(this.plugin.settings.encryptionImageCompressPreserveExif).onChange(async value => {
-                this.plugin.settings.encryptionImageCompressPreserveExif = value;
-                await this.plugin.saveSettings();
-                this.display();
-              })
-            );
-        }
-      }
-
-      new Setting(containerEl).setName('支持视频').addToggle(cd =>
-        cd.setValue(this.plugin.settings.encryptionSupportVideo).onChange(async value => {
-          this.plugin.settings.encryptionSupportVideo = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-      new Setting(containerEl)
-        .setName('分块量（mb）')
-        .setDesc('桌面端（100-300），移动端（1-5），如果处理器性能优越，值可以更大，用时更短')
-        .addText(cd =>
-          cd.setValue('' + this.plugin.settings.encryptionChunkSize / 1024 / 1024).onChange(async value => {
-            this.plugin.settings.encryptionChunkSize = Number(value) * 1024 * 1024;
-            await this.plugin.saveSettings();
-          })
-        );
-    }
-
-    new Setting(containerEl)
       .setName('🔑 密码创建器')
       .setHeading()
       .addToggle(cd =>
@@ -733,17 +606,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
       .addToggle(cd =>
         cd.setValue(this.plugin.settings.blockReference).onChange(async value => {
           this.plugin.settings.blockReference = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    new Setting(containerEl)
-      .setName('📸 画廊')
-      .setHeading()
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.gallery).onChange(async value => {
-          this.plugin.settings.gallery = value;
           await this.plugin.saveSettings();
           this.display();
         })
@@ -811,27 +673,6 @@ export class ToolboxSettingTab extends PluginSettingTab {
             })
           );
       }
-    }
-
-    new Setting(containerEl)
-      .setName('📦 沙箱（Beta）')
-      .setDesc('外部脚本注入，可实现更丰富的功能')
-      .setHeading()
-      .addToggle(cd =>
-        cd.setValue(this.plugin.settings.sandbox).onChange(async value => {
-          this.plugin.settings.sandbox = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-
-    if (this.plugin.settings.sandbox) {
-      new Setting(containerEl).setName('脚本所在文件夹').addText(cd =>
-        cd.setValue('' + this.plugin.settings.sandboxFolder).onChange(async value => {
-          this.plugin.settings.sandboxFolder = value;
-          await this.plugin.saveSettings();
-        })
-      );
     }
   }
 }

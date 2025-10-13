@@ -111,14 +111,14 @@ var require_md5 = __commonJS({
         method.update = function(message) {
           return method.create().update(message);
         };
-        for (var i2 = 0; i2 < OUTPUT_TYPES.length; ++i2) {
-          var type = OUTPUT_TYPES[i2];
+        for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
+          var type = OUTPUT_TYPES[i];
           method[type] = createOutputMethod(type);
         }
         return method;
       };
       var nodeWrap = function(method) {
-        var crypto2 = require("crypto");
+        var crypto = require("crypto");
         var Buffer2 = require("buffer").Buffer;
         var bufferFrom;
         if (Buffer2.from && !root.JS_MD5_NO_BUFFER_FROM) {
@@ -130,7 +130,7 @@ var require_md5 = __commonJS({
         }
         var nodeMethod = function(message) {
           if (typeof message === "string") {
-            return crypto2.createHash("md5").update(message, "utf8").digest("hex");
+            return crypto.createHash("md5").update(message, "utf8").digest("hex");
           } else {
             if (message === null || message === void 0) {
               throw new Error(INPUT_ERROR);
@@ -139,7 +139,7 @@ var require_md5 = __commonJS({
             }
           }
           if (isArray(message) || isView(message) || message.constructor === Buffer2) {
-            return crypto2.createHash("md5").update(bufferFrom(message)).digest("hex");
+            return crypto.createHash("md5").update(bufferFrom(message)).digest("hex");
           } else {
             return method(message);
           }
@@ -159,8 +159,8 @@ var require_md5 = __commonJS({
         method.update = function(key, message) {
           return method.create(key).update(message);
         };
-        for (var i2 = 0; i2 < OUTPUT_TYPES.length; ++i2) {
-          var type = OUTPUT_TYPES[i2];
+        for (var i = 0; i < OUTPUT_TYPES.length; ++i) {
+          var type = OUTPUT_TYPES[i];
           method[type] = createHmacOutputMethod(type);
         }
         return method;
@@ -190,7 +190,7 @@ var require_md5 = __commonJS({
         var result = formatMessage(message);
         message = result[0];
         var isString = result[1];
-        var code, index = 0, i2, length = message.length, blocks2 = this.blocks;
+        var code, index = 0, i, length = message.length, blocks2 = this.blocks;
         var buffer82 = this.buffer8;
         while (index < length) {
           if (this.hashed) {
@@ -200,65 +200,65 @@ var require_md5 = __commonJS({
           }
           if (isString) {
             if (ARRAY_BUFFER) {
-              for (i2 = this.start; index < length && i2 < 64; ++index) {
+              for (i = this.start; index < length && i < 64; ++index) {
                 code = message.charCodeAt(index);
                 if (code < 128) {
-                  buffer82[i2++] = code;
+                  buffer82[i++] = code;
                 } else if (code < 2048) {
-                  buffer82[i2++] = 192 | code >>> 6;
-                  buffer82[i2++] = 128 | code & 63;
+                  buffer82[i++] = 192 | code >>> 6;
+                  buffer82[i++] = 128 | code & 63;
                 } else if (code < 55296 || code >= 57344) {
-                  buffer82[i2++] = 224 | code >>> 12;
-                  buffer82[i2++] = 128 | code >>> 6 & 63;
-                  buffer82[i2++] = 128 | code & 63;
+                  buffer82[i++] = 224 | code >>> 12;
+                  buffer82[i++] = 128 | code >>> 6 & 63;
+                  buffer82[i++] = 128 | code & 63;
                 } else {
                   code = 65536 + ((code & 1023) << 10 | message.charCodeAt(++index) & 1023);
-                  buffer82[i2++] = 240 | code >>> 18;
-                  buffer82[i2++] = 128 | code >>> 12 & 63;
-                  buffer82[i2++] = 128 | code >>> 6 & 63;
-                  buffer82[i2++] = 128 | code & 63;
+                  buffer82[i++] = 240 | code >>> 18;
+                  buffer82[i++] = 128 | code >>> 12 & 63;
+                  buffer82[i++] = 128 | code >>> 6 & 63;
+                  buffer82[i++] = 128 | code & 63;
                 }
               }
             } else {
-              for (i2 = this.start; index < length && i2 < 64; ++index) {
+              for (i = this.start; index < length && i < 64; ++index) {
                 code = message.charCodeAt(index);
                 if (code < 128) {
-                  blocks2[i2 >>> 2] |= code << SHIFT[i2++ & 3];
+                  blocks2[i >>> 2] |= code << SHIFT[i++ & 3];
                 } else if (code < 2048) {
-                  blocks2[i2 >>> 2] |= (192 | code >>> 6) << SHIFT[i2++ & 3];
-                  blocks2[i2 >>> 2] |= (128 | code & 63) << SHIFT[i2++ & 3];
+                  blocks2[i >>> 2] |= (192 | code >>> 6) << SHIFT[i++ & 3];
+                  blocks2[i >>> 2] |= (128 | code & 63) << SHIFT[i++ & 3];
                 } else if (code < 55296 || code >= 57344) {
-                  blocks2[i2 >>> 2] |= (224 | code >>> 12) << SHIFT[i2++ & 3];
-                  blocks2[i2 >>> 2] |= (128 | code >>> 6 & 63) << SHIFT[i2++ & 3];
-                  blocks2[i2 >>> 2] |= (128 | code & 63) << SHIFT[i2++ & 3];
+                  blocks2[i >>> 2] |= (224 | code >>> 12) << SHIFT[i++ & 3];
+                  blocks2[i >>> 2] |= (128 | code >>> 6 & 63) << SHIFT[i++ & 3];
+                  blocks2[i >>> 2] |= (128 | code & 63) << SHIFT[i++ & 3];
                 } else {
                   code = 65536 + ((code & 1023) << 10 | message.charCodeAt(++index) & 1023);
-                  blocks2[i2 >>> 2] |= (240 | code >>> 18) << SHIFT[i2++ & 3];
-                  blocks2[i2 >>> 2] |= (128 | code >>> 12 & 63) << SHIFT[i2++ & 3];
-                  blocks2[i2 >>> 2] |= (128 | code >>> 6 & 63) << SHIFT[i2++ & 3];
-                  blocks2[i2 >>> 2] |= (128 | code & 63) << SHIFT[i2++ & 3];
+                  blocks2[i >>> 2] |= (240 | code >>> 18) << SHIFT[i++ & 3];
+                  blocks2[i >>> 2] |= (128 | code >>> 12 & 63) << SHIFT[i++ & 3];
+                  blocks2[i >>> 2] |= (128 | code >>> 6 & 63) << SHIFT[i++ & 3];
+                  blocks2[i >>> 2] |= (128 | code & 63) << SHIFT[i++ & 3];
                 }
               }
             }
           } else {
             if (ARRAY_BUFFER) {
-              for (i2 = this.start; index < length && i2 < 64; ++index) {
-                buffer82[i2++] = message[index];
+              for (i = this.start; index < length && i < 64; ++index) {
+                buffer82[i++] = message[index];
               }
             } else {
-              for (i2 = this.start; index < length && i2 < 64; ++index) {
-                blocks2[i2 >>> 2] |= message[index] << SHIFT[i2++ & 3];
+              for (i = this.start; index < length && i < 64; ++index) {
+                blocks2[i >>> 2] |= message[index] << SHIFT[i++ & 3];
               }
             }
           }
-          this.lastByteIndex = i2;
-          this.bytes += i2 - this.start;
-          if (i2 >= 64) {
-            this.start = i2 - 64;
+          this.lastByteIndex = i;
+          this.bytes += i - this.start;
+          if (i >= 64) {
+            this.start = i - 64;
             this.hash();
             this.hashed = true;
           } else {
-            this.start = i2;
+            this.start = i;
           }
         }
         if (this.bytes > 4294967295) {
@@ -272,9 +272,9 @@ var require_md5 = __commonJS({
           return;
         }
         this.finalized = true;
-        var blocks2 = this.blocks, i2 = this.lastByteIndex;
-        blocks2[i2 >>> 2] |= EXTRA[i2 & 3];
-        if (i2 >= 56) {
+        var blocks2 = this.blocks, i = this.lastByteIndex;
+        blocks2[i >>> 2] |= EXTRA[i & 3];
+        if (i >= 56) {
           if (!this.hashed) {
             this.hash();
           }
@@ -286,168 +286,168 @@ var require_md5 = __commonJS({
         this.hash();
       };
       Md5.prototype.hash = function() {
-        var a2, b, c2, d, bc, da, blocks2 = this.blocks;
+        var a, b, c, d, bc, da, blocks2 = this.blocks;
         if (this.first) {
-          a2 = blocks2[0] - 680876937;
-          a2 = (a2 << 7 | a2 >>> 25) - 271733879 << 0;
-          d = (-1732584194 ^ a2 & 2004318071) + blocks2[1] - 117830708;
-          d = (d << 12 | d >>> 20) + a2 << 0;
-          c2 = (-271733879 ^ d & (a2 ^ -271733879)) + blocks2[2] - 1126478375;
-          c2 = (c2 << 17 | c2 >>> 15) + d << 0;
-          b = (a2 ^ c2 & (d ^ a2)) + blocks2[3] - 1316259209;
-          b = (b << 22 | b >>> 10) + c2 << 0;
+          a = blocks2[0] - 680876937;
+          a = (a << 7 | a >>> 25) - 271733879 << 0;
+          d = (-1732584194 ^ a & 2004318071) + blocks2[1] - 117830708;
+          d = (d << 12 | d >>> 20) + a << 0;
+          c = (-271733879 ^ d & (a ^ -271733879)) + blocks2[2] - 1126478375;
+          c = (c << 17 | c >>> 15) + d << 0;
+          b = (a ^ c & (d ^ a)) + blocks2[3] - 1316259209;
+          b = (b << 22 | b >>> 10) + c << 0;
         } else {
-          a2 = this.h0;
+          a = this.h0;
           b = this.h1;
-          c2 = this.h2;
+          c = this.h2;
           d = this.h3;
-          a2 += (d ^ b & (c2 ^ d)) + blocks2[0] - 680876936;
-          a2 = (a2 << 7 | a2 >>> 25) + b << 0;
-          d += (c2 ^ a2 & (b ^ c2)) + blocks2[1] - 389564586;
-          d = (d << 12 | d >>> 20) + a2 << 0;
-          c2 += (b ^ d & (a2 ^ b)) + blocks2[2] + 606105819;
-          c2 = (c2 << 17 | c2 >>> 15) + d << 0;
-          b += (a2 ^ c2 & (d ^ a2)) + blocks2[3] - 1044525330;
-          b = (b << 22 | b >>> 10) + c2 << 0;
+          a += (d ^ b & (c ^ d)) + blocks2[0] - 680876936;
+          a = (a << 7 | a >>> 25) + b << 0;
+          d += (c ^ a & (b ^ c)) + blocks2[1] - 389564586;
+          d = (d << 12 | d >>> 20) + a << 0;
+          c += (b ^ d & (a ^ b)) + blocks2[2] + 606105819;
+          c = (c << 17 | c >>> 15) + d << 0;
+          b += (a ^ c & (d ^ a)) + blocks2[3] - 1044525330;
+          b = (b << 22 | b >>> 10) + c << 0;
         }
-        a2 += (d ^ b & (c2 ^ d)) + blocks2[4] - 176418897;
-        a2 = (a2 << 7 | a2 >>> 25) + b << 0;
-        d += (c2 ^ a2 & (b ^ c2)) + blocks2[5] + 1200080426;
-        d = (d << 12 | d >>> 20) + a2 << 0;
-        c2 += (b ^ d & (a2 ^ b)) + blocks2[6] - 1473231341;
-        c2 = (c2 << 17 | c2 >>> 15) + d << 0;
-        b += (a2 ^ c2 & (d ^ a2)) + blocks2[7] - 45705983;
-        b = (b << 22 | b >>> 10) + c2 << 0;
-        a2 += (d ^ b & (c2 ^ d)) + blocks2[8] + 1770035416;
-        a2 = (a2 << 7 | a2 >>> 25) + b << 0;
-        d += (c2 ^ a2 & (b ^ c2)) + blocks2[9] - 1958414417;
-        d = (d << 12 | d >>> 20) + a2 << 0;
-        c2 += (b ^ d & (a2 ^ b)) + blocks2[10] - 42063;
-        c2 = (c2 << 17 | c2 >>> 15) + d << 0;
-        b += (a2 ^ c2 & (d ^ a2)) + blocks2[11] - 1990404162;
-        b = (b << 22 | b >>> 10) + c2 << 0;
-        a2 += (d ^ b & (c2 ^ d)) + blocks2[12] + 1804603682;
-        a2 = (a2 << 7 | a2 >>> 25) + b << 0;
-        d += (c2 ^ a2 & (b ^ c2)) + blocks2[13] - 40341101;
-        d = (d << 12 | d >>> 20) + a2 << 0;
-        c2 += (b ^ d & (a2 ^ b)) + blocks2[14] - 1502002290;
-        c2 = (c2 << 17 | c2 >>> 15) + d << 0;
-        b += (a2 ^ c2 & (d ^ a2)) + blocks2[15] + 1236535329;
-        b = (b << 22 | b >>> 10) + c2 << 0;
-        a2 += (c2 ^ d & (b ^ c2)) + blocks2[1] - 165796510;
-        a2 = (a2 << 5 | a2 >>> 27) + b << 0;
-        d += (b ^ c2 & (a2 ^ b)) + blocks2[6] - 1069501632;
-        d = (d << 9 | d >>> 23) + a2 << 0;
-        c2 += (a2 ^ b & (d ^ a2)) + blocks2[11] + 643717713;
-        c2 = (c2 << 14 | c2 >>> 18) + d << 0;
-        b += (d ^ a2 & (c2 ^ d)) + blocks2[0] - 373897302;
-        b = (b << 20 | b >>> 12) + c2 << 0;
-        a2 += (c2 ^ d & (b ^ c2)) + blocks2[5] - 701558691;
-        a2 = (a2 << 5 | a2 >>> 27) + b << 0;
-        d += (b ^ c2 & (a2 ^ b)) + blocks2[10] + 38016083;
-        d = (d << 9 | d >>> 23) + a2 << 0;
-        c2 += (a2 ^ b & (d ^ a2)) + blocks2[15] - 660478335;
-        c2 = (c2 << 14 | c2 >>> 18) + d << 0;
-        b += (d ^ a2 & (c2 ^ d)) + blocks2[4] - 405537848;
-        b = (b << 20 | b >>> 12) + c2 << 0;
-        a2 += (c2 ^ d & (b ^ c2)) + blocks2[9] + 568446438;
-        a2 = (a2 << 5 | a2 >>> 27) + b << 0;
-        d += (b ^ c2 & (a2 ^ b)) + blocks2[14] - 1019803690;
-        d = (d << 9 | d >>> 23) + a2 << 0;
-        c2 += (a2 ^ b & (d ^ a2)) + blocks2[3] - 187363961;
-        c2 = (c2 << 14 | c2 >>> 18) + d << 0;
-        b += (d ^ a2 & (c2 ^ d)) + blocks2[8] + 1163531501;
-        b = (b << 20 | b >>> 12) + c2 << 0;
-        a2 += (c2 ^ d & (b ^ c2)) + blocks2[13] - 1444681467;
-        a2 = (a2 << 5 | a2 >>> 27) + b << 0;
-        d += (b ^ c2 & (a2 ^ b)) + blocks2[2] - 51403784;
-        d = (d << 9 | d >>> 23) + a2 << 0;
-        c2 += (a2 ^ b & (d ^ a2)) + blocks2[7] + 1735328473;
-        c2 = (c2 << 14 | c2 >>> 18) + d << 0;
-        b += (d ^ a2 & (c2 ^ d)) + blocks2[12] - 1926607734;
-        b = (b << 20 | b >>> 12) + c2 << 0;
-        bc = b ^ c2;
-        a2 += (bc ^ d) + blocks2[5] - 378558;
-        a2 = (a2 << 4 | a2 >>> 28) + b << 0;
-        d += (bc ^ a2) + blocks2[8] - 2022574463;
-        d = (d << 11 | d >>> 21) + a2 << 0;
-        da = d ^ a2;
-        c2 += (da ^ b) + blocks2[11] + 1839030562;
-        c2 = (c2 << 16 | c2 >>> 16) + d << 0;
-        b += (da ^ c2) + blocks2[14] - 35309556;
-        b = (b << 23 | b >>> 9) + c2 << 0;
-        bc = b ^ c2;
-        a2 += (bc ^ d) + blocks2[1] - 1530992060;
-        a2 = (a2 << 4 | a2 >>> 28) + b << 0;
-        d += (bc ^ a2) + blocks2[4] + 1272893353;
-        d = (d << 11 | d >>> 21) + a2 << 0;
-        da = d ^ a2;
-        c2 += (da ^ b) + blocks2[7] - 155497632;
-        c2 = (c2 << 16 | c2 >>> 16) + d << 0;
-        b += (da ^ c2) + blocks2[10] - 1094730640;
-        b = (b << 23 | b >>> 9) + c2 << 0;
-        bc = b ^ c2;
-        a2 += (bc ^ d) + blocks2[13] + 681279174;
-        a2 = (a2 << 4 | a2 >>> 28) + b << 0;
-        d += (bc ^ a2) + blocks2[0] - 358537222;
-        d = (d << 11 | d >>> 21) + a2 << 0;
-        da = d ^ a2;
-        c2 += (da ^ b) + blocks2[3] - 722521979;
-        c2 = (c2 << 16 | c2 >>> 16) + d << 0;
-        b += (da ^ c2) + blocks2[6] + 76029189;
-        b = (b << 23 | b >>> 9) + c2 << 0;
-        bc = b ^ c2;
-        a2 += (bc ^ d) + blocks2[9] - 640364487;
-        a2 = (a2 << 4 | a2 >>> 28) + b << 0;
-        d += (bc ^ a2) + blocks2[12] - 421815835;
-        d = (d << 11 | d >>> 21) + a2 << 0;
-        da = d ^ a2;
-        c2 += (da ^ b) + blocks2[15] + 530742520;
-        c2 = (c2 << 16 | c2 >>> 16) + d << 0;
-        b += (da ^ c2) + blocks2[2] - 995338651;
-        b = (b << 23 | b >>> 9) + c2 << 0;
-        a2 += (c2 ^ (b | ~d)) + blocks2[0] - 198630844;
-        a2 = (a2 << 6 | a2 >>> 26) + b << 0;
-        d += (b ^ (a2 | ~c2)) + blocks2[7] + 1126891415;
-        d = (d << 10 | d >>> 22) + a2 << 0;
-        c2 += (a2 ^ (d | ~b)) + blocks2[14] - 1416354905;
-        c2 = (c2 << 15 | c2 >>> 17) + d << 0;
-        b += (d ^ (c2 | ~a2)) + blocks2[5] - 57434055;
-        b = (b << 21 | b >>> 11) + c2 << 0;
-        a2 += (c2 ^ (b | ~d)) + blocks2[12] + 1700485571;
-        a2 = (a2 << 6 | a2 >>> 26) + b << 0;
-        d += (b ^ (a2 | ~c2)) + blocks2[3] - 1894986606;
-        d = (d << 10 | d >>> 22) + a2 << 0;
-        c2 += (a2 ^ (d | ~b)) + blocks2[10] - 1051523;
-        c2 = (c2 << 15 | c2 >>> 17) + d << 0;
-        b += (d ^ (c2 | ~a2)) + blocks2[1] - 2054922799;
-        b = (b << 21 | b >>> 11) + c2 << 0;
-        a2 += (c2 ^ (b | ~d)) + blocks2[8] + 1873313359;
-        a2 = (a2 << 6 | a2 >>> 26) + b << 0;
-        d += (b ^ (a2 | ~c2)) + blocks2[15] - 30611744;
-        d = (d << 10 | d >>> 22) + a2 << 0;
-        c2 += (a2 ^ (d | ~b)) + blocks2[6] - 1560198380;
-        c2 = (c2 << 15 | c2 >>> 17) + d << 0;
-        b += (d ^ (c2 | ~a2)) + blocks2[13] + 1309151649;
-        b = (b << 21 | b >>> 11) + c2 << 0;
-        a2 += (c2 ^ (b | ~d)) + blocks2[4] - 145523070;
-        a2 = (a2 << 6 | a2 >>> 26) + b << 0;
-        d += (b ^ (a2 | ~c2)) + blocks2[11] - 1120210379;
-        d = (d << 10 | d >>> 22) + a2 << 0;
-        c2 += (a2 ^ (d | ~b)) + blocks2[2] + 718787259;
-        c2 = (c2 << 15 | c2 >>> 17) + d << 0;
-        b += (d ^ (c2 | ~a2)) + blocks2[9] - 343485551;
-        b = (b << 21 | b >>> 11) + c2 << 0;
+        a += (d ^ b & (c ^ d)) + blocks2[4] - 176418897;
+        a = (a << 7 | a >>> 25) + b << 0;
+        d += (c ^ a & (b ^ c)) + blocks2[5] + 1200080426;
+        d = (d << 12 | d >>> 20) + a << 0;
+        c += (b ^ d & (a ^ b)) + blocks2[6] - 1473231341;
+        c = (c << 17 | c >>> 15) + d << 0;
+        b += (a ^ c & (d ^ a)) + blocks2[7] - 45705983;
+        b = (b << 22 | b >>> 10) + c << 0;
+        a += (d ^ b & (c ^ d)) + blocks2[8] + 1770035416;
+        a = (a << 7 | a >>> 25) + b << 0;
+        d += (c ^ a & (b ^ c)) + blocks2[9] - 1958414417;
+        d = (d << 12 | d >>> 20) + a << 0;
+        c += (b ^ d & (a ^ b)) + blocks2[10] - 42063;
+        c = (c << 17 | c >>> 15) + d << 0;
+        b += (a ^ c & (d ^ a)) + blocks2[11] - 1990404162;
+        b = (b << 22 | b >>> 10) + c << 0;
+        a += (d ^ b & (c ^ d)) + blocks2[12] + 1804603682;
+        a = (a << 7 | a >>> 25) + b << 0;
+        d += (c ^ a & (b ^ c)) + blocks2[13] - 40341101;
+        d = (d << 12 | d >>> 20) + a << 0;
+        c += (b ^ d & (a ^ b)) + blocks2[14] - 1502002290;
+        c = (c << 17 | c >>> 15) + d << 0;
+        b += (a ^ c & (d ^ a)) + blocks2[15] + 1236535329;
+        b = (b << 22 | b >>> 10) + c << 0;
+        a += (c ^ d & (b ^ c)) + blocks2[1] - 165796510;
+        a = (a << 5 | a >>> 27) + b << 0;
+        d += (b ^ c & (a ^ b)) + blocks2[6] - 1069501632;
+        d = (d << 9 | d >>> 23) + a << 0;
+        c += (a ^ b & (d ^ a)) + blocks2[11] + 643717713;
+        c = (c << 14 | c >>> 18) + d << 0;
+        b += (d ^ a & (c ^ d)) + blocks2[0] - 373897302;
+        b = (b << 20 | b >>> 12) + c << 0;
+        a += (c ^ d & (b ^ c)) + blocks2[5] - 701558691;
+        a = (a << 5 | a >>> 27) + b << 0;
+        d += (b ^ c & (a ^ b)) + blocks2[10] + 38016083;
+        d = (d << 9 | d >>> 23) + a << 0;
+        c += (a ^ b & (d ^ a)) + blocks2[15] - 660478335;
+        c = (c << 14 | c >>> 18) + d << 0;
+        b += (d ^ a & (c ^ d)) + blocks2[4] - 405537848;
+        b = (b << 20 | b >>> 12) + c << 0;
+        a += (c ^ d & (b ^ c)) + blocks2[9] + 568446438;
+        a = (a << 5 | a >>> 27) + b << 0;
+        d += (b ^ c & (a ^ b)) + blocks2[14] - 1019803690;
+        d = (d << 9 | d >>> 23) + a << 0;
+        c += (a ^ b & (d ^ a)) + blocks2[3] - 187363961;
+        c = (c << 14 | c >>> 18) + d << 0;
+        b += (d ^ a & (c ^ d)) + blocks2[8] + 1163531501;
+        b = (b << 20 | b >>> 12) + c << 0;
+        a += (c ^ d & (b ^ c)) + blocks2[13] - 1444681467;
+        a = (a << 5 | a >>> 27) + b << 0;
+        d += (b ^ c & (a ^ b)) + blocks2[2] - 51403784;
+        d = (d << 9 | d >>> 23) + a << 0;
+        c += (a ^ b & (d ^ a)) + blocks2[7] + 1735328473;
+        c = (c << 14 | c >>> 18) + d << 0;
+        b += (d ^ a & (c ^ d)) + blocks2[12] - 1926607734;
+        b = (b << 20 | b >>> 12) + c << 0;
+        bc = b ^ c;
+        a += (bc ^ d) + blocks2[5] - 378558;
+        a = (a << 4 | a >>> 28) + b << 0;
+        d += (bc ^ a) + blocks2[8] - 2022574463;
+        d = (d << 11 | d >>> 21) + a << 0;
+        da = d ^ a;
+        c += (da ^ b) + blocks2[11] + 1839030562;
+        c = (c << 16 | c >>> 16) + d << 0;
+        b += (da ^ c) + blocks2[14] - 35309556;
+        b = (b << 23 | b >>> 9) + c << 0;
+        bc = b ^ c;
+        a += (bc ^ d) + blocks2[1] - 1530992060;
+        a = (a << 4 | a >>> 28) + b << 0;
+        d += (bc ^ a) + blocks2[4] + 1272893353;
+        d = (d << 11 | d >>> 21) + a << 0;
+        da = d ^ a;
+        c += (da ^ b) + blocks2[7] - 155497632;
+        c = (c << 16 | c >>> 16) + d << 0;
+        b += (da ^ c) + blocks2[10] - 1094730640;
+        b = (b << 23 | b >>> 9) + c << 0;
+        bc = b ^ c;
+        a += (bc ^ d) + blocks2[13] + 681279174;
+        a = (a << 4 | a >>> 28) + b << 0;
+        d += (bc ^ a) + blocks2[0] - 358537222;
+        d = (d << 11 | d >>> 21) + a << 0;
+        da = d ^ a;
+        c += (da ^ b) + blocks2[3] - 722521979;
+        c = (c << 16 | c >>> 16) + d << 0;
+        b += (da ^ c) + blocks2[6] + 76029189;
+        b = (b << 23 | b >>> 9) + c << 0;
+        bc = b ^ c;
+        a += (bc ^ d) + blocks2[9] - 640364487;
+        a = (a << 4 | a >>> 28) + b << 0;
+        d += (bc ^ a) + blocks2[12] - 421815835;
+        d = (d << 11 | d >>> 21) + a << 0;
+        da = d ^ a;
+        c += (da ^ b) + blocks2[15] + 530742520;
+        c = (c << 16 | c >>> 16) + d << 0;
+        b += (da ^ c) + blocks2[2] - 995338651;
+        b = (b << 23 | b >>> 9) + c << 0;
+        a += (c ^ (b | ~d)) + blocks2[0] - 198630844;
+        a = (a << 6 | a >>> 26) + b << 0;
+        d += (b ^ (a | ~c)) + blocks2[7] + 1126891415;
+        d = (d << 10 | d >>> 22) + a << 0;
+        c += (a ^ (d | ~b)) + blocks2[14] - 1416354905;
+        c = (c << 15 | c >>> 17) + d << 0;
+        b += (d ^ (c | ~a)) + blocks2[5] - 57434055;
+        b = (b << 21 | b >>> 11) + c << 0;
+        a += (c ^ (b | ~d)) + blocks2[12] + 1700485571;
+        a = (a << 6 | a >>> 26) + b << 0;
+        d += (b ^ (a | ~c)) + blocks2[3] - 1894986606;
+        d = (d << 10 | d >>> 22) + a << 0;
+        c += (a ^ (d | ~b)) + blocks2[10] - 1051523;
+        c = (c << 15 | c >>> 17) + d << 0;
+        b += (d ^ (c | ~a)) + blocks2[1] - 2054922799;
+        b = (b << 21 | b >>> 11) + c << 0;
+        a += (c ^ (b | ~d)) + blocks2[8] + 1873313359;
+        a = (a << 6 | a >>> 26) + b << 0;
+        d += (b ^ (a | ~c)) + blocks2[15] - 30611744;
+        d = (d << 10 | d >>> 22) + a << 0;
+        c += (a ^ (d | ~b)) + blocks2[6] - 1560198380;
+        c = (c << 15 | c >>> 17) + d << 0;
+        b += (d ^ (c | ~a)) + blocks2[13] + 1309151649;
+        b = (b << 21 | b >>> 11) + c << 0;
+        a += (c ^ (b | ~d)) + blocks2[4] - 145523070;
+        a = (a << 6 | a >>> 26) + b << 0;
+        d += (b ^ (a | ~c)) + blocks2[11] - 1120210379;
+        d = (d << 10 | d >>> 22) + a << 0;
+        c += (a ^ (d | ~b)) + blocks2[2] + 718787259;
+        c = (c << 15 | c >>> 17) + d << 0;
+        b += (d ^ (c | ~a)) + blocks2[9] - 343485551;
+        b = (b << 21 | b >>> 11) + c << 0;
         if (this.first) {
-          this.h0 = a2 + 1732584193 << 0;
+          this.h0 = a + 1732584193 << 0;
           this.h1 = b - 271733879 << 0;
-          this.h2 = c2 - 1732584194 << 0;
+          this.h2 = c - 1732584194 << 0;
           this.h3 = d + 271733878 << 0;
           this.first = false;
         } else {
-          this.h0 = this.h0 + a2 << 0;
+          this.h0 = this.h0 + a << 0;
           this.h1 = this.h1 + b << 0;
-          this.h2 = this.h2 + c2 << 0;
+          this.h2 = this.h2 + c << 0;
           this.h3 = this.h3 + d << 0;
         }
       };
@@ -493,23 +493,23 @@ var require_md5 = __commonJS({
       Md5.prototype.buffer = Md5.prototype.arrayBuffer;
       Md5.prototype.base64 = function() {
         var v1, v2, v3, base64Str = "", bytes = this.array();
-        for (var i2 = 0; i2 < 15; ) {
-          v1 = bytes[i2++];
-          v2 = bytes[i2++];
-          v3 = bytes[i2++];
+        for (var i = 0; i < 15; ) {
+          v1 = bytes[i++];
+          v2 = bytes[i++];
+          v3 = bytes[i++];
           base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] + BASE64_ENCODE_CHAR[(v1 << 4 | v2 >>> 4) & 63] + BASE64_ENCODE_CHAR[(v2 << 2 | v3 >>> 6) & 63] + BASE64_ENCODE_CHAR[v3 & 63];
         }
-        v1 = bytes[i2];
+        v1 = bytes[i];
         base64Str += BASE64_ENCODE_CHAR[v1 >>> 2] + BASE64_ENCODE_CHAR[v1 << 4 & 63] + "==";
         return base64Str;
       };
       function HmacMd5(key, sharedMemory) {
-        var i2, result = formatMessage(key);
+        var i, result = formatMessage(key);
         key = result[0];
         if (result[1]) {
           var bytes = [], length = key.length, index = 0, code;
-          for (i2 = 0; i2 < length; ++i2) {
-            code = key.charCodeAt(i2);
+          for (i = 0; i < length; ++i) {
+            code = key.charCodeAt(i);
             if (code < 128) {
               bytes[index++] = code;
             } else if (code < 2048) {
@@ -520,7 +520,7 @@ var require_md5 = __commonJS({
               bytes[index++] = 128 | code >>> 6 & 63;
               bytes[index++] = 128 | code & 63;
             } else {
-              code = 65536 + ((code & 1023) << 10 | key.charCodeAt(++i2) & 1023);
+              code = 65536 + ((code & 1023) << 10 | key.charCodeAt(++i) & 1023);
               bytes[index++] = 240 | code >>> 18;
               bytes[index++] = 128 | code >>> 12 & 63;
               bytes[index++] = 128 | code >>> 6 & 63;
@@ -533,10 +533,10 @@ var require_md5 = __commonJS({
           key = new Md5(true).update(key).array();
         }
         var oKeyPad = [], iKeyPad = [];
-        for (i2 = 0; i2 < 64; ++i2) {
-          var b = key[i2] || 0;
-          oKeyPad[i2] = 92 ^ b;
-          iKeyPad[i2] = 54 ^ b;
+        for (i = 0; i < 64; ++i) {
+          var b = key[i] || 0;
+          oKeyPad[i] = 92 ^ b;
+          iKeyPad[i] = 54 ^ b;
         }
         Md5.call(this, sharedMemory);
         this.update(iKeyPad);
@@ -579,118 +579,10 @@ __export(main_exports, {
   default: () => Toolbox
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian31 = require("obsidian");
-
-// test/index.ts
-var import_obsidian = require("obsidian");
-
-// test/Test.ts
-var TestRunner = class {
-  constructor() {
-    this.tests = [];
-    this.beforeEachHooks = [];
-    this.afterEachHooks = [];
-  }
-  static getInstance() {
-    if (!TestRunner.instance) {
-      TestRunner.instance = new TestRunner();
-    }
-    return TestRunner.instance;
-  }
-  add(name, description, testFunction) {
-    this.tests.push({ name, description, testFunction });
-  }
-  beforeEach(hook) {
-    this.beforeEachHooks.push(hook);
-  }
-  afterEach(hook) {
-    this.afterEachHooks.push(hook);
-  }
-  async run(self4, ...args) {
-    let passed = 0;
-    let failed = 0;
-    const results = [];
-    for (const test of this.tests) {
-      try {
-        for (const hook of this.beforeEachHooks) {
-          await hook(self4, ...args);
-        }
-        await test.testFunction(self4, ...args);
-        results.push({ name: test.name, description: test.description, status: "passed" });
-        passed++;
-      } catch (error) {
-        results.push({ name: test.name, description: test.description, status: "failed", error: error.message });
-        failed++;
-      } finally {
-        for (const hook of this.afterEachHooks) {
-          await hook(self4, ...args);
-        }
-      }
-    }
-    const total = passed + failed;
-    const groupedResults = results.reduce((acc, result) => {
-      if (!acc[result.name]) {
-        acc[result.name] = [];
-      }
-      acc[result.name].push(result);
-      return acc;
-    }, {});
-    console.group("%cTest Results", "color: blue; font-weight: bold;");
-    for (const [name, tests] of Object.entries(groupedResults)) {
-      tests.sort((a2, b) => a2.status === "failed" ? -1 : 1);
-      console.group(`%c${name}`, "color: purple; font-weight: bold;");
-      tests.forEach((test, index) => {
-        if (test.status === "passed") {
-          console.log(`%c${index + 1}. ${test.description}`, "color: green;");
-        } else {
-          console.group(`%c${index + 1}. ${test.description}`, "color: red;");
-          console.log(`Error: ${test.error}`);
-          console.groupEnd();
-        }
-      });
-      console.groupEnd();
-    }
-    console.log(`%cTests completed: ${passed} passed, ${failed} failed, ${total} total`, "color: blue; font-weight: bold;");
-    console.groupEnd();
-  }
-  assertEqual(actual, expected, message) {
-    if (actual !== expected) {
-      throw new Error(message || `Expected ${expected} but got ${actual}`);
-    }
-  }
-  assertNotEqual(actual, expected, message) {
-    if (actual === expected) {
-      throw new Error(message || `Expected not ${expected} but got ${actual}`);
-    }
-  }
-  assertTrue(value, message) {
-    if (!value) {
-      {
-        throw new Error(message || `Expected true but got ${value}`);
-      }
-    }
-  }
-  assertFalse(value, message) {
-    if (value) {
-      throw new Error(message || `Expected false but got ${value}`);
-    }
-  }
-  assertThrows(fn, message) {
-    let threw = false;
-    try {
-      fn();
-    } catch (e2) {
-      threw = true;
-    }
-    if (!threw) {
-      throw new Error(message || `Expected function to throw an error`);
-    }
-  }
-};
-var Test_default = TestRunner.getInstance();
+var import_obsidian29 = require("obsidian");
 
 // src/helpers.ts
-var import_obsidian2 = require("obsidian");
+var import_obsidian = require("obsidian");
 var SOURCE_VIEW_CLASS = ".cm-scroller";
 var MOBILE_HEADER_CLASS = ".view-header";
 var MOBILE_NAVBAR_CLASS = ".mobile-navbar-actions";
@@ -698,7 +590,6 @@ var COMMENT_CLASS = ".__comment";
 var OUT_LINK_CLASS = ".cm-underline";
 var FOOTNOTE_CLASS = ".cm-footref";
 var STATUS_BAR_CLASS = ".status-bar";
-var imageSuffix = ["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp"];
 var videoSuffix = ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm"];
 function isFileInDirectory(file, directoryPath) {
   if (!Array.isArray(directoryPath))
@@ -715,10 +606,10 @@ function sanitizeFileName(fileName) {
 }
 async function render(app, text, el) {
   var _a2;
-  const component = new import_obsidian2.Component();
+  const component = new import_obsidian.Component();
   const sourcePath = (_a2 = app.workspace.getActiveFile()) == null ? void 0 : _a2.path;
   "markdown-preview-view markdown-rendered node-insert-event is-readable-line-width allow-fold-headings show-indentation-guide allow-fold-lists".split(" ").forEach((className) => el.classList.add(className));
-  await import_obsidian2.MarkdownRenderer.render(app, text, el, sourcePath, component);
+  await import_obsidian.MarkdownRenderer.render(app, text, el, sourcePath, component);
 }
 function createChatArea() {
   const chatArea = document.createElement("div");
@@ -743,7 +634,7 @@ function getBooksList(app, folderName) {
   }).map((file) => ({
     text: file,
     value: file.path
-  })).sort((a2, b) => b.text.stat.ctime - a2.text.stat.ctime);
+  })).sort((a, b) => b.text.stat.ctime - a.text.stat.ctime);
   return books;
 }
 function formatFileSize(sizeInBytes) {
@@ -770,17 +661,6 @@ function countOccurrences(arr) {
 function computerReadingProgress(el) {
   return parseFloat(((el.scrollTop + el.clientHeight) / el.scrollHeight * 100).toFixed(2));
 }
-function insertString(original, index, insert) {
-  if (index < 0) {
-    index = original.length + index;
-  }
-  return original.substring(0, index) + insert + original.substring(index);
-}
-async function createFile(app, path, cover = false) {
-  let file = app.vault.getFiles().find((f2) => f2.path === path);
-  file ? cover && await app.vault.modify(file, "") : file = await app.vault.create(path, "");
-  return file;
-}
 function codeBlockParamParse(source, separator2 = "=") {
   return source.split("\n").filter((row) => row.length > 0).map((row) => row.split(separator2)).reduce((res, ret) => {
     res[ret[0]] = ret[1];
@@ -789,17 +669,17 @@ function codeBlockParamParse(source, separator2 = "=") {
 }
 function editorBlur(app) {
   var _a2, _b;
-  (_b = (_a2 = app.workspace.getActiveViewOfType(import_obsidian2.MarkdownView)) == null ? void 0 : _a2.editor) == null ? void 0 : _b.blur();
+  (_b = (_a2 = app.workspace.getActiveViewOfType(import_obsidian.MarkdownView)) == null ? void 0 : _a2.editor) == null ? void 0 : _b.blur();
   getSelection().removeAllRanges();
 }
-function createElement(t2, text = "", className = "") {
-  const el = document.createElement(t2);
+function createElement(t, text = "", className = "") {
+  const el = document.createElement(t);
   el.className = className;
   el.innerHTML = text;
   return el;
 }
 async function requestUrlToHTML(url) {
-  const content = await (0, import_obsidian2.requestUrl)(url);
+  const content = await (0, import_obsidian.requestUrl)(url);
   const div = document.createElement("div");
   div.innerHTML = content.text;
   return div;
@@ -810,7 +690,7 @@ function getBasename(path) {
 function pick(array, count, unique = false) {
   const result = [];
   const usedIndices = /* @__PURE__ */ new Set();
-  for (let i2 = 0; i2 < count; i2++) {
+  for (let i = 0; i < count; i++) {
     let randomIndex;
     if (unique) {
       do {
@@ -825,10 +705,10 @@ function pick(array, count, unique = false) {
   return result;
 }
 function today(more = false) {
-  return (0, import_obsidian2.moment)().format("YYYY-MM-DD" + (more ? " hh:mm:ss" : ""));
+  return (0, import_obsidian.moment)().format("YYYY-MM-DD" + (more ? " hh:mm:ss" : ""));
 }
-function msTo(t2) {
-  let duration = import_obsidian2.moment.duration(t2);
+function msTo(t) {
+  let duration = import_obsidian.moment.duration(t);
   let hours = Math.floor(duration.asHours());
   let minutes = duration.minutes();
   let seconds = duration.seconds();
@@ -887,38 +767,6 @@ function shouldInsertAfter(block) {
 }
 function generateId() {
   return Math.random().toString(36).substr(2, 6);
-}
-function isNoteEncrypt(str2) {
-  return /^[a-f0-9]{32}%[a-z0-9:%]+$/.test(str2);
-}
-function isResourceEncrypt(str2) {
-  return /^[a-z0-9]{24,32}:[a-z0-9]+$/.test(str2);
-}
-function isVideoPath(path) {
-  return /\.(mp4|mkv|avi|mov|wmv|flv|webm)$/i.test(path);
-}
-function isImagePath(path) {
-  return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(path);
-}
-async function isLongScreenshot(arrayBuffer, proportion = 2) {
-  const blob = new Blob([arrayBuffer]);
-  const url = URL.createObjectURL(blob);
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = url;
-    img.onload = () => {
-      const aspectRatio = img.height / img.width;
-      resolve(aspectRatio > proportion);
-      URL.revokeObjectURL(url);
-    };
-  });
-}
-function mergeArrayBuffers(buffer1, buffer2) {
-  const mergedBuffer = new ArrayBuffer(buffer1.byteLength + buffer2.byteLength);
-  const mergedView = new Uint8Array(mergedBuffer);
-  mergedView.set(new Uint8Array(buffer1), 0);
-  mergedView.set(new Uint8Array(buffer2), buffer1.byteLength);
-  return mergedBuffer;
 }
 
 // src/Commands/adjustReadingPageStyle.ts
@@ -998,7 +846,7 @@ ${footer}`;
 var Block_default = Block.getInstance();
 
 // src/Commands/blockReference.ts
-var import_obsidian3 = require("obsidian");
+var import_obsidian2 = require("obsidian");
 function blockReferenceCommand(self4) {
   self4.settings.blockReference && self4.addCommand({
     id: "\u5757\u5F15\u7528",
@@ -1020,15 +868,15 @@ function blockReference(self4, editor, file) {
     content = `[[${file.path.replace("." + file.extension, "")}#^${blockId}|${file.basename.trim()}]]`;
   }
   window.navigator.clipboard.writeText(content);
-  new import_obsidian3.Notice("\u5757\u5F15\u7528\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
+  new import_obsidian2.Notice("\u5757\u5F15\u7528\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
 }
 
 // src/Commands/chat.ts
-var import_obsidian7 = require("obsidian");
+var import_obsidian6 = require("obsidian");
 
 // src/Modals/FuzzySuggest.ts
-var import_obsidian4 = require("obsidian");
-var FuzzySuggest = class extends import_obsidian4.FuzzySuggestModal {
+var import_obsidian3 = require("obsidian");
+var FuzzySuggest = class extends import_obsidian3.FuzzySuggestModal {
   constructor(app, books, onChoose) {
     super(app);
     this.books = books;
@@ -1046,7 +894,7 @@ var FuzzySuggest = class extends import_obsidian4.FuzzySuggestModal {
 };
 
 // src/Commands/AIChatAction.ts
-var import_obsidian5 = require("obsidian");
+var import_obsidian4 = require("obsidian");
 var actions = [
   {
     value: "\u9ED8\u8BA4 \u{1F63D}",
@@ -1094,7 +942,7 @@ var AIChatAction_default = actions;
 function replace() {
   var _a2;
   const content = this.chat.messages.find((message) => message.type === "answer");
-  const editor = (_a2 = this.self.app.workspace.getActiveViewOfType(import_obsidian5.MarkdownView)) == null ? void 0 : _a2.editor;
+  const editor = (_a2 = this.self.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView)) == null ? void 0 : _a2.editor;
   if (editor) {
     const text = editor.getSelection();
     if (text) {
@@ -1104,7 +952,7 @@ function replace() {
 }
 function wikiLink() {
   var _a2;
-  const editor = (_a2 = this.self.app.workspace.getActiveViewOfType(import_obsidian5.MarkdownView)) == null ? void 0 : _a2.editor;
+  const editor = (_a2 = this.self.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView)) == null ? void 0 : _a2.editor;
   if (editor) {
     const text = editor.getSelection();
     if (text) {
@@ -1118,13 +966,13 @@ function notSaveChat() {
 }
 async function cardNote() {
   var _a2;
-  const editor = (_a2 = this.self.app.workspace.getActiveViewOfType(import_obsidian5.MarkdownView)) == null ? void 0 : _a2.editor;
+  const editor = (_a2 = this.self.app.workspace.getActiveViewOfType(import_obsidian4.MarkdownView)) == null ? void 0 : _a2.editor;
   const name = this.chat.messages.find((message) => message.type === "question").content;
   const content = this.chat.messages.find((message) => message.type === "answer").content;
   const folder = this.self.settings.cardSaveFolder;
   let file = this.self.app.vault.getMarkdownFiles().find((file2) => isFileInDirectory(file2, folder) && file2.basename === name);
   if (file) {
-    new import_obsidian5.Notice("\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
+    new import_obsidian4.Notice("\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
   } else {
     const filepath = `${folder}/${name}.md`;
     file = await this.self.app.vault.create(filepath, content || "");
@@ -1155,13 +1003,13 @@ var inPrompts = {
 };
 var AIChatInPrompt_default = inPrompts;
 async function summarizeNote(self4, chat4, cd) {
-  await startChat("summarizeNote", self4, chat4, cd, (file, t2) => {
-    self4.updateFrontmatter(file, "summary", t2.replace(/\n/g, " "));
+  await startChat("summarizeNote", self4, chat4, cd, (file, t) => {
+    self4.updateFrontmatter(file, "summary", t.replace(/\n/g, " "));
   });
 }
 async function namingTitle(self4, chat4, cd) {
-  await startChat("namingTitle", self4, chat4, cd, async (file, t2) => {
-    const filename2 = sanitizeFileName(t2);
+  await startChat("namingTitle", self4, chat4, cd, async (file, t) => {
+    const filename2 = sanitizeFileName(t);
     await self4.updateFrontmatter(file, "title", filename2);
     await self4.app.fileManager.renameFile(file, file.path.replace(new RegExp(`(${file.basename}).md`, "g"), `${filename2}.md`));
   });
@@ -1174,7 +1022,7 @@ async function startChat(name, self4, chat4, c2, c1) {
   let content = await self4.app.vault.cachedRead(file);
   if (!content)
     return;
-  let t2 = "";
+  let t = "";
   chat4.clearMessage();
   chat4.data.save = false;
   await chat4.openChat(
@@ -1185,9 +1033,9 @@ async function startChat(name, self4, chat4, c2, c1) {
     (text, type) => {
       if (type === "content") {
         c2 && c2(text, type);
-        t2 += text;
+        t += text;
         if (!text) {
-          c1(file, t2);
+          c1(file, t);
         }
       }
     }
@@ -1195,7 +1043,7 @@ async function startChat(name, self4, chat4, c2, c1) {
 }
 
 // src/Commands/AIChatManager.ts
-var import_obsidian6 = require("obsidian");
+var import_obsidian5 = require("obsidian");
 
 // node_modules/openai/internal/qs/formats.mjs
 var default_format = "RFC3986";
@@ -1209,8 +1057,8 @@ var RFC1738 = "RFC1738";
 var is_array = Array.isArray;
 var hex_table = (() => {
   const array = [];
-  for (let i2 = 0; i2 < 256; ++i2) {
-    array.push("%" + ((i2 < 16 ? "0" : "") + i2.toString(16)).toUpperCase());
+  for (let i = 0; i < 256; ++i) {
+    array.push("%" + ((i < 16 ? "0" : "") + i.toString(16)).toUpperCase());
   }
   return array;
 })();
@@ -1234,34 +1082,34 @@ var encode = (str2, _defaultEncoder, charset, _kind, format) => {
   for (let j = 0; j < string.length; j += limit) {
     const segment = string.length >= limit ? string.slice(j, j + limit) : string;
     const arr = [];
-    for (let i2 = 0; i2 < segment.length; ++i2) {
-      let c2 = segment.charCodeAt(i2);
-      if (c2 === 45 || // -
-      c2 === 46 || // .
-      c2 === 95 || // _
-      c2 === 126 || // ~
-      c2 >= 48 && c2 <= 57 || // 0-9
-      c2 >= 65 && c2 <= 90 || // a-z
-      c2 >= 97 && c2 <= 122 || // A-Z
-      format === RFC1738 && (c2 === 40 || c2 === 41)) {
-        arr[arr.length] = segment.charAt(i2);
+    for (let i = 0; i < segment.length; ++i) {
+      let c = segment.charCodeAt(i);
+      if (c === 45 || // -
+      c === 46 || // .
+      c === 95 || // _
+      c === 126 || // ~
+      c >= 48 && c <= 57 || // 0-9
+      c >= 65 && c <= 90 || // a-z
+      c >= 97 && c <= 122 || // A-Z
+      format === RFC1738 && (c === 40 || c === 41)) {
+        arr[arr.length] = segment.charAt(i);
         continue;
       }
-      if (c2 < 128) {
-        arr[arr.length] = hex_table[c2];
+      if (c < 128) {
+        arr[arr.length] = hex_table[c];
         continue;
       }
-      if (c2 < 2048) {
-        arr[arr.length] = hex_table[192 | c2 >> 6] + hex_table[128 | c2 & 63];
+      if (c < 2048) {
+        arr[arr.length] = hex_table[192 | c >> 6] + hex_table[128 | c & 63];
         continue;
       }
-      if (c2 < 55296 || c2 >= 57344) {
-        arr[arr.length] = hex_table[224 | c2 >> 12] + hex_table[128 | c2 >> 6 & 63] + hex_table[128 | c2 & 63];
+      if (c < 55296 || c >= 57344) {
+        arr[arr.length] = hex_table[224 | c >> 12] + hex_table[128 | c >> 6 & 63] + hex_table[128 | c & 63];
         continue;
       }
-      i2 += 1;
-      c2 = 65536 + ((c2 & 1023) << 10 | segment.charCodeAt(i2) & 1023);
-      arr[arr.length] = hex_table[240 | c2 >> 18] + hex_table[128 | c2 >> 12 & 63] + hex_table[128 | c2 >> 6 & 63] + hex_table[128 | c2 & 63];
+      i += 1;
+      c = 65536 + ((c & 1023) << 10 | segment.charCodeAt(i) & 1023);
+      arr[arr.length] = hex_table[240 | c >> 18] + hex_table[128 | c >> 12 & 63] + hex_table[128 | c >> 6 & 63] + hex_table[128 | c & 63];
     }
     out += arr.join("");
   }
@@ -1276,8 +1124,8 @@ function is_buffer(obj) {
 function maybe_map(val, fn) {
   if (is_array(val)) {
     const mapped = [];
-    for (let i2 = 0; i2 < val.length; i2 += 1) {
-      mapped.push(fn(val[i2]));
+    for (let i = 0; i < val.length; i += 1) {
+      mapped.push(fn(val[i]));
     }
     return mapped;
   }
@@ -1526,8 +1374,8 @@ function stringify(object, opts = {}) {
     obj_keys.sort(options.sort);
   }
   const sideChannel = /* @__PURE__ */ new WeakMap();
-  for (let i2 = 0; i2 < obj_keys.length; ++i2) {
-    const key = obj_keys[i2];
+  for (let i = 0; i < obj_keys.length; ++i) {
+    const key = obj_keys[i];
     if (options.skipNulls && obj[key] === null) {
       continue;
     }
@@ -1790,21 +1638,21 @@ var ContentFilterFinishReasonError = class extends OpenAIError {
 };
 
 // node_modules/openai/internal/decoders/line.mjs
-var __classPrivateFieldSet = function(receiver, state, value, kind2, f2) {
+var __classPrivateFieldSet = function(receiver, state, value, kind2, f) {
   if (kind2 === "m")
     throw new TypeError("Private method is not writable");
-  if (kind2 === "a" && !f2)
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a setter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot write private member to an object whose class did not declare it");
-  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+  return kind2 === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
 };
-var __classPrivateFieldGet = function(receiver, state, kind2, f2) {
-  if (kind2 === "a" && !f2)
+var __classPrivateFieldGet = function(receiver, state, kind2, f) {
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a getter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+  return kind2 === "m" ? f : kind2 === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _LineDecoder_carriageReturnIndex;
 var LineDecoder = class {
@@ -1880,12 +1728,12 @@ LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
 function findNewlineIndex(buffer, startIndex) {
   const newline = 10;
   const carriage = 13;
-  for (let i2 = startIndex != null ? startIndex : 0; i2 < buffer.length; i2++) {
-    if (buffer[i2] === newline) {
-      return { preceding: i2, index: i2 + 1, carriage: false };
+  for (let i = startIndex != null ? startIndex : 0; i < buffer.length; i++) {
+    if (buffer[i] === newline) {
+      return { preceding: i, index: i + 1, carriage: false };
     }
-    if (buffer[i2] === carriage) {
-      return { preceding: i2, index: i2 + 1, carriage: true };
+    if (buffer[i] === carriage) {
+      return { preceding: i, index: i + 1, carriage: true };
     }
   }
   return null;
@@ -1893,15 +1741,15 @@ function findNewlineIndex(buffer, startIndex) {
 function findDoubleNewlineIndex(buffer) {
   const newline = 10;
   const carriage = 13;
-  for (let i2 = 0; i2 < buffer.length - 1; i2++) {
-    if (buffer[i2] === newline && buffer[i2 + 1] === newline) {
-      return i2 + 2;
+  for (let i = 0; i < buffer.length - 1; i++) {
+    if (buffer[i] === newline && buffer[i + 1] === newline) {
+      return i + 2;
     }
-    if (buffer[i2] === carriage && buffer[i2 + 1] === carriage) {
-      return i2 + 2;
+    if (buffer[i] === carriage && buffer[i + 1] === carriage) {
+      return i + 2;
     }
-    if (buffer[i2] === carriage && buffer[i2 + 1] === newline && i2 + 3 < buffer.length && buffer[i2 + 2] === carriage && buffer[i2 + 3] === newline) {
-      return i2 + 4;
+    if (buffer[i] === carriage && buffer[i + 1] === newline && i + 3 < buffer.length && buffer[i + 2] === carriage && buffer[i + 3] === newline) {
+      return i + 4;
     }
   }
   return -1;
@@ -1919,9 +1767,9 @@ function ReadableStreamToAsyncIterable(stream) {
         if (result == null ? void 0 : result.done)
           reader.releaseLock();
         return result;
-      } catch (e2) {
+      } catch (e) {
         reader.releaseLock();
-        throw e2;
+        throw e;
       }
     },
     async return() {
@@ -1962,10 +1810,10 @@ var Stream = class {
             let data;
             try {
               data = JSON.parse(sse.data);
-            } catch (e2) {
+            } catch (e) {
               console.error(`Could not parse message into JSON:`, sse.data);
               console.error(`From chunk:`, sse.raw);
-              throw e2;
+              throw e;
             }
             if (data && data.error) {
               throw new APIError(void 0, data.error, void 0, void 0);
@@ -1975,10 +1823,10 @@ var Stream = class {
             let data;
             try {
               data = JSON.parse(sse.data);
-            } catch (e2) {
+            } catch (e) {
               console.error(`Could not parse message into JSON:`, sse.data);
               console.error(`From chunk:`, sse.raw);
-              throw e2;
+              throw e;
             }
             if (sse.event == "error") {
               throw new APIError(void 0, data.error, data.message, void 0);
@@ -1987,10 +1835,10 @@ var Stream = class {
           }
         }
         done = true;
-      } catch (e2) {
-        if (e2 instanceof Error && e2.name === "AbortError")
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError")
           return;
-        throw e2;
+        throw e;
       } finally {
         if (!done)
           controller.abort();
@@ -2030,10 +1878,10 @@ var Stream = class {
             yield JSON.parse(line);
         }
         done = true;
-      } catch (e2) {
-        if (e2 instanceof Error && e2.name === "AbortError")
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError")
           return;
-        throw e2;
+        throw e;
       } finally {
         if (!done)
           controller.abort();
@@ -2283,21 +2131,21 @@ var addFormValue = async (form, key, value) => {
 };
 
 // node_modules/openai/core.mjs
-var __classPrivateFieldSet2 = function(receiver, state, value, kind2, f2) {
+var __classPrivateFieldSet2 = function(receiver, state, value, kind2, f) {
   if (kind2 === "m")
     throw new TypeError("Private method is not writable");
-  if (kind2 === "a" && !f2)
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a setter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot write private member to an object whose class did not declare it");
-  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+  return kind2 === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
 };
-var __classPrivateFieldGet2 = function(receiver, state, kind2, f2) {
-  if (kind2 === "a" && !f2)
+var __classPrivateFieldGet2 = function(receiver, state, kind2, f) {
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a getter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+  return kind2 === "m" ? f : kind2 === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _AbstractPage_client;
 async function defaultParseResponse(props) {
@@ -2588,7 +2436,7 @@ var APIClient = class {
         debug(`response (error; ${retryMessage2})`, response.status, url, responseHeaders);
         return this.retryRequest(options, retriesRemaining, responseHeaders);
       }
-      const errText = await response.text().catch((e2) => castToError(e2).message);
+      const errText = await response.text().catch((e) => castToError(e).message);
       const errJSON = safeJSON(errText);
       const errMessage = errJSON ? void 0 : errText;
       const retryMessage = retriesRemaining ? `(error; no more retries left)` : `(error; not retryable)`;
@@ -2933,7 +2781,7 @@ var castToError = (err) => {
   if (typeof err === "object" && err !== null) {
     try {
       return new Error(JSON.stringify(err));
-    } catch (e2) {
+    } catch (e) {
     }
   }
   return new Error(err);
@@ -3003,9 +2851,9 @@ function debug(action, ...args) {
   }
 }
 var uuid4 = () => {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c2) => {
-    const r2 = Math.random() * 16 | 0;
-    const v = c2 === "x" ? r2 : r2 & 3 | 8;
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === "x" ? r : r & 3 | 8;
     return v.toString(16);
   });
 };
@@ -3334,21 +3182,21 @@ var isToolMessage = (message) => {
 };
 
 // node_modules/openai/lib/EventStream.mjs
-var __classPrivateFieldSet3 = function(receiver, state, value, kind2, f2) {
+var __classPrivateFieldSet3 = function(receiver, state, value, kind2, f) {
   if (kind2 === "m")
     throw new TypeError("Private method is not writable");
-  if (kind2 === "a" && !f2)
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a setter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot write private member to an object whose class did not declare it");
-  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+  return kind2 === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
 };
-var __classPrivateFieldGet3 = function(receiver, state, kind2, f2) {
-  if (kind2 === "a" && !f2)
+var __classPrivateFieldGet3 = function(receiver, state, kind2, f) {
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a getter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+  return kind2 === "m" ? f : kind2 === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _EventStream_instances;
 var _EventStream_connectedPromise;
@@ -3444,7 +3292,7 @@ var EventStream = class {
     const listeners = __classPrivateFieldGet3(this, _EventStream_listeners, "f")[event];
     if (!listeners)
       return this;
-    const index = listeners.findIndex((l2) => l2.listener === listener);
+    const index = listeners.findIndex((l) => l.listener === listener);
     if (index >= 0)
       listeners.splice(index, 1);
     return this;
@@ -3492,7 +3340,7 @@ var EventStream = class {
     }
     const listeners = __classPrivateFieldGet3(this, _EventStream_listeners, "f")[event];
     if (listeners) {
-      __classPrivateFieldGet3(this, _EventStream_listeners, "f")[event] = listeners.filter((l2) => !l2.once);
+      __classPrivateFieldGet3(this, _EventStream_listeners, "f")[event] = listeners.filter((l) => !l.once);
       listeners.forEach(({ listener }) => listener(...args));
     }
     if (event === "abort") {
@@ -3629,7 +3477,7 @@ function hasAutoParseableInput(params) {
   if (isAutoParsableResponseFormat(params.response_format)) {
     return true;
   }
-  return (_b = (_a2 = params.tools) == null ? void 0 : _a2.some((t2) => isAutoParsableTool(t2) || t2.type === "function" && t2.function.strict === true)) != null ? _b : false;
+  return (_b = (_a2 = params.tools) == null ? void 0 : _a2.some((t) => isAutoParsableTool(t) || t.type === "function" && t.function.strict === true)) != null ? _b : false;
 }
 function validateInputTools(tools) {
   for (const tool of tools != null ? tools : []) {
@@ -3643,12 +3491,12 @@ function validateInputTools(tools) {
 }
 
 // node_modules/openai/lib/AbstractChatCompletionRunner.mjs
-var __classPrivateFieldGet4 = function(receiver, state, kind2, f2) {
-  if (kind2 === "a" && !f2)
+var __classPrivateFieldGet4 = function(receiver, state, kind2, f) {
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a getter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+  return kind2 === "m" ? f : kind2 === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _AbstractChatCompletionRunner_instances;
 var _AbstractChatCompletionRunner_getFinalContent;
@@ -3756,7 +3604,7 @@ var AbstractChatCompletionRunner = class extends EventStream {
     const finalFunctionCallResult = __classPrivateFieldGet4(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCallResult).call(this);
     if (finalFunctionCallResult != null)
       this._emit("finalFunctionCallResult", finalFunctionCallResult);
-    if (this._chatCompletions.some((c2) => c2.usage)) {
+    if (this._chatCompletions.some((c) => c.usage)) {
       this._emit("totalUsage", __classPrivateFieldGet4(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_calculateTotalUsage).call(this));
     }
   }
@@ -3785,18 +3633,18 @@ var AbstractChatCompletionRunner = class extends EventStream {
     const singleFunctionToCall = typeof function_call !== "string" && (function_call == null ? void 0 : function_call.name);
     const { maxChatCompletions = DEFAULT_MAX_CHAT_COMPLETIONS } = options || {};
     const functionsByName = {};
-    for (const f2 of params.functions) {
-      functionsByName[f2.name || f2.function.name] = f2;
+    for (const f of params.functions) {
+      functionsByName[f.name || f.function.name] = f;
     }
-    const functions = params.functions.map((f2) => ({
-      name: f2.name || f2.function.name,
-      parameters: f2.parameters,
-      description: f2.description
+    const functions = params.functions.map((f) => ({
+      name: f.name || f.function.name,
+      parameters: f.parameters,
+      description: f.description
     }));
     for (const message of params.messages) {
       this._addMessage(message, false);
     }
-    for (let i2 = 0; i2 < maxChatCompletions; ++i2) {
+    for (let i = 0; i < maxChatCompletions; ++i) {
       const chatCompletion = await this._createChatCompletion(client, {
         ...restParams,
         function_call,
@@ -3812,7 +3660,7 @@ var AbstractChatCompletionRunner = class extends EventStream {
       const { name, arguments: args } = message.function_call;
       const fn = functionsByName[name];
       if (!fn) {
-        const content2 = `Invalid function_call: ${JSON.stringify(name)}. Available options are: ${functions.map((f2) => JSON.stringify(f2.name)).join(", ")}. Please try again`;
+        const content2 = `Invalid function_call: ${JSON.stringify(name)}. Available options are: ${functions.map((f) => JSON.stringify(f.name)).join(", ")}. Please try again`;
         this._addMessage({ role, name, content: content2 });
         continue;
       } else if (singleFunctionToCall && singleFunctionToCall !== name) {
@@ -3864,24 +3712,24 @@ var AbstractChatCompletionRunner = class extends EventStream {
       return tool;
     });
     const functionsByName = {};
-    for (const f2 of inputTools) {
-      if (f2.type === "function") {
-        functionsByName[f2.function.name || f2.function.function.name] = f2.function;
+    for (const f of inputTools) {
+      if (f.type === "function") {
+        functionsByName[f.function.name || f.function.function.name] = f.function;
       }
     }
-    const tools = "tools" in params ? inputTools.map((t2) => t2.type === "function" ? {
+    const tools = "tools" in params ? inputTools.map((t) => t.type === "function" ? {
       type: "function",
       function: {
-        name: t2.function.name || t2.function.function.name,
-        parameters: t2.function.parameters,
-        description: t2.function.description,
-        strict: t2.function.strict
+        name: t.function.name || t.function.function.name,
+        parameters: t.function.parameters,
+        description: t.function.description,
+        strict: t.function.strict
       }
-    } : t2) : void 0;
+    } : t) : void 0;
     for (const message of params.messages) {
       this._addMessage(message, false);
     }
-    for (let i2 = 0; i2 < maxChatCompletions; ++i2) {
+    for (let i = 0; i < maxChatCompletions; ++i) {
       const chatCompletion = await this._createChatCompletion(client, {
         ...restParams,
         tool_choice,
@@ -3934,9 +3782,9 @@ _AbstractChatCompletionRunner_instances = /* @__PURE__ */ new WeakSet(), _Abstra
   return (_a2 = __classPrivateFieldGet4(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalMessage).call(this).content) != null ? _a2 : null;
 }, _AbstractChatCompletionRunner_getFinalMessage = function _AbstractChatCompletionRunner_getFinalMessage2() {
   var _a2, _b;
-  let i2 = this.messages.length;
-  while (i2-- > 0) {
-    const message = this.messages[i2];
+  let i = this.messages.length;
+  while (i-- > 0) {
+    const message = this.messages[i];
     if (isAssistantMessage(message)) {
       const { function_call, ...rest } = message;
       const ret = {
@@ -3953,8 +3801,8 @@ _AbstractChatCompletionRunner_instances = /* @__PURE__ */ new WeakSet(), _Abstra
   throw new OpenAIError("stream ended without producing a ChatCompletionMessage with role=assistant");
 }, _AbstractChatCompletionRunner_getFinalFunctionCall = function _AbstractChatCompletionRunner_getFinalFunctionCall2() {
   var _a2, _b;
-  for (let i2 = this.messages.length - 1; i2 >= 0; i2--) {
-    const message = this.messages[i2];
+  for (let i = this.messages.length - 1; i >= 0; i--) {
+    const message = this.messages[i];
     if (isAssistantMessage(message) && (message == null ? void 0 : message.function_call)) {
       return message.function_call;
     }
@@ -3964,8 +3812,8 @@ _AbstractChatCompletionRunner_instances = /* @__PURE__ */ new WeakSet(), _Abstra
   }
   return;
 }, _AbstractChatCompletionRunner_getFinalFunctionCallResult = function _AbstractChatCompletionRunner_getFinalFunctionCallResult2() {
-  for (let i2 = this.messages.length - 1; i2 >= 0; i2--) {
-    const message = this.messages[i2];
+  for (let i = this.messages.length - 1; i >= 0; i--) {
+    const message = this.messages[i];
     if (isFunctionMessage(message) && message.content != null) {
       return message.content;
     }
@@ -4128,13 +3976,13 @@ var _parseJSON = (jsonString, allow) => {
     if (jsonString.charAt(index) == '"') {
       try {
         return JSON.parse(jsonString.substring(start, ++index - Number(escape2)));
-      } catch (e2) {
-        throwMalformedError(String(e2));
+      } catch (e) {
+        throwMalformedError(String(e));
       }
     } else if (Allow.STR & allow) {
       try {
         return JSON.parse(jsonString.substring(start, index - Number(escape2)) + '"');
-      } catch (e2) {
+      } catch (e) {
         return JSON.parse(jsonString.substring(start, jsonString.lastIndexOf("\\")) + '"');
       }
     }
@@ -4155,17 +4003,17 @@ var _parseJSON = (jsonString, allow) => {
         try {
           const value = parseAny();
           Object.defineProperty(obj, key, { value, writable: true, enumerable: true, configurable: true });
-        } catch (e2) {
+        } catch (e) {
           if (Allow.OBJ & allow)
             return obj;
           else
-            throw e2;
+            throw e;
         }
         skipBlank();
         if (jsonString[index] === ",")
           index++;
       }
-    } catch (e2) {
+    } catch (e) {
       if (Allow.OBJ & allow)
         return obj;
       else
@@ -4185,7 +4033,7 @@ var _parseJSON = (jsonString, allow) => {
           index++;
         }
       }
-    } catch (e2) {
+    } catch (e) {
       if (Allow.ARR & allow) {
         return arr;
       }
@@ -4200,16 +4048,16 @@ var _parseJSON = (jsonString, allow) => {
         markPartialJSON("Not sure what '-' is");
       try {
         return JSON.parse(jsonString);
-      } catch (e2) {
+      } catch (e) {
         if (Allow.NUM & allow) {
           try {
             if ("." === jsonString[jsonString.length - 1])
               return JSON.parse(jsonString.substring(0, jsonString.lastIndexOf(".")));
             return JSON.parse(jsonString.substring(0, jsonString.lastIndexOf("e")));
-          } catch (e3) {
+          } catch (e2) {
           }
         }
-        throwMalformedError(String(e2));
+        throwMalformedError(String(e));
       }
     }
     const start = index;
@@ -4221,13 +4069,13 @@ var _parseJSON = (jsonString, allow) => {
       markPartialJSON("Unterminated number literal");
     try {
       return JSON.parse(jsonString.substring(start, index));
-    } catch (e2) {
+    } catch (e) {
       if (jsonString.substring(start, index) === "-" && Allow.NUM & allow)
         markPartialJSON("Not sure what '-' is");
       try {
         return JSON.parse(jsonString.substring(start, jsonString.lastIndexOf("e")));
-      } catch (e3) {
-        throwMalformedError(String(e3));
+      } catch (e2) {
+        throwMalformedError(String(e2));
       }
     }
   };
@@ -4241,21 +4089,21 @@ var _parseJSON = (jsonString, allow) => {
 var partialParse = (input) => parseJSON(input, Allow.ALL ^ Allow.NUM);
 
 // node_modules/openai/lib/ChatCompletionStream.mjs
-var __classPrivateFieldSet4 = function(receiver, state, value, kind2, f2) {
+var __classPrivateFieldSet4 = function(receiver, state, value, kind2, f) {
   if (kind2 === "m")
     throw new TypeError("Private method is not writable");
-  if (kind2 === "a" && !f2)
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a setter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot write private member to an object whose class did not declare it");
-  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+  return kind2 === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
 };
-var __classPrivateFieldGet5 = function(receiver, state, kind2, f2) {
-  if (kind2 === "a" && !f2)
+var __classPrivateFieldGet5 = function(receiver, state, kind2, f) {
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a getter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+  return kind2 === "m" ? f : kind2 === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _ChatCompletionStream_instances;
 var _ChatCompletionStream_params;
@@ -4696,23 +4544,23 @@ function finalizeChatCompletion(snapshot, params) {
             role,
             content,
             refusal: (_b = message.refusal) != null ? _b : null,
-            tool_calls: tool_calls.map((tool_call, i2) => {
+            tool_calls: tool_calls.map((tool_call, i) => {
               const { function: fn, type, id: id2, ...toolRest } = tool_call;
               const { arguments: args, name, ...fnRest } = fn || {};
               if (id2 == null) {
-                throw new OpenAIError(`missing choices[${index}].tool_calls[${i2}].id
+                throw new OpenAIError(`missing choices[${index}].tool_calls[${i}].id
 ${str(snapshot)}`);
               }
               if (type == null) {
-                throw new OpenAIError(`missing choices[${index}].tool_calls[${i2}].type
+                throw new OpenAIError(`missing choices[${index}].tool_calls[${i}].type
 ${str(snapshot)}`);
               }
               if (name == null) {
-                throw new OpenAIError(`missing choices[${index}].tool_calls[${i2}].function.name
+                throw new OpenAIError(`missing choices[${index}].tool_calls[${i}].function.name
 ${str(snapshot)}`);
               }
               if (args == null) {
-                throw new OpenAIError(`missing choices[${index}].tool_calls[${i2}].function.arguments
+                throw new OpenAIError(`missing choices[${index}].tool_calls[${i}].function.arguments
 ${str(snapshot)}`);
               }
               return { ...toolRest, id: id2, type, function: { ...fnRest, name, arguments: args } };
@@ -4848,21 +4696,21 @@ var Realtime = class extends APIResource {
 Realtime.Sessions = Sessions;
 
 // node_modules/openai/lib/AssistantStream.mjs
-var __classPrivateFieldGet6 = function(receiver, state, kind2, f2) {
-  if (kind2 === "a" && !f2)
+var __classPrivateFieldGet6 = function(receiver, state, kind2, f) {
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a getter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
-  return kind2 === "m" ? f2 : kind2 === "a" ? f2.call(receiver) : f2 ? f2.value : state.get(receiver);
+  return kind2 === "m" ? f : kind2 === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var __classPrivateFieldSet5 = function(receiver, state, value, kind2, f2) {
+var __classPrivateFieldSet5 = function(receiver, state, value, kind2, f) {
   if (kind2 === "m")
     throw new TypeError("Private method is not writable");
-  if (kind2 === "a" && !f2)
+  if (kind2 === "a" && !f)
     throw new TypeError("Private accessor was defined without a setter");
-  if (typeof state === "function" ? receiver !== state || !f2 : !state.has(receiver))
+  if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver))
     throw new TypeError("Cannot write private member to an object whose class did not declare it");
-  return kind2 === "a" ? f2.call(receiver, value) : f2 ? f2.value = value : state.set(receiver, value), value;
+  return kind2 === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
 };
 var _AssistantStream_instances;
 var _AssistantStream_events;
@@ -6512,7 +6360,7 @@ var AIChatManager = class {
   async specifyPrompt(name) {
     var _a2;
     const path = this.self.settings.chatPromptFolder + "/" + name + ".md";
-    const file = this.self.app.vault.getFiles().find((f2) => f2.path === path);
+    const file = this.self.app.vault.getFiles().find((f) => f.path === path);
     if (!file) {
       this.data = { ...defaultOpenAiOptions };
       return;
@@ -6534,13 +6382,13 @@ var AIChatManager = class {
    * @returns {Promise<TFile>} 返回保存的文件路径
    */
   async saveChat() {
-    const text = this.messages.reduce((ret, res, i2, arr) => {
+    const text = this.messages.reduce((ret, res, i, arr) => {
       if (res.type === "question")
         ret += res.content.trim().replace(/^</, "") + "\n\n";
       else if (res.type === "answer")
         ret += "> " + res.content.replace(/\n/gm, "\n> ") + "\n\n";
       else if (res.type === "file")
-        ret += `[[${res.content.split("\n")[0]}]]${arr[i2 + 1].type === "file" ? "\n" : "\n\n"}`;
+        ret += `[[${res.content.split("\n")[0]}]]${arr[i + 1].type === "file" ? "\n" : "\n\n"}`;
       return ret;
     }, "");
     const sanitizedTitle = sanitizeFileName(this.title);
@@ -6558,7 +6406,7 @@ var AIChatManager = class {
    * @returns {Promise<MESSAGE_TYPE[]>} 返回聊天记录
    */
   async loadHistoryChat(path) {
-    const file = this.self.app.vault.getFiles().find((f2) => f2.path === path);
+    const file = this.self.app.vault.getFiles().find((f) => f.path === path);
     if (file) {
       const content = await this.self.app.vault.cachedRead(file);
       const messages = [];
@@ -6612,7 +6460,7 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
       const text = completion2.choices[0].text;
       updateText(text);
     } catch (error) {
-      new import_obsidian6.Notice(error.message);
+      new import_obsidian5.Notice(error.message);
     }
   }
   clearMessage() {
@@ -6684,7 +6532,7 @@ ${await this.self.app.vault.adapter.read(p)}`, type: "file" });
         }
       }
     } catch (error) {
-      new import_obsidian6.Notice(error.message);
+      new import_obsidian5.Notice(error.message);
     }
     this.data.save && this.isStopped && this.title && await this.saveChat();
   }
@@ -6716,7 +6564,7 @@ function chatCommand(self4) {
 async function AiQuick(toolbox, operationName, promptDescription) {
   var _a2;
   const aiProcessor = new AIChatManager(toolbox);
-  const activeEditor = (_a2 = toolbox.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView)) == null ? void 0 : _a2.editor;
+  const activeEditor = (_a2 = toolbox.app.workspace.getActiveViewOfType(import_obsidian6.MarkdownView)) == null ? void 0 : _a2.editor;
   if (!activeEditor)
     return;
   const cursorPosition = activeEditor.getCursor();
@@ -6743,7 +6591,7 @@ async function AiQuick(toolbox, operationName, promptDescription) {
 
 [${operationName}]
 `;
-  const notice = new import_obsidian7.Notice(noticeBaseMessage, 0);
+  const notice = new import_obsidian6.Notice(noticeBaseMessage, 0);
   aiProcessor.openChat(contentToProcess, async (contentChunk, messageType) => {
     if (messageType === "content") {
       accumulatedResult += contentChunk;
@@ -6762,8 +6610,8 @@ async function AiQuick(toolbox, operationName, promptDescription) {
 function findBlockContent(content, blockId) {
   const lines = content.split("\n");
   const blockRegex = new RegExp(`${blockId}$`);
-  for (let i2 = 0; i2 < lines.length; i2++) {
-    const line = lines[i2].trim();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
     if (blockRegex.test(line)) {
       return line.replace(/\s*\^[\w-]+$/, "").trim();
     }
@@ -6774,13 +6622,13 @@ async function chat(self4, text) {
   if (!self4.settings.chat)
     return;
   if (!text) {
-    const editor = (_a2 = self4.app.workspace.getActiveViewOfType(import_obsidian7.MarkdownView)) == null ? void 0 : _a2.editor;
+    const editor = (_a2 = self4.app.workspace.getActiveViewOfType(import_obsidian6.MarkdownView)) == null ? void 0 : _a2.editor;
     if (editor)
       text = editor.getSelection();
   }
   new PanelChat(self4, text).open();
 }
-var PanelChat = class extends import_obsidian7.Modal {
+var PanelChat = class extends import_obsidian6.Modal {
   constructor(self4, content) {
     super(self4.app);
     this.files = /* @__PURE__ */ new Set();
@@ -6800,8 +6648,8 @@ var PanelChat = class extends import_obsidian7.Modal {
     contentEl.appendChild(this.fileArea = createChatArea());
     this.chatArea.style.overflow = "auto";
     this.chat.model = this.self.settings.chatDefaultUsingR1 ? "deepseek-reasoner" : null;
-    new import_obsidian7.Setting(contentEl).addTextArea((text) => this.setTextArea(text)).addButton((btn) => this.setSend(btn)).infoEl.style.display = "none";
-    new import_obsidian7.Setting(contentEl).addDropdown((cd) => this.setPrompt(cd)).addButton((btn) => this.deepReasoning(btn)).addButton((btn) => this.setAttachment(btn)).addButton((btn) => this.setHistoryChat(btn)).addButton((btn) => this.setAction(btn));
+    new import_obsidian6.Setting(contentEl).addTextArea((text) => this.setTextArea(text)).addButton((btn) => this.setSend(btn)).infoEl.style.display = "none";
+    new import_obsidian6.Setting(contentEl).addDropdown((cd) => this.setPrompt(cd)).addButton((btn) => this.deepReasoning(btn)).addButton((btn) => this.setAttachment(btn)).addButton((btn) => this.setHistoryChat(btn)).addButton((btn) => this.setAction(btn));
   }
   attachmentHandler() {
     this.contentEl.onclick = (evt) => {
@@ -6847,7 +6695,7 @@ var PanelChat = class extends import_obsidian7.Modal {
   choiceAction(name) {
     name || (name = "default");
     this.action = name;
-    this.actionBtn.setIcon(AIChatAction_default.find((a2) => a2.text.name === name).text.icon);
+    this.actionBtn.setIcon(AIChatAction_default.find((a) => a.text.name === name).text.icon);
     this.action === "default" ? this.actionBtn.removeCta() : this.actionBtn.setCta();
   }
   async choicePrompt(value) {
@@ -6965,7 +6813,7 @@ var PanelChat = class extends import_obsidian7.Modal {
     var _a2, _b;
     let { contentEl } = this;
     contentEl.empty();
-    (_b = (_a2 = AIChatAction_default.find((a2) => a2.text.name === this.action)) == null ? void 0 : _a2.text) == null ? void 0 : _b.fn.call(this);
+    (_b = (_a2 = AIChatAction_default.find((a) => a.text.name === this.action)) == null ? void 0 : _a2.text) == null ? void 0 : _b.fn.call(this);
   }
   async startChat() {
     if (!this.chat.isStopped) {
@@ -7023,7 +6871,7 @@ ${this.question}
   async loadHistoryChat(path) {
     const messages = await this.chat.loadHistoryChat(path);
     this.setTitle(this.chat.title);
-    this.chatArea.innerHTML = messages.reduce((ret, res, i2, arr) => {
+    this.chatArea.innerHTML = messages.reduce((ret, res, i, arr) => {
       if (res.type === "question")
         ret += `<hr><b><i>\u53EB\u6211\u5305\u4ED4\uFF1A</i></b>
 ${res.content}
@@ -7033,7 +6881,7 @@ ${res.content}
         ret += `<b><i>AI Cha\uFF1A</i></b>
 ${res.content}`;
       else if (res.type === "file")
-        ret += `\u{1F4C4} ${res.content.split("\n")[0]}${arr[i2 + 1].type === "file" ? "\n" : "\n\n"}`;
+        ret += `\u{1F4C4} ${res.content.split("\n")[0]}${arr[i + 1].type === "file" ? "\n" : "\n\n"}`;
       return ret;
     }, "");
   }
@@ -7046,7 +6894,7 @@ ${res.content}`;
 };
 
 // src/Commands/chatWebPageClipping.ts
-var import_obsidian8 = require("obsidian");
+var import_obsidian7 = require("obsidian");
 var chat2 = new AIChatManager(null);
 async function chatWebPageClipping(self4, file) {
   const isMD = isFileInDirectory(file, self4.settings.chatWebPageClippingFolder.split(","));
@@ -7056,29 +6904,29 @@ async function chatWebPageClipping(self4, file) {
   let title = getMetadata(file, "title") || "";
   let summary = getMetadata(file, "summary") || "";
   let content = await self4.app.vault.read(file);
-  let t2;
+  let t;
   if (!content)
     return;
   if (!summary) {
     const tt = title ? title + "\n\n" : "";
-    t2 = new import_obsidian8.Notice(`${tt}\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6458\u8981`, 0);
+    t = new import_obsidian7.Notice(`${tt}\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6458\u8981`, 0);
     await AIChatInPrompt_default.summarizeNote.fn(self4, chat2, (text) => {
       summary += text;
-      t2.setMessage(`${tt}${summary}`);
+      t.setMessage(`${tt}${summary}`);
     });
   }
   if (!title) {
-    if (!t2)
-      t2 = new import_obsidian8.Notice(`\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6807\u9898
+    if (!t)
+      t = new import_obsidian7.Notice(`\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6807\u9898
 
 ${summary}`, 0);
     else
-      t2.setMessage(`\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6807\u9898
+      t.setMessage(`\u6B63\u5728\u4E3A\u7B14\u8BB0\u751F\u6210\u6807\u9898
 
 ${summary}`);
     await AIChatInPrompt_default.namingTitle.fn(self4, chat2, (text) => {
       title += text;
-      t2.setMessage(`${title}
+      t.setMessage(`${title}
 
 ${summary}`);
     });
@@ -7086,7 +6934,7 @@ ${summary}`);
 }
 
 // src/Commands/completion.ts
-var import_obsidian9 = require("obsidian");
+var import_obsidian8 = require("obsidian");
 var chat3 = new AIChatManager(null);
 var lastPrefix;
 var timer;
@@ -7107,7 +6955,7 @@ function completion(self4) {
   var _a2;
   if (!self4.settings.completion)
     return;
-  const editor = (_a2 = self4.app.workspace.getActiveViewOfType(import_obsidian9.MarkdownView)) == null ? void 0 : _a2.editor;
+  const editor = (_a2 = self4.app.workspace.getActiveViewOfType(import_obsidian8.MarkdownView)) == null ? void 0 : _a2.editor;
   if (!editor)
     return;
   const { line, ch } = editor.getCursor();
@@ -7178,7 +7026,7 @@ function clearPlaceholder(editor) {
 }
 
 // src/Commands/createCharacterRelationship.ts
-var import_obsidian10 = require("obsidian");
+var import_obsidian9 = require("obsidian");
 function createCharacterRelationshipCommand(self4) {
   self4.settings.characterRelationships && self4.addCommand({
     id: "\u521B\u5EFA\u4EBA\u7269\u5173\u7CFB",
@@ -7193,8 +7041,8 @@ async function switchCharacterRelationship(self4, file) {
   document.onclick = (evt) => {
     const target = evt.target;
     if (target.hasClass("__character-relationship__")) {
-      const { id, path, title, progress: progress2 } = target.dataset;
-      characterRelationship(self4, file, title, path, id, Number(progress2));
+      const { id, path, title, progress } = target.dataset;
+      characterRelationship(self4, file, title, path, id, Number(progress));
     }
   };
 }
@@ -7205,11 +7053,11 @@ async function createCharacterRelationship(self4, editor, file) {
   const readingProgress = Number(self4.getMetadata(file, "readingProgress"));
   const title = self4.getMetadata(file, "title");
   if (readingProgress <= 0 || isNaN(readingProgress)) {
-    new import_obsidian10.Notice(`\u300A${file.basename}\u300B\u8FD8\u672A\u9605\u8BFB`);
+    new import_obsidian9.Notice(`\u300A${file.basename}\u300B\u8FD8\u672A\u9605\u8BFB`);
     return;
   }
   const targetPath = `${self4.settings.characterRelationshipsFolder}/${title}.md`;
-  let targetFile = self4.app.vault.getFiles().find((f2) => f2.path === targetPath);
+  let targetFile = self4.app.vault.getFiles().find((f) => f.path === targetPath);
   if (!targetFile) {
     targetFile = await self4.app.vault.create(targetPath, "");
   }
@@ -7218,24 +7066,24 @@ async function createCharacterRelationship(self4, editor, file) {
   const hierarchy = getHeadingHierarchy(headings, position.line);
   const headingText = hierarchy.reduce((res, ret) => res += ret.heading + "/", "").slice(0, -1);
   let blockId = getBlock(self4.app, editor, file);
-  const progress2 = computerReadingProgress(document.querySelector(SOURCE_VIEW_CLASS));
-  await characterRelationship(self4, targetFile, headingText, file.path, blockId, progress2);
+  const progress = computerReadingProgress(document.querySelector(SOURCE_VIEW_CLASS));
+  await characterRelationship(self4, targetFile, headingText, file.path, blockId, progress);
   await self4.app.workspace.getLeaf(true).openFile(targetFile);
 }
-async function characterRelationship(self4, file, title, path, id, progress2) {
+async function characterRelationship(self4, file, title, path, id, progress) {
   var _a2;
   let content = await self4.app.vault.read(file);
   let els = createElement("div", content).querySelectorAll(".__character-relationship__");
   if (els.length === 0) {
     if (content) {
-      new import_obsidian10.Notice("\u4EBA\u7269\u5173\u7CFB\u7B14\u8BB0\u5DF2\u901A\u8FC7\u5176\u4ED6\u65B9\u5F0F\u521B\u5EFA");
+      new import_obsidian9.Notice("\u4EBA\u7269\u5173\u7CFB\u7B14\u8BB0\u5DF2\u901A\u8FC7\u5176\u4ED6\u65B9\u5F0F\u521B\u5EFA");
       return;
     }
     content = `---
 tags: \u4EBA\u7269\u5173\u7CFB
 ---
 
-- [${title}](${path}#^${id}) - <span class="__character-relationship__ cm-highlight" data-id="${id}" data-path="${path}" data-title="${title}" data-progress="${progress2}" data-content="" data-state="open">${progress2}%</span>
+- [${title}](${path}#^${id}) - <span class="__character-relationship__ cm-highlight" data-id="${id}" data-path="${path}" data-title="${title}" data-progress="${progress}" data-content="" data-state="open">${progress}%</span>
 
 \`\`\`mermaid
 flowchart LR
@@ -7243,22 +7091,22 @@ flowchart LR
   } else {
     let mermaid = content.match(/^```mermaid[\s\S]+```/gm)[0];
     els = Array.from(els).map((el) => {
-      const { id: id2, path: path2, title: title2, progress: progress3, content: content2, state } = el.dataset;
+      const { id: id2, path: path2, title: title2, progress: progress2, content: content2, state } = el.dataset;
       return {
         id: id2,
         path: path2,
         title: title2,
-        progress: Number(progress3),
+        progress: Number(progress2),
         content: state === "open" ? mermaid : content2.replace(/\\n/g, "\n"),
         state: "close"
       };
     });
-    const index = els.findIndex((item) => item.progress >= progress2);
+    const index = els.findIndex((item) => item.progress >= progress);
     const value = {
       id,
       path,
       title,
-      progress: Number(progress2),
+      progress: Number(progress),
       content: "",
       state: "open"
     };
@@ -7267,7 +7115,7 @@ flowchart LR
 \`\`\`mermaid
 flowchart LR
 \`\`\``;
-    if (((_a2 = els[index]) == null ? void 0 : _a2.progress) === progress2) {
+    if (((_a2 = els[index]) == null ? void 0 : _a2.progress) === progress) {
       els[index].state = "open";
       mermaid = els[index].content;
     } else if (index > -1) {
@@ -7289,9 +7137,9 @@ ${mermaid}`;
 function getHeadingHierarchy(headings, line) {
   let currentHeading;
   const hierarchy = [];
-  for (let i2 = headings.length - 1; i2 >= 0; i2--) {
-    if (headings[i2].position.start.line <= line) {
-      currentHeading = headings[i2];
+  for (let i = headings.length - 1; i >= 0; i--) {
+    if (headings[i].position.start.line <= line) {
+      currentHeading = headings[i];
       break;
     }
   }
@@ -7299,18 +7147,18 @@ function getHeadingHierarchy(headings, line) {
     return hierarchy;
   }
   hierarchy.push(currentHeading);
-  for (let i2 = headings.indexOf(currentHeading) - 1; i2 >= 0; i2--) {
-    if (headings[i2].level < currentHeading.level) {
-      hierarchy.unshift(headings[i2]);
-      currentHeading = headings[i2];
+  for (let i = headings.indexOf(currentHeading) - 1; i >= 0; i--) {
+    if (headings[i].level < currentHeading.level) {
+      hierarchy.unshift(headings[i]);
+      currentHeading = headings[i];
     }
   }
   return hierarchy;
 }
 
 // src/Modals/DoubleInputBox.ts
-var import_obsidian11 = require("obsidian");
-var DoubleInputBox = class extends import_obsidian11.Modal {
+var import_obsidian10 = require("obsidian");
+var DoubleInputBox = class extends import_obsidian10.Modal {
   constructor(app, data) {
     super(app);
     this.data = data;
@@ -7322,19 +7170,19 @@ var DoubleInputBox = class extends import_obsidian11.Modal {
     const { title, titleName, textName, titleDescription = "", textDescription = "", content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
     this.setTitle(title);
     content && this.setContent(content);
-    new import_obsidian11.Setting(contentEl).setDesc(titleDescription).setName(titleName).addText(
+    new import_obsidian10.Setting(contentEl).setDesc(titleDescription).setName(titleName).addText(
       (text) => text.onChange((value) => {
         res1 = value;
       })
     );
-    new import_obsidian11.Setting(contentEl).setDesc(textDescription).setName(textName).addTextArea((text) => {
+    new import_obsidian10.Setting(contentEl).setDesc(textDescription).setName(textName).addTextArea((text) => {
       text.inputEl.style.width = "100%";
       text.onChange((value) => {
         text.inputEl.style.height = text.inputEl.scrollHeight + "px";
         res2 = value;
       });
     }).infoEl.style.display = "none";
-    new import_obsidian11.Setting(contentEl).addButton(
+    new import_obsidian10.Setting(contentEl).addButton(
       (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
         this.close();
         onSubmit(res1, res2);
@@ -7383,2495 +7231,12 @@ ${text}
   }).open();
 }
 
-// node_modules/browser-image-compression/dist/browser-image-compression.mjs
-function _mergeNamespaces(e2, t2) {
-  return t2.forEach(function(t3) {
-    t3 && "string" != typeof t3 && !Array.isArray(t3) && Object.keys(t3).forEach(function(r2) {
-      if ("default" !== r2 && !(r2 in e2)) {
-        var i2 = Object.getOwnPropertyDescriptor(t3, r2);
-        Object.defineProperty(e2, r2, i2.get ? i2 : { enumerable: true, get: function() {
-          return t3[r2];
-        } });
-      }
-    });
-  }), Object.freeze(e2);
-}
-function copyExifWithoutOrientation(e2, t2) {
-  return new Promise(function(r2, i2) {
-    let o2;
-    return getApp1Segment(e2).then(function(e3) {
-      try {
-        return o2 = e3, r2(new Blob([t2.slice(0, 2), o2, t2.slice(2)], { type: "image/jpeg" }));
-      } catch (e4) {
-        return i2(e4);
-      }
-    }, i2);
-  });
-}
-var getApp1Segment = (e2) => new Promise((t2, r2) => {
-  const i2 = new FileReader();
-  i2.addEventListener("load", ({ target: { result: e3 } }) => {
-    const i3 = new DataView(e3);
-    let o2 = 0;
-    if (65496 !== i3.getUint16(o2))
-      return r2("not a valid JPEG");
-    for (o2 += 2; ; ) {
-      const a2 = i3.getUint16(o2);
-      if (65498 === a2)
-        break;
-      const s2 = i3.getUint16(o2 + 2);
-      if (65505 === a2 && 1165519206 === i3.getUint32(o2 + 4)) {
-        const a3 = o2 + 10;
-        let f2;
-        switch (i3.getUint16(a3)) {
-          case 18761:
-            f2 = true;
-            break;
-          case 19789:
-            f2 = false;
-            break;
-          default:
-            return r2("TIFF header contains invalid endian");
-        }
-        if (42 !== i3.getUint16(a3 + 2, f2))
-          return r2("TIFF header contains invalid version");
-        const l2 = i3.getUint32(a3 + 4, f2), c2 = a3 + l2 + 2 + 12 * i3.getUint16(a3 + l2, f2);
-        for (let e4 = a3 + l2 + 2; e4 < c2; e4 += 12) {
-          if (274 == i3.getUint16(e4, f2)) {
-            if (3 !== i3.getUint16(e4 + 2, f2))
-              return r2("Orientation data type is invalid");
-            if (1 !== i3.getUint32(e4 + 4, f2))
-              return r2("Orientation data count is invalid");
-            i3.setUint16(e4 + 8, 1, f2);
-            break;
-          }
-        }
-        return t2(e3.slice(o2, o2 + 2 + s2));
-      }
-      o2 += 2 + s2;
-    }
-    return t2(new Blob());
-  }), i2.readAsArrayBuffer(e2);
-});
-var e = {};
-var t = { get exports() {
-  return e;
-}, set exports(t2) {
-  e = t2;
-} };
-!function(e2) {
-  var r2, i2, UZIP2 = {};
-  t.exports = UZIP2, UZIP2.parse = function(e3, t2) {
-    for (var r3 = UZIP2.bin.readUshort, i3 = UZIP2.bin.readUint, o2 = 0, a2 = {}, s2 = new Uint8Array(e3), f2 = s2.length - 4; 101010256 != i3(s2, f2); )
-      f2--;
-    o2 = f2;
-    o2 += 4;
-    var l2 = r3(s2, o2 += 4);
-    r3(s2, o2 += 2);
-    var c2 = i3(s2, o2 += 2), u = i3(s2, o2 += 4);
-    o2 += 4, o2 = u;
-    for (var h = 0; h < l2; h++) {
-      i3(s2, o2), o2 += 4, o2 += 4, o2 += 4, i3(s2, o2 += 4);
-      c2 = i3(s2, o2 += 4);
-      var d = i3(s2, o2 += 4), A = r3(s2, o2 += 4), g = r3(s2, o2 + 2), p = r3(s2, o2 + 4);
-      o2 += 6;
-      var m = i3(s2, o2 += 8);
-      o2 += 4, o2 += A + g + p, UZIP2._readLocal(s2, m, a2, c2, d, t2);
-    }
-    return a2;
-  }, UZIP2._readLocal = function(e3, t2, r3, i3, o2, a2) {
-    var s2 = UZIP2.bin.readUshort, f2 = UZIP2.bin.readUint;
-    f2(e3, t2), s2(e3, t2 += 4), s2(e3, t2 += 2);
-    var l2 = s2(e3, t2 += 2);
-    f2(e3, t2 += 2), f2(e3, t2 += 4), t2 += 4;
-    var c2 = s2(e3, t2 += 8), u = s2(e3, t2 += 2);
-    t2 += 2;
-    var h = UZIP2.bin.readUTF8(e3, t2, c2);
-    if (t2 += c2, t2 += u, a2)
-      r3[h] = { size: o2, csize: i3 };
-    else {
-      var d = new Uint8Array(e3.buffer, t2);
-      if (0 == l2)
-        r3[h] = new Uint8Array(d.buffer.slice(t2, t2 + i3));
-      else {
-        if (8 != l2)
-          throw "unknown compression method: " + l2;
-        var A = new Uint8Array(o2);
-        UZIP2.inflateRaw(d, A), r3[h] = A;
-      }
-    }
-  }, UZIP2.inflateRaw = function(e3, t2) {
-    return UZIP2.F.inflate(e3, t2);
-  }, UZIP2.inflate = function(e3, t2) {
-    return e3[0], e3[1], UZIP2.inflateRaw(new Uint8Array(e3.buffer, e3.byteOffset + 2, e3.length - 6), t2);
-  }, UZIP2.deflate = function(e3, t2) {
-    null == t2 && (t2 = { level: 6 });
-    var r3 = 0, i3 = new Uint8Array(50 + Math.floor(1.1 * e3.length));
-    i3[r3] = 120, i3[r3 + 1] = 156, r3 += 2, r3 = UZIP2.F.deflateRaw(e3, i3, r3, t2.level);
-    var o2 = UZIP2.adler(e3, 0, e3.length);
-    return i3[r3 + 0] = o2 >>> 24 & 255, i3[r3 + 1] = o2 >>> 16 & 255, i3[r3 + 2] = o2 >>> 8 & 255, i3[r3 + 3] = o2 >>> 0 & 255, new Uint8Array(i3.buffer, 0, r3 + 4);
-  }, UZIP2.deflateRaw = function(e3, t2) {
-    null == t2 && (t2 = { level: 6 });
-    var r3 = new Uint8Array(50 + Math.floor(1.1 * e3.length)), i3 = UZIP2.F.deflateRaw(e3, r3, i3, t2.level);
-    return new Uint8Array(r3.buffer, 0, i3);
-  }, UZIP2.encode = function(e3, t2) {
-    null == t2 && (t2 = false);
-    var r3 = 0, i3 = UZIP2.bin.writeUint, o2 = UZIP2.bin.writeUshort, a2 = {};
-    for (var s2 in e3) {
-      var f2 = !UZIP2._noNeed(s2) && !t2, l2 = e3[s2], c2 = UZIP2.crc.crc(l2, 0, l2.length);
-      a2[s2] = { cpr: f2, usize: l2.length, crc: c2, file: f2 ? UZIP2.deflateRaw(l2) : l2 };
-    }
-    for (var s2 in a2)
-      r3 += a2[s2].file.length + 30 + 46 + 2 * UZIP2.bin.sizeUTF8(s2);
-    r3 += 22;
-    var u = new Uint8Array(r3), h = 0, d = [];
-    for (var s2 in a2) {
-      var A = a2[s2];
-      d.push(h), h = UZIP2._writeHeader(u, h, s2, A, 0);
-    }
-    var g = 0, p = h;
-    for (var s2 in a2) {
-      A = a2[s2];
-      d.push(h), h = UZIP2._writeHeader(u, h, s2, A, 1, d[g++]);
-    }
-    var m = h - p;
-    return i3(u, h, 101010256), h += 4, o2(u, h += 4, g), o2(u, h += 2, g), i3(u, h += 2, m), i3(u, h += 4, p), h += 4, h += 2, u.buffer;
-  }, UZIP2._noNeed = function(e3) {
-    var t2 = e3.split(".").pop().toLowerCase();
-    return -1 != "png,jpg,jpeg,zip".indexOf(t2);
-  }, UZIP2._writeHeader = function(e3, t2, r3, i3, o2, a2) {
-    var s2 = UZIP2.bin.writeUint, f2 = UZIP2.bin.writeUshort, l2 = i3.file;
-    return s2(e3, t2, 0 == o2 ? 67324752 : 33639248), t2 += 4, 1 == o2 && (t2 += 2), f2(e3, t2, 20), f2(e3, t2 += 2, 0), f2(e3, t2 += 2, i3.cpr ? 8 : 0), s2(e3, t2 += 2, 0), s2(e3, t2 += 4, i3.crc), s2(e3, t2 += 4, l2.length), s2(e3, t2 += 4, i3.usize), f2(e3, t2 += 4, UZIP2.bin.sizeUTF8(r3)), f2(e3, t2 += 2, 0), t2 += 2, 1 == o2 && (t2 += 2, t2 += 2, s2(e3, t2 += 6, a2), t2 += 4), t2 += UZIP2.bin.writeUTF8(e3, t2, r3), 0 == o2 && (e3.set(l2, t2), t2 += l2.length), t2;
-  }, UZIP2.crc = { table: function() {
-    for (var e3 = new Uint32Array(256), t2 = 0; t2 < 256; t2++) {
-      for (var r3 = t2, i3 = 0; i3 < 8; i3++)
-        1 & r3 ? r3 = 3988292384 ^ r3 >>> 1 : r3 >>>= 1;
-      e3[t2] = r3;
-    }
-    return e3;
-  }(), update: function(e3, t2, r3, i3) {
-    for (var o2 = 0; o2 < i3; o2++)
-      e3 = UZIP2.crc.table[255 & (e3 ^ t2[r3 + o2])] ^ e3 >>> 8;
-    return e3;
-  }, crc: function(e3, t2, r3) {
-    return 4294967295 ^ UZIP2.crc.update(4294967295, e3, t2, r3);
-  } }, UZIP2.adler = function(e3, t2, r3) {
-    for (var i3 = 1, o2 = 0, a2 = t2, s2 = t2 + r3; a2 < s2; ) {
-      for (var f2 = Math.min(a2 + 5552, s2); a2 < f2; )
-        o2 += i3 += e3[a2++];
-      i3 %= 65521, o2 %= 65521;
-    }
-    return o2 << 16 | i3;
-  }, UZIP2.bin = { readUshort: function(e3, t2) {
-    return e3[t2] | e3[t2 + 1] << 8;
-  }, writeUshort: function(e3, t2, r3) {
-    e3[t2] = 255 & r3, e3[t2 + 1] = r3 >> 8 & 255;
-  }, readUint: function(e3, t2) {
-    return 16777216 * e3[t2 + 3] + (e3[t2 + 2] << 16 | e3[t2 + 1] << 8 | e3[t2]);
-  }, writeUint: function(e3, t2, r3) {
-    e3[t2] = 255 & r3, e3[t2 + 1] = r3 >> 8 & 255, e3[t2 + 2] = r3 >> 16 & 255, e3[t2 + 3] = r3 >> 24 & 255;
-  }, readASCII: function(e3, t2, r3) {
-    for (var i3 = "", o2 = 0; o2 < r3; o2++)
-      i3 += String.fromCharCode(e3[t2 + o2]);
-    return i3;
-  }, writeASCII: function(e3, t2, r3) {
-    for (var i3 = 0; i3 < r3.length; i3++)
-      e3[t2 + i3] = r3.charCodeAt(i3);
-  }, pad: function(e3) {
-    return e3.length < 2 ? "0" + e3 : e3;
-  }, readUTF8: function(e3, t2, r3) {
-    for (var i3, o2 = "", a2 = 0; a2 < r3; a2++)
-      o2 += "%" + UZIP2.bin.pad(e3[t2 + a2].toString(16));
-    try {
-      i3 = decodeURIComponent(o2);
-    } catch (i4) {
-      return UZIP2.bin.readASCII(e3, t2, r3);
-    }
-    return i3;
-  }, writeUTF8: function(e3, t2, r3) {
-    for (var i3 = r3.length, o2 = 0, a2 = 0; a2 < i3; a2++) {
-      var s2 = r3.charCodeAt(a2);
-      if (0 == (4294967168 & s2))
-        e3[t2 + o2] = s2, o2++;
-      else if (0 == (4294965248 & s2))
-        e3[t2 + o2] = 192 | s2 >> 6, e3[t2 + o2 + 1] = 128 | s2 >> 0 & 63, o2 += 2;
-      else if (0 == (4294901760 & s2))
-        e3[t2 + o2] = 224 | s2 >> 12, e3[t2 + o2 + 1] = 128 | s2 >> 6 & 63, e3[t2 + o2 + 2] = 128 | s2 >> 0 & 63, o2 += 3;
-      else {
-        if (0 != (4292870144 & s2))
-          throw "e";
-        e3[t2 + o2] = 240 | s2 >> 18, e3[t2 + o2 + 1] = 128 | s2 >> 12 & 63, e3[t2 + o2 + 2] = 128 | s2 >> 6 & 63, e3[t2 + o2 + 3] = 128 | s2 >> 0 & 63, o2 += 4;
-      }
-    }
-    return o2;
-  }, sizeUTF8: function(e3) {
-    for (var t2 = e3.length, r3 = 0, i3 = 0; i3 < t2; i3++) {
-      var o2 = e3.charCodeAt(i3);
-      if (0 == (4294967168 & o2))
-        r3++;
-      else if (0 == (4294965248 & o2))
-        r3 += 2;
-      else if (0 == (4294901760 & o2))
-        r3 += 3;
-      else {
-        if (0 != (4292870144 & o2))
-          throw "e";
-        r3 += 4;
-      }
-    }
-    return r3;
-  } }, UZIP2.F = {}, UZIP2.F.deflateRaw = function(e3, t2, r3, i3) {
-    var o2 = [[0, 0, 0, 0, 0], [4, 4, 8, 4, 0], [4, 5, 16, 8, 0], [4, 6, 16, 16, 0], [4, 10, 16, 32, 0], [8, 16, 32, 32, 0], [8, 16, 128, 128, 0], [8, 32, 128, 256, 0], [32, 128, 258, 1024, 1], [32, 258, 258, 4096, 1]][i3], a2 = UZIP2.F.U, s2 = UZIP2.F._goodIndex;
-    UZIP2.F._hash;
-    var f2 = UZIP2.F._putsE, l2 = 0, c2 = r3 << 3, u = 0, h = e3.length;
-    if (0 == i3) {
-      for (; l2 < h; ) {
-        f2(t2, c2, l2 + (_ = Math.min(65535, h - l2)) == h ? 1 : 0), c2 = UZIP2.F._copyExact(e3, l2, _, t2, c2 + 8), l2 += _;
-      }
-      return c2 >>> 3;
-    }
-    var d = a2.lits, A = a2.strt, g = a2.prev, p = 0, m = 0, w = 0, v = 0, b = 0, y = 0;
-    for (h > 2 && (A[y = UZIP2.F._hash(e3, 0)] = 0), l2 = 0; l2 < h; l2++) {
-      if (b = y, l2 + 1 < h - 2) {
-        y = UZIP2.F._hash(e3, l2 + 1);
-        var E = l2 + 1 & 32767;
-        g[E] = A[y], A[y] = E;
-      }
-      if (u <= l2) {
-        (p > 14e3 || m > 26697) && h - l2 > 100 && (u < l2 && (d[p] = l2 - u, p += 2, u = l2), c2 = UZIP2.F._writeBlock(l2 == h - 1 || u == h ? 1 : 0, d, p, v, e3, w, l2 - w, t2, c2), p = m = v = 0, w = l2);
-        var F = 0;
-        l2 < h - 2 && (F = UZIP2.F._bestMatch(e3, l2, g, b, Math.min(o2[2], h - l2), o2[3]));
-        var _ = F >>> 16, B = 65535 & F;
-        if (0 != F) {
-          B = 65535 & F;
-          var U = s2(_ = F >>> 16, a2.of0);
-          a2.lhst[257 + U]++;
-          var C = s2(B, a2.df0);
-          a2.dhst[C]++, v += a2.exb[U] + a2.dxb[C], d[p] = _ << 23 | l2 - u, d[p + 1] = B << 16 | U << 8 | C, p += 2, u = l2 + _;
-        } else
-          a2.lhst[e3[l2]]++;
-        m++;
-      }
-    }
-    for (w == l2 && 0 != e3.length || (u < l2 && (d[p] = l2 - u, p += 2, u = l2), c2 = UZIP2.F._writeBlock(1, d, p, v, e3, w, l2 - w, t2, c2), p = 0, m = 0, p = m = v = 0, w = l2); 0 != (7 & c2); )
-      c2++;
-    return c2 >>> 3;
-  }, UZIP2.F._bestMatch = function(e3, t2, r3, i3, o2, a2) {
-    var s2 = 32767 & t2, f2 = r3[s2], l2 = s2 - f2 + 32768 & 32767;
-    if (f2 == s2 || i3 != UZIP2.F._hash(e3, t2 - l2))
-      return 0;
-    for (var c2 = 0, u = 0, h = Math.min(32767, t2); l2 <= h && 0 != --a2 && f2 != s2; ) {
-      if (0 == c2 || e3[t2 + c2] == e3[t2 + c2 - l2]) {
-        var d = UZIP2.F._howLong(e3, t2, l2);
-        if (d > c2) {
-          if (u = l2, (c2 = d) >= o2)
-            break;
-          l2 + 2 < d && (d = l2 + 2);
-          for (var A = 0, g = 0; g < d - 2; g++) {
-            var p = t2 - l2 + g + 32768 & 32767, m = p - r3[p] + 32768 & 32767;
-            m > A && (A = m, f2 = p);
-          }
-        }
-      }
-      l2 += (s2 = f2) - (f2 = r3[s2]) + 32768 & 32767;
-    }
-    return c2 << 16 | u;
-  }, UZIP2.F._howLong = function(e3, t2, r3) {
-    if (e3[t2] != e3[t2 - r3] || e3[t2 + 1] != e3[t2 + 1 - r3] || e3[t2 + 2] != e3[t2 + 2 - r3])
-      return 0;
-    var i3 = t2, o2 = Math.min(e3.length, t2 + 258);
-    for (t2 += 3; t2 < o2 && e3[t2] == e3[t2 - r3]; )
-      t2++;
-    return t2 - i3;
-  }, UZIP2.F._hash = function(e3, t2) {
-    return (e3[t2] << 8 | e3[t2 + 1]) + (e3[t2 + 2] << 4) & 65535;
-  }, UZIP2.saved = 0, UZIP2.F._writeBlock = function(e3, t2, r3, i3, o2, a2, s2, f2, l2) {
-    var c2, u, h, d, A, g, p, m, w, v = UZIP2.F.U, b = UZIP2.F._putsF, y = UZIP2.F._putsE;
-    v.lhst[256]++, u = (c2 = UZIP2.F.getTrees())[0], h = c2[1], d = c2[2], A = c2[3], g = c2[4], p = c2[5], m = c2[6], w = c2[7];
-    var E = 32 + (0 == (l2 + 3 & 7) ? 0 : 8 - (l2 + 3 & 7)) + (s2 << 3), F = i3 + UZIP2.F.contSize(v.fltree, v.lhst) + UZIP2.F.contSize(v.fdtree, v.dhst), _ = i3 + UZIP2.F.contSize(v.ltree, v.lhst) + UZIP2.F.contSize(v.dtree, v.dhst);
-    _ += 14 + 3 * p + UZIP2.F.contSize(v.itree, v.ihst) + (2 * v.ihst[16] + 3 * v.ihst[17] + 7 * v.ihst[18]);
-    for (var B = 0; B < 286; B++)
-      v.lhst[B] = 0;
-    for (B = 0; B < 30; B++)
-      v.dhst[B] = 0;
-    for (B = 0; B < 19; B++)
-      v.ihst[B] = 0;
-    var U = E < F && E < _ ? 0 : F < _ ? 1 : 2;
-    if (b(f2, l2, e3), b(f2, l2 + 1, U), l2 += 3, 0 == U) {
-      for (; 0 != (7 & l2); )
-        l2++;
-      l2 = UZIP2.F._copyExact(o2, a2, s2, f2, l2);
-    } else {
-      var C, I;
-      if (1 == U && (C = v.fltree, I = v.fdtree), 2 == U) {
-        UZIP2.F.makeCodes(v.ltree, u), UZIP2.F.revCodes(v.ltree, u), UZIP2.F.makeCodes(v.dtree, h), UZIP2.F.revCodes(v.dtree, h), UZIP2.F.makeCodes(v.itree, d), UZIP2.F.revCodes(v.itree, d), C = v.ltree, I = v.dtree, y(f2, l2, A - 257), y(f2, l2 += 5, g - 1), y(f2, l2 += 5, p - 4), l2 += 4;
-        for (var Q = 0; Q < p; Q++)
-          y(f2, l2 + 3 * Q, v.itree[1 + (v.ordr[Q] << 1)]);
-        l2 += 3 * p, l2 = UZIP2.F._codeTiny(m, v.itree, f2, l2), l2 = UZIP2.F._codeTiny(w, v.itree, f2, l2);
-      }
-      for (var M = a2, x = 0; x < r3; x += 2) {
-        for (var S = t2[x], R = S >>> 23, T = M + (8388607 & S); M < T; )
-          l2 = UZIP2.F._writeLit(o2[M++], C, f2, l2);
-        if (0 != R) {
-          var O = t2[x + 1], P = O >> 16, H = O >> 8 & 255, L = 255 & O;
-          y(f2, l2 = UZIP2.F._writeLit(257 + H, C, f2, l2), R - v.of0[H]), l2 += v.exb[H], b(f2, l2 = UZIP2.F._writeLit(L, I, f2, l2), P - v.df0[L]), l2 += v.dxb[L], M += R;
-        }
-      }
-      l2 = UZIP2.F._writeLit(256, C, f2, l2);
-    }
-    return l2;
-  }, UZIP2.F._copyExact = function(e3, t2, r3, i3, o2) {
-    var a2 = o2 >>> 3;
-    return i3[a2] = r3, i3[a2 + 1] = r3 >>> 8, i3[a2 + 2] = 255 - i3[a2], i3[a2 + 3] = 255 - i3[a2 + 1], a2 += 4, i3.set(new Uint8Array(e3.buffer, t2, r3), a2), o2 + (r3 + 4 << 3);
-  }, UZIP2.F.getTrees = function() {
-    for (var e3 = UZIP2.F.U, t2 = UZIP2.F._hufTree(e3.lhst, e3.ltree, 15), r3 = UZIP2.F._hufTree(e3.dhst, e3.dtree, 15), i3 = [], o2 = UZIP2.F._lenCodes(e3.ltree, i3), a2 = [], s2 = UZIP2.F._lenCodes(e3.dtree, a2), f2 = 0; f2 < i3.length; f2 += 2)
-      e3.ihst[i3[f2]]++;
-    for (f2 = 0; f2 < a2.length; f2 += 2)
-      e3.ihst[a2[f2]]++;
-    for (var l2 = UZIP2.F._hufTree(e3.ihst, e3.itree, 7), c2 = 19; c2 > 4 && 0 == e3.itree[1 + (e3.ordr[c2 - 1] << 1)]; )
-      c2--;
-    return [t2, r3, l2, o2, s2, c2, i3, a2];
-  }, UZIP2.F.getSecond = function(e3) {
-    for (var t2 = [], r3 = 0; r3 < e3.length; r3 += 2)
-      t2.push(e3[r3 + 1]);
-    return t2;
-  }, UZIP2.F.nonZero = function(e3) {
-    for (var t2 = "", r3 = 0; r3 < e3.length; r3 += 2)
-      0 != e3[r3 + 1] && (t2 += (r3 >> 1) + ",");
-    return t2;
-  }, UZIP2.F.contSize = function(e3, t2) {
-    for (var r3 = 0, i3 = 0; i3 < t2.length; i3++)
-      r3 += t2[i3] * e3[1 + (i3 << 1)];
-    return r3;
-  }, UZIP2.F._codeTiny = function(e3, t2, r3, i3) {
-    for (var o2 = 0; o2 < e3.length; o2 += 2) {
-      var a2 = e3[o2], s2 = e3[o2 + 1];
-      i3 = UZIP2.F._writeLit(a2, t2, r3, i3);
-      var f2 = 16 == a2 ? 2 : 17 == a2 ? 3 : 7;
-      a2 > 15 && (UZIP2.F._putsE(r3, i3, s2, f2), i3 += f2);
-    }
-    return i3;
-  }, UZIP2.F._lenCodes = function(e3, t2) {
-    for (var r3 = e3.length; 2 != r3 && 0 == e3[r3 - 1]; )
-      r3 -= 2;
-    for (var i3 = 0; i3 < r3; i3 += 2) {
-      var o2 = e3[i3 + 1], a2 = i3 + 3 < r3 ? e3[i3 + 3] : -1, s2 = i3 + 5 < r3 ? e3[i3 + 5] : -1, f2 = 0 == i3 ? -1 : e3[i3 - 1];
-      if (0 == o2 && a2 == o2 && s2 == o2) {
-        for (var l2 = i3 + 5; l2 + 2 < r3 && e3[l2 + 2] == o2; )
-          l2 += 2;
-        (c2 = Math.min(l2 + 1 - i3 >>> 1, 138)) < 11 ? t2.push(17, c2 - 3) : t2.push(18, c2 - 11), i3 += 2 * c2 - 2;
-      } else if (o2 == f2 && a2 == o2 && s2 == o2) {
-        for (l2 = i3 + 5; l2 + 2 < r3 && e3[l2 + 2] == o2; )
-          l2 += 2;
-        var c2 = Math.min(l2 + 1 - i3 >>> 1, 6);
-        t2.push(16, c2 - 3), i3 += 2 * c2 - 2;
-      } else
-        t2.push(o2, 0);
-    }
-    return r3 >>> 1;
-  }, UZIP2.F._hufTree = function(e3, t2, r3) {
-    var i3 = [], o2 = e3.length, a2 = t2.length, s2 = 0;
-    for (s2 = 0; s2 < a2; s2 += 2)
-      t2[s2] = 0, t2[s2 + 1] = 0;
-    for (s2 = 0; s2 < o2; s2++)
-      0 != e3[s2] && i3.push({ lit: s2, f: e3[s2] });
-    var f2 = i3.length, l2 = i3.slice(0);
-    if (0 == f2)
-      return 0;
-    if (1 == f2) {
-      var c2 = i3[0].lit;
-      l2 = 0 == c2 ? 1 : 0;
-      return t2[1 + (c2 << 1)] = 1, t2[1 + (l2 << 1)] = 1, 1;
-    }
-    i3.sort(function(e4, t3) {
-      return e4.f - t3.f;
-    });
-    var u = i3[0], h = i3[1], d = 0, A = 1, g = 2;
-    for (i3[0] = { lit: -1, f: u.f + h.f, l: u, r: h, d: 0 }; A != f2 - 1; )
-      u = d != A && (g == f2 || i3[d].f < i3[g].f) ? i3[d++] : i3[g++], h = d != A && (g == f2 || i3[d].f < i3[g].f) ? i3[d++] : i3[g++], i3[A++] = { lit: -1, f: u.f + h.f, l: u, r: h };
-    var p = UZIP2.F.setDepth(i3[A - 1], 0);
-    for (p > r3 && (UZIP2.F.restrictDepth(l2, r3, p), p = r3), s2 = 0; s2 < f2; s2++)
-      t2[1 + (l2[s2].lit << 1)] = l2[s2].d;
-    return p;
-  }, UZIP2.F.setDepth = function(e3, t2) {
-    return -1 != e3.lit ? (e3.d = t2, t2) : Math.max(UZIP2.F.setDepth(e3.l, t2 + 1), UZIP2.F.setDepth(e3.r, t2 + 1));
-  }, UZIP2.F.restrictDepth = function(e3, t2, r3) {
-    var i3 = 0, o2 = 1 << r3 - t2, a2 = 0;
-    for (e3.sort(function(e4, t3) {
-      return t3.d == e4.d ? e4.f - t3.f : t3.d - e4.d;
-    }), i3 = 0; i3 < e3.length && e3[i3].d > t2; i3++) {
-      var s2 = e3[i3].d;
-      e3[i3].d = t2, a2 += o2 - (1 << r3 - s2);
-    }
-    for (a2 >>>= r3 - t2; a2 > 0; ) {
-      (s2 = e3[i3].d) < t2 ? (e3[i3].d++, a2 -= 1 << t2 - s2 - 1) : i3++;
-    }
-    for (; i3 >= 0; i3--)
-      e3[i3].d == t2 && a2 < 0 && (e3[i3].d--, a2++);
-    0 != a2 && console.log("debt left");
-  }, UZIP2.F._goodIndex = function(e3, t2) {
-    var r3 = 0;
-    return t2[16 | r3] <= e3 && (r3 |= 16), t2[8 | r3] <= e3 && (r3 |= 8), t2[4 | r3] <= e3 && (r3 |= 4), t2[2 | r3] <= e3 && (r3 |= 2), t2[1 | r3] <= e3 && (r3 |= 1), r3;
-  }, UZIP2.F._writeLit = function(e3, t2, r3, i3) {
-    return UZIP2.F._putsF(r3, i3, t2[e3 << 1]), i3 + t2[1 + (e3 << 1)];
-  }, UZIP2.F.inflate = function(e3, t2) {
-    var r3 = Uint8Array;
-    if (3 == e3[0] && 0 == e3[1])
-      return t2 || new r3(0);
-    var i3 = UZIP2.F, o2 = i3._bitsF, a2 = i3._bitsE, s2 = i3._decodeTiny, f2 = i3.makeCodes, l2 = i3.codes2map, c2 = i3._get17, u = i3.U, h = null == t2;
-    h && (t2 = new r3(e3.length >>> 2 << 3));
-    for (var d, A, g = 0, p = 0, m = 0, w = 0, v = 0, b = 0, y = 0, E = 0, F = 0; 0 == g; )
-      if (g = o2(e3, F, 1), p = o2(e3, F + 1, 2), F += 3, 0 != p) {
-        if (h && (t2 = UZIP2.F._check(t2, E + (1 << 17))), 1 == p && (d = u.flmap, A = u.fdmap, b = 511, y = 31), 2 == p) {
-          m = a2(e3, F, 5) + 257, w = a2(e3, F + 5, 5) + 1, v = a2(e3, F + 10, 4) + 4, F += 14;
-          for (var _ = 0; _ < 38; _ += 2)
-            u.itree[_] = 0, u.itree[_ + 1] = 0;
-          var B = 1;
-          for (_ = 0; _ < v; _++) {
-            var U = a2(e3, F + 3 * _, 3);
-            u.itree[1 + (u.ordr[_] << 1)] = U, U > B && (B = U);
-          }
-          F += 3 * v, f2(u.itree, B), l2(u.itree, B, u.imap), d = u.lmap, A = u.dmap, F = s2(u.imap, (1 << B) - 1, m + w, e3, F, u.ttree);
-          var C = i3._copyOut(u.ttree, 0, m, u.ltree);
-          b = (1 << C) - 1;
-          var I = i3._copyOut(u.ttree, m, w, u.dtree);
-          y = (1 << I) - 1, f2(u.ltree, C), l2(u.ltree, C, d), f2(u.dtree, I), l2(u.dtree, I, A);
-        }
-        for (; ; ) {
-          var Q = d[c2(e3, F) & b];
-          F += 15 & Q;
-          var M = Q >>> 4;
-          if (M >>> 8 == 0)
-            t2[E++] = M;
-          else {
-            if (256 == M)
-              break;
-            var x = E + M - 254;
-            if (M > 264) {
-              var S = u.ldef[M - 257];
-              x = E + (S >>> 3) + a2(e3, F, 7 & S), F += 7 & S;
-            }
-            var R = A[c2(e3, F) & y];
-            F += 15 & R;
-            var T = R >>> 4, O = u.ddef[T], P = (O >>> 4) + o2(e3, F, 15 & O);
-            for (F += 15 & O, h && (t2 = UZIP2.F._check(t2, E + (1 << 17))); E < x; )
-              t2[E] = t2[E++ - P], t2[E] = t2[E++ - P], t2[E] = t2[E++ - P], t2[E] = t2[E++ - P];
-            E = x;
-          }
-        }
-      } else {
-        0 != (7 & F) && (F += 8 - (7 & F));
-        var H = 4 + (F >>> 3), L = e3[H - 4] | e3[H - 3] << 8;
-        h && (t2 = UZIP2.F._check(t2, E + L)), t2.set(new r3(e3.buffer, e3.byteOffset + H, L), E), F = H + L << 3, E += L;
-      }
-    return t2.length == E ? t2 : t2.slice(0, E);
-  }, UZIP2.F._check = function(e3, t2) {
-    var r3 = e3.length;
-    if (t2 <= r3)
-      return e3;
-    var i3 = new Uint8Array(Math.max(r3 << 1, t2));
-    return i3.set(e3, 0), i3;
-  }, UZIP2.F._decodeTiny = function(e3, t2, r3, i3, o2, a2) {
-    for (var s2 = UZIP2.F._bitsE, f2 = UZIP2.F._get17, l2 = 0; l2 < r3; ) {
-      var c2 = e3[f2(i3, o2) & t2];
-      o2 += 15 & c2;
-      var u = c2 >>> 4;
-      if (u <= 15)
-        a2[l2] = u, l2++;
-      else {
-        var h = 0, d = 0;
-        16 == u ? (d = 3 + s2(i3, o2, 2), o2 += 2, h = a2[l2 - 1]) : 17 == u ? (d = 3 + s2(i3, o2, 3), o2 += 3) : 18 == u && (d = 11 + s2(i3, o2, 7), o2 += 7);
-        for (var A = l2 + d; l2 < A; )
-          a2[l2] = h, l2++;
-      }
-    }
-    return o2;
-  }, UZIP2.F._copyOut = function(e3, t2, r3, i3) {
-    for (var o2 = 0, a2 = 0, s2 = i3.length >>> 1; a2 < r3; ) {
-      var f2 = e3[a2 + t2];
-      i3[a2 << 1] = 0, i3[1 + (a2 << 1)] = f2, f2 > o2 && (o2 = f2), a2++;
-    }
-    for (; a2 < s2; )
-      i3[a2 << 1] = 0, i3[1 + (a2 << 1)] = 0, a2++;
-    return o2;
-  }, UZIP2.F.makeCodes = function(e3, t2) {
-    for (var r3, i3, o2, a2, s2 = UZIP2.F.U, f2 = e3.length, l2 = s2.bl_count, c2 = 0; c2 <= t2; c2++)
-      l2[c2] = 0;
-    for (c2 = 1; c2 < f2; c2 += 2)
-      l2[e3[c2]]++;
-    var u = s2.next_code;
-    for (r3 = 0, l2[0] = 0, i3 = 1; i3 <= t2; i3++)
-      r3 = r3 + l2[i3 - 1] << 1, u[i3] = r3;
-    for (o2 = 0; o2 < f2; o2 += 2)
-      0 != (a2 = e3[o2 + 1]) && (e3[o2] = u[a2], u[a2]++);
-  }, UZIP2.F.codes2map = function(e3, t2, r3) {
-    for (var i3 = e3.length, o2 = UZIP2.F.U.rev15, a2 = 0; a2 < i3; a2 += 2)
-      if (0 != e3[a2 + 1])
-        for (var s2 = a2 >> 1, f2 = e3[a2 + 1], l2 = s2 << 4 | f2, c2 = t2 - f2, u = e3[a2] << c2, h = u + (1 << c2); u != h; ) {
-          r3[o2[u] >>> 15 - t2] = l2, u++;
-        }
-  }, UZIP2.F.revCodes = function(e3, t2) {
-    for (var r3 = UZIP2.F.U.rev15, i3 = 15 - t2, o2 = 0; o2 < e3.length; o2 += 2) {
-      var a2 = e3[o2] << t2 - e3[o2 + 1];
-      e3[o2] = r3[a2] >>> i3;
-    }
-  }, UZIP2.F._putsE = function(e3, t2, r3) {
-    r3 <<= 7 & t2;
-    var i3 = t2 >>> 3;
-    e3[i3] |= r3, e3[i3 + 1] |= r3 >>> 8;
-  }, UZIP2.F._putsF = function(e3, t2, r3) {
-    r3 <<= 7 & t2;
-    var i3 = t2 >>> 3;
-    e3[i3] |= r3, e3[i3 + 1] |= r3 >>> 8, e3[i3 + 2] |= r3 >>> 16;
-  }, UZIP2.F._bitsE = function(e3, t2, r3) {
-    return (e3[t2 >>> 3] | e3[1 + (t2 >>> 3)] << 8) >>> (7 & t2) & (1 << r3) - 1;
-  }, UZIP2.F._bitsF = function(e3, t2, r3) {
-    return (e3[t2 >>> 3] | e3[1 + (t2 >>> 3)] << 8 | e3[2 + (t2 >>> 3)] << 16) >>> (7 & t2) & (1 << r3) - 1;
-  }, UZIP2.F._get17 = function(e3, t2) {
-    return (e3[t2 >>> 3] | e3[1 + (t2 >>> 3)] << 8 | e3[2 + (t2 >>> 3)] << 16) >>> (7 & t2);
-  }, UZIP2.F._get25 = function(e3, t2) {
-    return (e3[t2 >>> 3] | e3[1 + (t2 >>> 3)] << 8 | e3[2 + (t2 >>> 3)] << 16 | e3[3 + (t2 >>> 3)] << 24) >>> (7 & t2);
-  }, UZIP2.F.U = (r2 = Uint16Array, i2 = Uint32Array, { next_code: new r2(16), bl_count: new r2(16), ordr: [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15], of0: [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 999, 999, 999], exb: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0, 0], ldef: new r2(32), df0: [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 65535, 65535], dxb: [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 0, 0], ddef: new i2(32), flmap: new r2(512), fltree: [], fdmap: new r2(32), fdtree: [], lmap: new r2(32768), ltree: [], ttree: [], dmap: new r2(32768), dtree: [], imap: new r2(512), itree: [], rev15: new r2(32768), lhst: new i2(286), dhst: new i2(30), ihst: new i2(19), lits: new i2(15e3), strt: new r2(65536), prev: new r2(32768) }), function() {
-    for (var e3 = UZIP2.F.U, t2 = 0; t2 < 32768; t2++) {
-      var r3 = t2;
-      r3 = (4278255360 & (r3 = (4042322160 & (r3 = (3435973836 & (r3 = (2863311530 & r3) >>> 1 | (1431655765 & r3) << 1)) >>> 2 | (858993459 & r3) << 2)) >>> 4 | (252645135 & r3) << 4)) >>> 8 | (16711935 & r3) << 8, e3.rev15[t2] = (r3 >>> 16 | r3 << 16) >>> 17;
-    }
-    function pushV(e4, t3, r4) {
-      for (; 0 != t3--; )
-        e4.push(0, r4);
-    }
-    for (t2 = 0; t2 < 32; t2++)
-      e3.ldef[t2] = e3.of0[t2] << 3 | e3.exb[t2], e3.ddef[t2] = e3.df0[t2] << 4 | e3.dxb[t2];
-    pushV(e3.fltree, 144, 8), pushV(e3.fltree, 112, 9), pushV(e3.fltree, 24, 7), pushV(e3.fltree, 8, 8), UZIP2.F.makeCodes(e3.fltree, 9), UZIP2.F.codes2map(e3.fltree, 9, e3.flmap), UZIP2.F.revCodes(e3.fltree, 9), pushV(e3.fdtree, 32, 5), UZIP2.F.makeCodes(e3.fdtree, 5), UZIP2.F.codes2map(e3.fdtree, 5, e3.fdmap), UZIP2.F.revCodes(e3.fdtree, 5), pushV(e3.itree, 19, 0), pushV(e3.ltree, 286, 0), pushV(e3.dtree, 30, 0), pushV(e3.ttree, 320, 0);
-  }();
-}();
-var UZIP = _mergeNamespaces({ __proto__: null, default: e }, [e]);
-var UPNG = function() {
-  var e2 = { nextZero(e3, t3) {
-    for (; 0 != e3[t3]; )
-      t3++;
-    return t3;
-  }, readUshort: (e3, t3) => e3[t3] << 8 | e3[t3 + 1], writeUshort(e3, t3, r2) {
-    e3[t3] = r2 >> 8 & 255, e3[t3 + 1] = 255 & r2;
-  }, readUint: (e3, t3) => 16777216 * e3[t3] + (e3[t3 + 1] << 16 | e3[t3 + 2] << 8 | e3[t3 + 3]), writeUint(e3, t3, r2) {
-    e3[t3] = r2 >> 24 & 255, e3[t3 + 1] = r2 >> 16 & 255, e3[t3 + 2] = r2 >> 8 & 255, e3[t3 + 3] = 255 & r2;
-  }, readASCII(e3, t3, r2) {
-    let i2 = "";
-    for (let o2 = 0; o2 < r2; o2++)
-      i2 += String.fromCharCode(e3[t3 + o2]);
-    return i2;
-  }, writeASCII(e3, t3, r2) {
-    for (let i2 = 0; i2 < r2.length; i2++)
-      e3[t3 + i2] = r2.charCodeAt(i2);
-  }, readBytes(e3, t3, r2) {
-    const i2 = [];
-    for (let o2 = 0; o2 < r2; o2++)
-      i2.push(e3[t3 + o2]);
-    return i2;
-  }, pad: (e3) => e3.length < 2 ? `0${e3}` : e3, readUTF8(t3, r2, i2) {
-    let o2, a2 = "";
-    for (let o3 = 0; o3 < i2; o3++)
-      a2 += `%${e2.pad(t3[r2 + o3].toString(16))}`;
-    try {
-      o2 = decodeURIComponent(a2);
-    } catch (o3) {
-      return e2.readASCII(t3, r2, i2);
-    }
-    return o2;
-  } };
-  function decodeImage(t3, r2, i2, o2) {
-    const a2 = r2 * i2, s2 = _getBPP(o2), f2 = Math.ceil(r2 * s2 / 8), l2 = new Uint8Array(4 * a2), c2 = new Uint32Array(l2.buffer), { ctype: u } = o2, { depth: h } = o2, d = e2.readUshort;
-    if (6 == u) {
-      const e3 = a2 << 2;
-      if (8 == h)
-        for (var A = 0; A < e3; A += 4)
-          l2[A] = t3[A], l2[A + 1] = t3[A + 1], l2[A + 2] = t3[A + 2], l2[A + 3] = t3[A + 3];
-      if (16 == h)
-        for (A = 0; A < e3; A++)
-          l2[A] = t3[A << 1];
-    } else if (2 == u) {
-      const e3 = o2.tabs.tRNS;
-      if (null == e3) {
-        if (8 == h)
-          for (A = 0; A < a2; A++) {
-            var g = 3 * A;
-            c2[A] = 255 << 24 | t3[g + 2] << 16 | t3[g + 1] << 8 | t3[g];
-          }
-        if (16 == h)
-          for (A = 0; A < a2; A++) {
-            g = 6 * A;
-            c2[A] = 255 << 24 | t3[g + 4] << 16 | t3[g + 2] << 8 | t3[g];
-          }
-      } else {
-        var p = e3[0];
-        const r3 = e3[1], i3 = e3[2];
-        if (8 == h)
-          for (A = 0; A < a2; A++) {
-            var m = A << 2;
-            g = 3 * A;
-            c2[A] = 255 << 24 | t3[g + 2] << 16 | t3[g + 1] << 8 | t3[g], t3[g] == p && t3[g + 1] == r3 && t3[g + 2] == i3 && (l2[m + 3] = 0);
-          }
-        if (16 == h)
-          for (A = 0; A < a2; A++) {
-            m = A << 2, g = 6 * A;
-            c2[A] = 255 << 24 | t3[g + 4] << 16 | t3[g + 2] << 8 | t3[g], d(t3, g) == p && d(t3, g + 2) == r3 && d(t3, g + 4) == i3 && (l2[m + 3] = 0);
-          }
-      }
-    } else if (3 == u) {
-      const e3 = o2.tabs.PLTE, s3 = o2.tabs.tRNS, c3 = s3 ? s3.length : 0;
-      if (1 == h)
-        for (var w = 0; w < i2; w++) {
-          var v = w * f2, b = w * r2;
-          for (A = 0; A < r2; A++) {
-            m = b + A << 2;
-            var y = 3 * (E = t3[v + (A >> 3)] >> 7 - ((7 & A) << 0) & 1);
-            l2[m] = e3[y], l2[m + 1] = e3[y + 1], l2[m + 2] = e3[y + 2], l2[m + 3] = E < c3 ? s3[E] : 255;
-          }
-        }
-      if (2 == h)
-        for (w = 0; w < i2; w++)
-          for (v = w * f2, b = w * r2, A = 0; A < r2; A++) {
-            m = b + A << 2, y = 3 * (E = t3[v + (A >> 2)] >> 6 - ((3 & A) << 1) & 3);
-            l2[m] = e3[y], l2[m + 1] = e3[y + 1], l2[m + 2] = e3[y + 2], l2[m + 3] = E < c3 ? s3[E] : 255;
-          }
-      if (4 == h)
-        for (w = 0; w < i2; w++)
-          for (v = w * f2, b = w * r2, A = 0; A < r2; A++) {
-            m = b + A << 2, y = 3 * (E = t3[v + (A >> 1)] >> 4 - ((1 & A) << 2) & 15);
-            l2[m] = e3[y], l2[m + 1] = e3[y + 1], l2[m + 2] = e3[y + 2], l2[m + 3] = E < c3 ? s3[E] : 255;
-          }
-      if (8 == h)
-        for (A = 0; A < a2; A++) {
-          var E;
-          m = A << 2, y = 3 * (E = t3[A]);
-          l2[m] = e3[y], l2[m + 1] = e3[y + 1], l2[m + 2] = e3[y + 2], l2[m + 3] = E < c3 ? s3[E] : 255;
-        }
-    } else if (4 == u) {
-      if (8 == h)
-        for (A = 0; A < a2; A++) {
-          m = A << 2;
-          var F = t3[_ = A << 1];
-          l2[m] = F, l2[m + 1] = F, l2[m + 2] = F, l2[m + 3] = t3[_ + 1];
-        }
-      if (16 == h)
-        for (A = 0; A < a2; A++) {
-          var _;
-          m = A << 2, F = t3[_ = A << 2];
-          l2[m] = F, l2[m + 1] = F, l2[m + 2] = F, l2[m + 3] = t3[_ + 2];
-        }
-    } else if (0 == u)
-      for (p = o2.tabs.tRNS ? o2.tabs.tRNS : -1, w = 0; w < i2; w++) {
-        const e3 = w * f2, i3 = w * r2;
-        if (1 == h)
-          for (var B = 0; B < r2; B++) {
-            var U = (F = 255 * (t3[e3 + (B >>> 3)] >>> 7 - (7 & B) & 1)) == 255 * p ? 0 : 255;
-            c2[i3 + B] = U << 24 | F << 16 | F << 8 | F;
-          }
-        else if (2 == h)
-          for (B = 0; B < r2; B++) {
-            U = (F = 85 * (t3[e3 + (B >>> 2)] >>> 6 - ((3 & B) << 1) & 3)) == 85 * p ? 0 : 255;
-            c2[i3 + B] = U << 24 | F << 16 | F << 8 | F;
-          }
-        else if (4 == h)
-          for (B = 0; B < r2; B++) {
-            U = (F = 17 * (t3[e3 + (B >>> 1)] >>> 4 - ((1 & B) << 2) & 15)) == 17 * p ? 0 : 255;
-            c2[i3 + B] = U << 24 | F << 16 | F << 8 | F;
-          }
-        else if (8 == h)
-          for (B = 0; B < r2; B++) {
-            U = (F = t3[e3 + B]) == p ? 0 : 255;
-            c2[i3 + B] = U << 24 | F << 16 | F << 8 | F;
-          }
-        else if (16 == h)
-          for (B = 0; B < r2; B++) {
-            F = t3[e3 + (B << 1)], U = d(t3, e3 + (B << 1)) == p ? 0 : 255;
-            c2[i3 + B] = U << 24 | F << 16 | F << 8 | F;
-          }
-      }
-    return l2;
-  }
-  function _decompress(e3, r2, i2, o2) {
-    const a2 = _getBPP(e3), s2 = Math.ceil(i2 * a2 / 8), f2 = new Uint8Array((s2 + 1 + e3.interlace) * o2);
-    return r2 = e3.tabs.CgBI ? t2(r2, f2) : _inflate(r2, f2), 0 == e3.interlace ? r2 = _filterZero(r2, e3, 0, i2, o2) : 1 == e3.interlace && (r2 = function _readInterlace(e4, t3) {
-      const r3 = t3.width, i3 = t3.height, o3 = _getBPP(t3), a3 = o3 >> 3, s3 = Math.ceil(r3 * o3 / 8), f3 = new Uint8Array(i3 * s3);
-      let l2 = 0;
-      const c2 = [0, 0, 4, 0, 2, 0, 1], u = [0, 4, 0, 2, 0, 1, 0], h = [8, 8, 8, 4, 4, 2, 2], d = [8, 8, 4, 4, 2, 2, 1];
-      let A = 0;
-      for (; A < 7; ) {
-        const p = h[A], m = d[A];
-        let w = 0, v = 0, b = c2[A];
-        for (; b < i3; )
-          b += p, v++;
-        let y = u[A];
-        for (; y < r3; )
-          y += m, w++;
-        const E = Math.ceil(w * o3 / 8);
-        _filterZero(e4, t3, l2, w, v);
-        let F = 0, _ = c2[A];
-        for (; _ < i3; ) {
-          let t4 = u[A], i4 = l2 + F * E << 3;
-          for (; t4 < r3; ) {
-            var g;
-            if (1 == o3)
-              g = (g = e4[i4 >> 3]) >> 7 - (7 & i4) & 1, f3[_ * s3 + (t4 >> 3)] |= g << 7 - ((7 & t4) << 0);
-            if (2 == o3)
-              g = (g = e4[i4 >> 3]) >> 6 - (7 & i4) & 3, f3[_ * s3 + (t4 >> 2)] |= g << 6 - ((3 & t4) << 1);
-            if (4 == o3)
-              g = (g = e4[i4 >> 3]) >> 4 - (7 & i4) & 15, f3[_ * s3 + (t4 >> 1)] |= g << 4 - ((1 & t4) << 2);
-            if (o3 >= 8) {
-              const r4 = _ * s3 + t4 * a3;
-              for (let t5 = 0; t5 < a3; t5++)
-                f3[r4 + t5] = e4[(i4 >> 3) + t5];
-            }
-            i4 += o3, t4 += m;
-          }
-          F++, _ += p;
-        }
-        w * v != 0 && (l2 += v * (1 + E)), A += 1;
-      }
-      return f3;
-    }(r2, e3)), r2;
-  }
-  function _inflate(e3, r2) {
-    return t2(new Uint8Array(e3.buffer, 2, e3.length - 6), r2);
-  }
-  var t2 = function() {
-    const e3 = { H: {} };
-    return e3.H.N = function(t3, r2) {
-      const i2 = Uint8Array;
-      let o2, a2, s2 = 0, f2 = 0, l2 = 0, c2 = 0, u = 0, h = 0, d = 0, A = 0, g = 0;
-      if (3 == t3[0] && 0 == t3[1])
-        return r2 || new i2(0);
-      const p = e3.H, m = p.b, w = p.e, v = p.R, b = p.n, y = p.A, E = p.Z, F = p.m, _ = null == r2;
-      for (_ && (r2 = new i2(t3.length >>> 2 << 5)); 0 == s2; )
-        if (s2 = m(t3, g, 1), f2 = m(t3, g + 1, 2), g += 3, 0 != f2) {
-          if (_ && (r2 = e3.H.W(r2, A + (1 << 17))), 1 == f2 && (o2 = F.J, a2 = F.h, h = 511, d = 31), 2 == f2) {
-            l2 = w(t3, g, 5) + 257, c2 = w(t3, g + 5, 5) + 1, u = w(t3, g + 10, 4) + 4, g += 14;
-            let e4 = 1;
-            for (var B = 0; B < 38; B += 2)
-              F.Q[B] = 0, F.Q[B + 1] = 0;
-            for (B = 0; B < u; B++) {
-              const r4 = w(t3, g + 3 * B, 3);
-              F.Q[1 + (F.X[B] << 1)] = r4, r4 > e4 && (e4 = r4);
-            }
-            g += 3 * u, b(F.Q, e4), y(F.Q, e4, F.u), o2 = F.w, a2 = F.d, g = v(F.u, (1 << e4) - 1, l2 + c2, t3, g, F.v);
-            const r3 = p.V(F.v, 0, l2, F.C);
-            h = (1 << r3) - 1;
-            const i3 = p.V(F.v, l2, c2, F.D);
-            d = (1 << i3) - 1, b(F.C, r3), y(F.C, r3, o2), b(F.D, i3), y(F.D, i3, a2);
-          }
-          for (; ; ) {
-            const e4 = o2[E(t3, g) & h];
-            g += 15 & e4;
-            const i3 = e4 >>> 4;
-            if (i3 >>> 8 == 0)
-              r2[A++] = i3;
-            else {
-              if (256 == i3)
-                break;
-              {
-                let e5 = A + i3 - 254;
-                if (i3 > 264) {
-                  const r3 = F.q[i3 - 257];
-                  e5 = A + (r3 >>> 3) + w(t3, g, 7 & r3), g += 7 & r3;
-                }
-                const o3 = a2[E(t3, g) & d];
-                g += 15 & o3;
-                const s3 = o3 >>> 4, f3 = F.c[s3], l3 = (f3 >>> 4) + m(t3, g, 15 & f3);
-                for (g += 15 & f3; A < e5; )
-                  r2[A] = r2[A++ - l3], r2[A] = r2[A++ - l3], r2[A] = r2[A++ - l3], r2[A] = r2[A++ - l3];
-                A = e5;
-              }
-            }
-          }
-        } else {
-          0 != (7 & g) && (g += 8 - (7 & g));
-          const o3 = 4 + (g >>> 3), a3 = t3[o3 - 4] | t3[o3 - 3] << 8;
-          _ && (r2 = e3.H.W(r2, A + a3)), r2.set(new i2(t3.buffer, t3.byteOffset + o3, a3), A), g = o3 + a3 << 3, A += a3;
-        }
-      return r2.length == A ? r2 : r2.slice(0, A);
-    }, e3.H.W = function(e4, t3) {
-      const r2 = e4.length;
-      if (t3 <= r2)
-        return e4;
-      const i2 = new Uint8Array(r2 << 1);
-      return i2.set(e4, 0), i2;
-    }, e3.H.R = function(t3, r2, i2, o2, a2, s2) {
-      const f2 = e3.H.e, l2 = e3.H.Z;
-      let c2 = 0;
-      for (; c2 < i2; ) {
-        const e4 = t3[l2(o2, a2) & r2];
-        a2 += 15 & e4;
-        const i3 = e4 >>> 4;
-        if (i3 <= 15)
-          s2[c2] = i3, c2++;
-        else {
-          let e5 = 0, t4 = 0;
-          16 == i3 ? (t4 = 3 + f2(o2, a2, 2), a2 += 2, e5 = s2[c2 - 1]) : 17 == i3 ? (t4 = 3 + f2(o2, a2, 3), a2 += 3) : 18 == i3 && (t4 = 11 + f2(o2, a2, 7), a2 += 7);
-          const r3 = c2 + t4;
-          for (; c2 < r3; )
-            s2[c2] = e5, c2++;
-        }
-      }
-      return a2;
-    }, e3.H.V = function(e4, t3, r2, i2) {
-      let o2 = 0, a2 = 0;
-      const s2 = i2.length >>> 1;
-      for (; a2 < r2; ) {
-        const r3 = e4[a2 + t3];
-        i2[a2 << 1] = 0, i2[1 + (a2 << 1)] = r3, r3 > o2 && (o2 = r3), a2++;
-      }
-      for (; a2 < s2; )
-        i2[a2 << 1] = 0, i2[1 + (a2 << 1)] = 0, a2++;
-      return o2;
-    }, e3.H.n = function(t3, r2) {
-      const i2 = e3.H.m, o2 = t3.length;
-      let a2, s2, f2;
-      let l2;
-      const c2 = i2.j;
-      for (var u = 0; u <= r2; u++)
-        c2[u] = 0;
-      for (u = 1; u < o2; u += 2)
-        c2[t3[u]]++;
-      const h = i2.K;
-      for (a2 = 0, c2[0] = 0, s2 = 1; s2 <= r2; s2++)
-        a2 = a2 + c2[s2 - 1] << 1, h[s2] = a2;
-      for (f2 = 0; f2 < o2; f2 += 2)
-        l2 = t3[f2 + 1], 0 != l2 && (t3[f2] = h[l2], h[l2]++);
-    }, e3.H.A = function(t3, r2, i2) {
-      const o2 = t3.length, a2 = e3.H.m.r;
-      for (let e4 = 0; e4 < o2; e4 += 2)
-        if (0 != t3[e4 + 1]) {
-          const o3 = e4 >> 1, s2 = t3[e4 + 1], f2 = o3 << 4 | s2, l2 = r2 - s2;
-          let c2 = t3[e4] << l2;
-          const u = c2 + (1 << l2);
-          for (; c2 != u; ) {
-            i2[a2[c2] >>> 15 - r2] = f2, c2++;
-          }
-        }
-    }, e3.H.l = function(t3, r2) {
-      const i2 = e3.H.m.r, o2 = 15 - r2;
-      for (let e4 = 0; e4 < t3.length; e4 += 2) {
-        const a2 = t3[e4] << r2 - t3[e4 + 1];
-        t3[e4] = i2[a2] >>> o2;
-      }
-    }, e3.H.M = function(e4, t3, r2) {
-      r2 <<= 7 & t3;
-      const i2 = t3 >>> 3;
-      e4[i2] |= r2, e4[i2 + 1] |= r2 >>> 8;
-    }, e3.H.I = function(e4, t3, r2) {
-      r2 <<= 7 & t3;
-      const i2 = t3 >>> 3;
-      e4[i2] |= r2, e4[i2 + 1] |= r2 >>> 8, e4[i2 + 2] |= r2 >>> 16;
-    }, e3.H.e = function(e4, t3, r2) {
-      return (e4[t3 >>> 3] | e4[1 + (t3 >>> 3)] << 8) >>> (7 & t3) & (1 << r2) - 1;
-    }, e3.H.b = function(e4, t3, r2) {
-      return (e4[t3 >>> 3] | e4[1 + (t3 >>> 3)] << 8 | e4[2 + (t3 >>> 3)] << 16) >>> (7 & t3) & (1 << r2) - 1;
-    }, e3.H.Z = function(e4, t3) {
-      return (e4[t3 >>> 3] | e4[1 + (t3 >>> 3)] << 8 | e4[2 + (t3 >>> 3)] << 16) >>> (7 & t3);
-    }, e3.H.i = function(e4, t3) {
-      return (e4[t3 >>> 3] | e4[1 + (t3 >>> 3)] << 8 | e4[2 + (t3 >>> 3)] << 16 | e4[3 + (t3 >>> 3)] << 24) >>> (7 & t3);
-    }, e3.H.m = function() {
-      const e4 = Uint16Array, t3 = Uint32Array;
-      return { K: new e4(16), j: new e4(16), X: [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15], S: [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 999, 999, 999], T: [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0, 0], q: new e4(32), p: [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 65535, 65535], z: [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 0, 0], c: new t3(32), J: new e4(512), _: [], h: new e4(32), $: [], w: new e4(32768), C: [], v: [], d: new e4(32768), D: [], u: new e4(512), Q: [], r: new e4(32768), s: new t3(286), Y: new t3(30), a: new t3(19), t: new t3(15e3), k: new e4(65536), g: new e4(32768) };
-    }(), function() {
-      const t3 = e3.H.m;
-      for (var r2 = 0; r2 < 32768; r2++) {
-        let e4 = r2;
-        e4 = (2863311530 & e4) >>> 1 | (1431655765 & e4) << 1, e4 = (3435973836 & e4) >>> 2 | (858993459 & e4) << 2, e4 = (4042322160 & e4) >>> 4 | (252645135 & e4) << 4, e4 = (4278255360 & e4) >>> 8 | (16711935 & e4) << 8, t3.r[r2] = (e4 >>> 16 | e4 << 16) >>> 17;
-      }
-      function n(e4, t4, r3) {
-        for (; 0 != t4--; )
-          e4.push(0, r3);
-      }
-      for (r2 = 0; r2 < 32; r2++)
-        t3.q[r2] = t3.S[r2] << 3 | t3.T[r2], t3.c[r2] = t3.p[r2] << 4 | t3.z[r2];
-      n(t3._, 144, 8), n(t3._, 112, 9), n(t3._, 24, 7), n(t3._, 8, 8), e3.H.n(t3._, 9), e3.H.A(t3._, 9, t3.J), e3.H.l(t3._, 9), n(t3.$, 32, 5), e3.H.n(t3.$, 5), e3.H.A(t3.$, 5, t3.h), e3.H.l(t3.$, 5), n(t3.Q, 19, 0), n(t3.C, 286, 0), n(t3.D, 30, 0), n(t3.v, 320, 0);
-    }(), e3.H.N;
-  }();
-  function _getBPP(e3) {
-    return [1, null, 3, 1, 2, null, 4][e3.ctype] * e3.depth;
-  }
-  function _filterZero(e3, t3, r2, i2, o2) {
-    let a2 = _getBPP(t3);
-    const s2 = Math.ceil(i2 * a2 / 8);
-    let f2, l2;
-    a2 = Math.ceil(a2 / 8);
-    let c2 = e3[r2], u = 0;
-    if (c2 > 1 && (e3[r2] = [0, 0, 1][c2 - 2]), 3 == c2)
-      for (u = a2; u < s2; u++)
-        e3[u + 1] = e3[u + 1] + (e3[u + 1 - a2] >>> 1) & 255;
-    for (let t4 = 0; t4 < o2; t4++)
-      if (f2 = r2 + t4 * s2, l2 = f2 + t4 + 1, c2 = e3[l2 - 1], u = 0, 0 == c2)
-        for (; u < s2; u++)
-          e3[f2 + u] = e3[l2 + u];
-      else if (1 == c2) {
-        for (; u < a2; u++)
-          e3[f2 + u] = e3[l2 + u];
-        for (; u < s2; u++)
-          e3[f2 + u] = e3[l2 + u] + e3[f2 + u - a2];
-      } else if (2 == c2)
-        for (; u < s2; u++)
-          e3[f2 + u] = e3[l2 + u] + e3[f2 + u - s2];
-      else if (3 == c2) {
-        for (; u < a2; u++)
-          e3[f2 + u] = e3[l2 + u] + (e3[f2 + u - s2] >>> 1);
-        for (; u < s2; u++)
-          e3[f2 + u] = e3[l2 + u] + (e3[f2 + u - s2] + e3[f2 + u - a2] >>> 1);
-      } else {
-        for (; u < a2; u++)
-          e3[f2 + u] = e3[l2 + u] + _paeth(0, e3[f2 + u - s2], 0);
-        for (; u < s2; u++)
-          e3[f2 + u] = e3[l2 + u] + _paeth(e3[f2 + u - a2], e3[f2 + u - s2], e3[f2 + u - a2 - s2]);
-      }
-    return e3;
-  }
-  function _paeth(e3, t3, r2) {
-    const i2 = e3 + t3 - r2, o2 = i2 - e3, a2 = i2 - t3, s2 = i2 - r2;
-    return o2 * o2 <= a2 * a2 && o2 * o2 <= s2 * s2 ? e3 : a2 * a2 <= s2 * s2 ? t3 : r2;
-  }
-  function _IHDR(t3, r2, i2) {
-    i2.width = e2.readUint(t3, r2), r2 += 4, i2.height = e2.readUint(t3, r2), r2 += 4, i2.depth = t3[r2], r2++, i2.ctype = t3[r2], r2++, i2.compress = t3[r2], r2++, i2.filter = t3[r2], r2++, i2.interlace = t3[r2], r2++;
-  }
-  function _copyTile(e3, t3, r2, i2, o2, a2, s2, f2, l2) {
-    const c2 = Math.min(t3, o2), u = Math.min(r2, a2);
-    let h = 0, d = 0;
-    for (let r3 = 0; r3 < u; r3++)
-      for (let a3 = 0; a3 < c2; a3++)
-        if (s2 >= 0 && f2 >= 0 ? (h = r3 * t3 + a3 << 2, d = (f2 + r3) * o2 + s2 + a3 << 2) : (h = (-f2 + r3) * t3 - s2 + a3 << 2, d = r3 * o2 + a3 << 2), 0 == l2)
-          i2[d] = e3[h], i2[d + 1] = e3[h + 1], i2[d + 2] = e3[h + 2], i2[d + 3] = e3[h + 3];
-        else if (1 == l2) {
-          var A = e3[h + 3] * (1 / 255), g = e3[h] * A, p = e3[h + 1] * A, m = e3[h + 2] * A, w = i2[d + 3] * (1 / 255), v = i2[d] * w, b = i2[d + 1] * w, y = i2[d + 2] * w;
-          const t4 = 1 - A, r4 = A + w * t4, o3 = 0 == r4 ? 0 : 1 / r4;
-          i2[d + 3] = 255 * r4, i2[d + 0] = (g + v * t4) * o3, i2[d + 1] = (p + b * t4) * o3, i2[d + 2] = (m + y * t4) * o3;
-        } else if (2 == l2) {
-          A = e3[h + 3], g = e3[h], p = e3[h + 1], m = e3[h + 2], w = i2[d + 3], v = i2[d], b = i2[d + 1], y = i2[d + 2];
-          A == w && g == v && p == b && m == y ? (i2[d] = 0, i2[d + 1] = 0, i2[d + 2] = 0, i2[d + 3] = 0) : (i2[d] = g, i2[d + 1] = p, i2[d + 2] = m, i2[d + 3] = A);
-        } else if (3 == l2) {
-          A = e3[h + 3], g = e3[h], p = e3[h + 1], m = e3[h + 2], w = i2[d + 3], v = i2[d], b = i2[d + 1], y = i2[d + 2];
-          if (A == w && g == v && p == b && m == y)
-            continue;
-          if (A < 220 && w > 20)
-            return false;
-        }
-    return true;
-  }
-  return { decode: function decode(r2) {
-    const i2 = new Uint8Array(r2);
-    let o2 = 8;
-    const a2 = e2, s2 = a2.readUshort, f2 = a2.readUint, l2 = { tabs: {}, frames: [] }, c2 = new Uint8Array(i2.length);
-    let u, h = 0, d = 0;
-    const A = [137, 80, 78, 71, 13, 10, 26, 10];
-    for (var g = 0; g < 8; g++)
-      if (i2[g] != A[g])
-        throw "The input is not a PNG file!";
-    for (; o2 < i2.length; ) {
-      const e3 = a2.readUint(i2, o2);
-      o2 += 4;
-      const r3 = a2.readASCII(i2, o2, 4);
-      if (o2 += 4, "IHDR" == r3)
-        _IHDR(i2, o2, l2);
-      else if ("iCCP" == r3) {
-        for (var p = o2; 0 != i2[p]; )
-          p++;
-        a2.readASCII(i2, o2, p - o2), i2[p + 1];
-        const s3 = i2.slice(p + 2, o2 + e3);
-        let f3 = null;
-        try {
-          f3 = _inflate(s3);
-        } catch (e4) {
-          f3 = t2(s3);
-        }
-        l2.tabs[r3] = f3;
-      } else if ("CgBI" == r3)
-        l2.tabs[r3] = i2.slice(o2, o2 + 4);
-      else if ("IDAT" == r3) {
-        for (g = 0; g < e3; g++)
-          c2[h + g] = i2[o2 + g];
-        h += e3;
-      } else if ("acTL" == r3)
-        l2.tabs[r3] = { num_frames: f2(i2, o2), num_plays: f2(i2, o2 + 4) }, u = new Uint8Array(i2.length);
-      else if ("fcTL" == r3) {
-        if (0 != d)
-          (E = l2.frames[l2.frames.length - 1]).data = _decompress(l2, u.slice(0, d), E.rect.width, E.rect.height), d = 0;
-        const e4 = { x: f2(i2, o2 + 12), y: f2(i2, o2 + 16), width: f2(i2, o2 + 4), height: f2(i2, o2 + 8) };
-        let t3 = s2(i2, o2 + 22);
-        t3 = s2(i2, o2 + 20) / (0 == t3 ? 100 : t3);
-        const r4 = { rect: e4, delay: Math.round(1e3 * t3), dispose: i2[o2 + 24], blend: i2[o2 + 25] };
-        l2.frames.push(r4);
-      } else if ("fdAT" == r3) {
-        for (g = 0; g < e3 - 4; g++)
-          u[d + g] = i2[o2 + g + 4];
-        d += e3 - 4;
-      } else if ("pHYs" == r3)
-        l2.tabs[r3] = [a2.readUint(i2, o2), a2.readUint(i2, o2 + 4), i2[o2 + 8]];
-      else if ("cHRM" == r3) {
-        l2.tabs[r3] = [];
-        for (g = 0; g < 8; g++)
-          l2.tabs[r3].push(a2.readUint(i2, o2 + 4 * g));
-      } else if ("tEXt" == r3 || "zTXt" == r3) {
-        null == l2.tabs[r3] && (l2.tabs[r3] = {});
-        var m = a2.nextZero(i2, o2), w = a2.readASCII(i2, o2, m - o2), v = o2 + e3 - m - 1;
-        if ("tEXt" == r3)
-          y = a2.readASCII(i2, m + 1, v);
-        else {
-          var b = _inflate(i2.slice(m + 2, m + 2 + v));
-          y = a2.readUTF8(b, 0, b.length);
-        }
-        l2.tabs[r3][w] = y;
-      } else if ("iTXt" == r3) {
-        null == l2.tabs[r3] && (l2.tabs[r3] = {});
-        m = 0, p = o2;
-        m = a2.nextZero(i2, p);
-        w = a2.readASCII(i2, p, m - p);
-        const t3 = i2[p = m + 1];
-        var y;
-        i2[p + 1], p += 2, m = a2.nextZero(i2, p), a2.readASCII(i2, p, m - p), p = m + 1, m = a2.nextZero(i2, p), a2.readUTF8(i2, p, m - p);
-        v = e3 - ((p = m + 1) - o2);
-        if (0 == t3)
-          y = a2.readUTF8(i2, p, v);
-        else {
-          b = _inflate(i2.slice(p, p + v));
-          y = a2.readUTF8(b, 0, b.length);
-        }
-        l2.tabs[r3][w] = y;
-      } else if ("PLTE" == r3)
-        l2.tabs[r3] = a2.readBytes(i2, o2, e3);
-      else if ("hIST" == r3) {
-        const e4 = l2.tabs.PLTE.length / 3;
-        l2.tabs[r3] = [];
-        for (g = 0; g < e4; g++)
-          l2.tabs[r3].push(s2(i2, o2 + 2 * g));
-      } else if ("tRNS" == r3)
-        3 == l2.ctype ? l2.tabs[r3] = a2.readBytes(i2, o2, e3) : 0 == l2.ctype ? l2.tabs[r3] = s2(i2, o2) : 2 == l2.ctype && (l2.tabs[r3] = [s2(i2, o2), s2(i2, o2 + 2), s2(i2, o2 + 4)]);
-      else if ("gAMA" == r3)
-        l2.tabs[r3] = a2.readUint(i2, o2) / 1e5;
-      else if ("sRGB" == r3)
-        l2.tabs[r3] = i2[o2];
-      else if ("bKGD" == r3)
-        0 == l2.ctype || 4 == l2.ctype ? l2.tabs[r3] = [s2(i2, o2)] : 2 == l2.ctype || 6 == l2.ctype ? l2.tabs[r3] = [s2(i2, o2), s2(i2, o2 + 2), s2(i2, o2 + 4)] : 3 == l2.ctype && (l2.tabs[r3] = i2[o2]);
-      else if ("IEND" == r3)
-        break;
-      o2 += e3, a2.readUint(i2, o2), o2 += 4;
-    }
-    var E;
-    return 0 != d && ((E = l2.frames[l2.frames.length - 1]).data = _decompress(l2, u.slice(0, d), E.rect.width, E.rect.height)), l2.data = _decompress(l2, c2, l2.width, l2.height), delete l2.compress, delete l2.interlace, delete l2.filter, l2;
-  }, toRGBA8: function toRGBA8(e3) {
-    const t3 = e3.width, r2 = e3.height;
-    if (null == e3.tabs.acTL)
-      return [decodeImage(e3.data, t3, r2, e3).buffer];
-    const i2 = [];
-    null == e3.frames[0].data && (e3.frames[0].data = e3.data);
-    const o2 = t3 * r2 * 4, a2 = new Uint8Array(o2), s2 = new Uint8Array(o2), f2 = new Uint8Array(o2);
-    for (let c2 = 0; c2 < e3.frames.length; c2++) {
-      const u = e3.frames[c2], h = u.rect.x, d = u.rect.y, A = u.rect.width, g = u.rect.height, p = decodeImage(u.data, A, g, e3);
-      if (0 != c2)
-        for (var l2 = 0; l2 < o2; l2++)
-          f2[l2] = a2[l2];
-      if (0 == u.blend ? _copyTile(p, A, g, a2, t3, r2, h, d, 0) : 1 == u.blend && _copyTile(p, A, g, a2, t3, r2, h, d, 1), i2.push(a2.buffer.slice(0)), 0 == u.dispose)
-        ;
-      else if (1 == u.dispose)
-        _copyTile(s2, A, g, a2, t3, r2, h, d, 0);
-      else if (2 == u.dispose)
-        for (l2 = 0; l2 < o2; l2++)
-          a2[l2] = f2[l2];
-    }
-    return i2;
-  }, _paeth, _copyTile, _bin: e2 };
-}();
-!function() {
-  const { _copyTile: e2 } = UPNG, { _bin: t2 } = UPNG, r2 = UPNG._paeth;
-  var i2 = { table: function() {
-    const e3 = new Uint32Array(256);
-    for (let t3 = 0; t3 < 256; t3++) {
-      let r3 = t3;
-      for (let e4 = 0; e4 < 8; e4++)
-        1 & r3 ? r3 = 3988292384 ^ r3 >>> 1 : r3 >>>= 1;
-      e3[t3] = r3;
-    }
-    return e3;
-  }(), update(e3, t3, r3, o3) {
-    for (let a2 = 0; a2 < o3; a2++)
-      e3 = i2.table[255 & (e3 ^ t3[r3 + a2])] ^ e3 >>> 8;
-    return e3;
-  }, crc: (e3, t3, r3) => 4294967295 ^ i2.update(4294967295, e3, t3, r3) };
-  function addErr(e3, t3, r3, i3) {
-    t3[r3] += e3[0] * i3 >> 4, t3[r3 + 1] += e3[1] * i3 >> 4, t3[r3 + 2] += e3[2] * i3 >> 4, t3[r3 + 3] += e3[3] * i3 >> 4;
-  }
-  function N(e3) {
-    return Math.max(0, Math.min(255, e3));
-  }
-  function D(e3, t3) {
-    const r3 = e3[0] - t3[0], i3 = e3[1] - t3[1], o3 = e3[2] - t3[2], a2 = e3[3] - t3[3];
-    return r3 * r3 + i3 * i3 + o3 * o3 + a2 * a2;
-  }
-  function dither(e3, t3, r3, i3, o3, a2, s2) {
-    null == s2 && (s2 = 1);
-    const f2 = i3.length, l2 = [];
-    for (var c2 = 0; c2 < f2; c2++) {
-      const e4 = i3[c2];
-      l2.push([e4 >>> 0 & 255, e4 >>> 8 & 255, e4 >>> 16 & 255, e4 >>> 24 & 255]);
-    }
-    for (c2 = 0; c2 < f2; c2++) {
-      let e4 = 4294967295;
-      for (var u = 0, h = 0; h < f2; h++) {
-        var d = D(l2[c2], l2[h]);
-        h != c2 && d < e4 && (e4 = d, u = h);
-      }
-    }
-    const A = new Uint32Array(o3.buffer), g = new Int16Array(t3 * r3 * 4), p = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-    for (c2 = 0; c2 < p.length; c2++)
-      p[c2] = 255 * ((p[c2] + 0.5) / 16 - 0.5);
-    for (let o4 = 0; o4 < r3; o4++)
-      for (let w = 0; w < t3; w++) {
-        var m;
-        c2 = 4 * (o4 * t3 + w);
-        if (2 != s2)
-          m = [N(e3[c2] + g[c2]), N(e3[c2 + 1] + g[c2 + 1]), N(e3[c2 + 2] + g[c2 + 2]), N(e3[c2 + 3] + g[c2 + 3])];
-        else {
-          d = p[4 * (3 & o4) + (3 & w)];
-          m = [N(e3[c2] + d), N(e3[c2 + 1] + d), N(e3[c2 + 2] + d), N(e3[c2 + 3] + d)];
-        }
-        u = 0;
-        let v = 16777215;
-        for (h = 0; h < f2; h++) {
-          const e4 = D(m, l2[h]);
-          e4 < v && (v = e4, u = h);
-        }
-        const b = l2[u], y = [m[0] - b[0], m[1] - b[1], m[2] - b[2], m[3] - b[3]];
-        1 == s2 && (w != t3 - 1 && addErr(y, g, c2 + 4, 7), o4 != r3 - 1 && (0 != w && addErr(y, g, c2 + 4 * t3 - 4, 3), addErr(y, g, c2 + 4 * t3, 5), w != t3 - 1 && addErr(y, g, c2 + 4 * t3 + 4, 1))), a2[c2 >> 2] = u, A[c2 >> 2] = i3[u];
-      }
-  }
-  function _main(e3, r3, o3, a2, s2) {
-    null == s2 && (s2 = {});
-    const { crc: f2 } = i2, l2 = t2.writeUint, c2 = t2.writeUshort, u = t2.writeASCII;
-    let h = 8;
-    const d = e3.frames.length > 1;
-    let A, g = false, p = 33 + (d ? 20 : 0);
-    if (null != s2.sRGB && (p += 13), null != s2.pHYs && (p += 21), null != s2.iCCP && (A = pako.deflate(s2.iCCP), p += 21 + A.length + 4), 3 == e3.ctype) {
-      for (var m = e3.plte.length, w = 0; w < m; w++)
-        e3.plte[w] >>> 24 != 255 && (g = true);
-      p += 8 + 3 * m + 4 + (g ? 8 + 1 * m + 4 : 0);
-    }
-    for (var v = 0; v < e3.frames.length; v++) {
-      d && (p += 38), p += (F = e3.frames[v]).cimg.length + 12, 0 != v && (p += 4);
-    }
-    p += 12;
-    const b = new Uint8Array(p), y = [137, 80, 78, 71, 13, 10, 26, 10];
-    for (w = 0; w < 8; w++)
-      b[w] = y[w];
-    if (l2(b, h, 13), h += 4, u(b, h, "IHDR"), h += 4, l2(b, h, r3), h += 4, l2(b, h, o3), h += 4, b[h] = e3.depth, h++, b[h] = e3.ctype, h++, b[h] = 0, h++, b[h] = 0, h++, b[h] = 0, h++, l2(b, h, f2(b, h - 17, 17)), h += 4, null != s2.sRGB && (l2(b, h, 1), h += 4, u(b, h, "sRGB"), h += 4, b[h] = s2.sRGB, h++, l2(b, h, f2(b, h - 5, 5)), h += 4), null != s2.iCCP) {
-      const e4 = 13 + A.length;
-      l2(b, h, e4), h += 4, u(b, h, "iCCP"), h += 4, u(b, h, "ICC profile"), h += 11, h += 2, b.set(A, h), h += A.length, l2(b, h, f2(b, h - (e4 + 4), e4 + 4)), h += 4;
-    }
-    if (null != s2.pHYs && (l2(b, h, 9), h += 4, u(b, h, "pHYs"), h += 4, l2(b, h, s2.pHYs[0]), h += 4, l2(b, h, s2.pHYs[1]), h += 4, b[h] = s2.pHYs[2], h++, l2(b, h, f2(b, h - 13, 13)), h += 4), d && (l2(b, h, 8), h += 4, u(b, h, "acTL"), h += 4, l2(b, h, e3.frames.length), h += 4, l2(b, h, null != s2.loop ? s2.loop : 0), h += 4, l2(b, h, f2(b, h - 12, 12)), h += 4), 3 == e3.ctype) {
-      l2(b, h, 3 * (m = e3.plte.length)), h += 4, u(b, h, "PLTE"), h += 4;
-      for (w = 0; w < m; w++) {
-        const t3 = 3 * w, r4 = e3.plte[w], i3 = 255 & r4, o4 = r4 >>> 8 & 255, a3 = r4 >>> 16 & 255;
-        b[h + t3 + 0] = i3, b[h + t3 + 1] = o4, b[h + t3 + 2] = a3;
-      }
-      if (h += 3 * m, l2(b, h, f2(b, h - 3 * m - 4, 3 * m + 4)), h += 4, g) {
-        l2(b, h, m), h += 4, u(b, h, "tRNS"), h += 4;
-        for (w = 0; w < m; w++)
-          b[h + w] = e3.plte[w] >>> 24 & 255;
-        h += m, l2(b, h, f2(b, h - m - 4, m + 4)), h += 4;
-      }
-    }
-    let E = 0;
-    for (v = 0; v < e3.frames.length; v++) {
-      var F = e3.frames[v];
-      d && (l2(b, h, 26), h += 4, u(b, h, "fcTL"), h += 4, l2(b, h, E++), h += 4, l2(b, h, F.rect.width), h += 4, l2(b, h, F.rect.height), h += 4, l2(b, h, F.rect.x), h += 4, l2(b, h, F.rect.y), h += 4, c2(b, h, a2[v]), h += 2, c2(b, h, 1e3), h += 2, b[h] = F.dispose, h++, b[h] = F.blend, h++, l2(b, h, f2(b, h - 30, 30)), h += 4);
-      const t3 = F.cimg;
-      l2(b, h, (m = t3.length) + (0 == v ? 0 : 4)), h += 4;
-      const r4 = h;
-      u(b, h, 0 == v ? "IDAT" : "fdAT"), h += 4, 0 != v && (l2(b, h, E++), h += 4), b.set(t3, h), h += m, l2(b, h, f2(b, r4, h - r4)), h += 4;
-    }
-    return l2(b, h, 0), h += 4, u(b, h, "IEND"), h += 4, l2(b, h, f2(b, h - 4, 4)), h += 4, b.buffer;
-  }
-  function compressPNG(e3, t3, r3) {
-    for (let i3 = 0; i3 < e3.frames.length; i3++) {
-      const o3 = e3.frames[i3];
-      o3.rect.width;
-      const a2 = o3.rect.height, s2 = new Uint8Array(a2 * o3.bpl + a2);
-      o3.cimg = _filterZero(o3.img, a2, o3.bpp, o3.bpl, s2, t3, r3);
-    }
-  }
-  function compress2(t3, r3, i3, o3, a2) {
-    const s2 = a2[0], f2 = a2[1], l2 = a2[2], c2 = a2[3], u = a2[4], h = a2[5];
-    let d = 6, A = 8, g = 255;
-    for (var p = 0; p < t3.length; p++) {
-      const e3 = new Uint8Array(t3[p]);
-      for (var m = e3.length, w = 0; w < m; w += 4)
-        g &= e3[w + 3];
-    }
-    const v = 255 != g, b = function framize(t4, r4, i4, o4, a3, s3) {
-      const f3 = [];
-      for (var l3 = 0; l3 < t4.length; l3++) {
-        const h3 = new Uint8Array(t4[l3]), A3 = new Uint32Array(h3.buffer);
-        var c3;
-        let g2 = 0, p2 = 0, m2 = r4, w2 = i4, v2 = o4 ? 1 : 0;
-        if (0 != l3) {
-          const b2 = s3 || o4 || 1 == l3 || 0 != f3[l3 - 2].dispose ? 1 : 2;
-          let y2 = 0, E2 = 1e9;
-          for (let e3 = 0; e3 < b2; e3++) {
-            var u2 = new Uint8Array(t4[l3 - 1 - e3]);
-            const o5 = new Uint32Array(t4[l3 - 1 - e3]);
-            let s4 = r4, f4 = i4, c4 = -1, h4 = -1;
-            for (let e4 = 0; e4 < i4; e4++)
-              for (let t5 = 0; t5 < r4; t5++) {
-                A3[d2 = e4 * r4 + t5] != o5[d2] && (t5 < s4 && (s4 = t5), t5 > c4 && (c4 = t5), e4 < f4 && (f4 = e4), e4 > h4 && (h4 = e4));
-              }
-            -1 == c4 && (s4 = f4 = c4 = h4 = 0), a3 && (1 == (1 & s4) && s4--, 1 == (1 & f4) && f4--);
-            const v3 = (c4 - s4 + 1) * (h4 - f4 + 1);
-            v3 < E2 && (E2 = v3, y2 = e3, g2 = s4, p2 = f4, m2 = c4 - s4 + 1, w2 = h4 - f4 + 1);
-          }
-          u2 = new Uint8Array(t4[l3 - 1 - y2]);
-          1 == y2 && (f3[l3 - 1].dispose = 2), c3 = new Uint8Array(m2 * w2 * 4), e2(u2, r4, i4, c3, m2, w2, -g2, -p2, 0), v2 = e2(h3, r4, i4, c3, m2, w2, -g2, -p2, 3) ? 1 : 0, 1 == v2 ? _prepareDiff(h3, r4, i4, c3, { x: g2, y: p2, width: m2, height: w2 }) : e2(h3, r4, i4, c3, m2, w2, -g2, -p2, 0);
-        } else
-          c3 = h3.slice(0);
-        f3.push({ rect: { x: g2, y: p2, width: m2, height: w2 }, img: c3, blend: v2, dispose: 0 });
-      }
-      if (o4)
-        for (l3 = 0; l3 < f3.length; l3++) {
-          if (1 == (A2 = f3[l3]).blend)
-            continue;
-          const e3 = A2.rect, o5 = f3[l3 - 1].rect, s4 = Math.min(e3.x, o5.x), c4 = Math.min(e3.y, o5.y), u3 = { x: s4, y: c4, width: Math.max(e3.x + e3.width, o5.x + o5.width) - s4, height: Math.max(e3.y + e3.height, o5.y + o5.height) - c4 };
-          f3[l3 - 1].dispose = 1, l3 - 1 != 0 && _updateFrame(t4, r4, i4, f3, l3 - 1, u3, a3), _updateFrame(t4, r4, i4, f3, l3, u3, a3);
-        }
-      let h2 = 0;
-      if (1 != t4.length)
-        for (var d2 = 0; d2 < f3.length; d2++) {
-          var A2;
-          h2 += (A2 = f3[d2]).rect.width * A2.rect.height;
-        }
-      return f3;
-    }(t3, r3, i3, s2, f2, l2), y = {}, E = [], F = [];
-    if (0 != o3) {
-      const e3 = [];
-      for (w = 0; w < b.length; w++)
-        e3.push(b[w].img.buffer);
-      const t4 = function concatRGBA(e4) {
-        let t5 = 0;
-        for (var r5 = 0; r5 < e4.length; r5++)
-          t5 += e4[r5].byteLength;
-        const i5 = new Uint8Array(t5);
-        let o4 = 0;
-        for (r5 = 0; r5 < e4.length; r5++) {
-          const t6 = new Uint8Array(e4[r5]), a3 = t6.length;
-          for (let e5 = 0; e5 < a3; e5 += 4) {
-            let r6 = t6[e5], a4 = t6[e5 + 1], s3 = t6[e5 + 2];
-            const f3 = t6[e5 + 3];
-            0 == f3 && (r6 = a4 = s3 = 0), i5[o4 + e5] = r6, i5[o4 + e5 + 1] = a4, i5[o4 + e5 + 2] = s3, i5[o4 + e5 + 3] = f3;
-          }
-          o4 += a3;
-        }
-        return i5.buffer;
-      }(e3), r4 = quantize(t4, o3);
-      for (w = 0; w < r4.plte.length; w++)
-        E.push(r4.plte[w].est.rgba);
-      let i4 = 0;
-      for (w = 0; w < b.length; w++) {
-        const e4 = (B = b[w]).img.length;
-        var _ = new Uint8Array(r4.inds.buffer, i4 >> 2, e4 >> 2);
-        F.push(_);
-        const t5 = new Uint8Array(r4.abuf, i4, e4);
-        h && dither(B.img, B.rect.width, B.rect.height, E, t5, _), B.img.set(t5), i4 += e4;
-      }
-    } else
-      for (p = 0; p < b.length; p++) {
-        var B = b[p];
-        const e3 = new Uint32Array(B.img.buffer);
-        var U = B.rect.width;
-        m = e3.length, _ = new Uint8Array(m);
-        F.push(_);
-        for (w = 0; w < m; w++) {
-          const t4 = e3[w];
-          if (0 != w && t4 == e3[w - 1])
-            _[w] = _[w - 1];
-          else if (w > U && t4 == e3[w - U])
-            _[w] = _[w - U];
-          else {
-            let e4 = y[t4];
-            if (null == e4 && (y[t4] = e4 = E.length, E.push(t4), E.length >= 300))
-              break;
-            _[w] = e4;
-          }
-        }
-      }
-    const C = E.length;
-    C <= 256 && 0 == u && (A = C <= 2 ? 1 : C <= 4 ? 2 : C <= 16 ? 4 : 8, A = Math.max(A, c2));
-    for (p = 0; p < b.length; p++) {
-      (B = b[p]).rect.x, B.rect.y;
-      U = B.rect.width;
-      const e3 = B.rect.height;
-      let t4 = B.img;
-      new Uint32Array(t4.buffer);
-      let r4 = 4 * U, i4 = 4;
-      if (C <= 256 && 0 == u) {
-        r4 = Math.ceil(A * U / 8);
-        var I = new Uint8Array(r4 * e3);
-        const o4 = F[p];
-        for (let t5 = 0; t5 < e3; t5++) {
-          w = t5 * r4;
-          const e4 = t5 * U;
-          if (8 == A)
-            for (var Q = 0; Q < U; Q++)
-              I[w + Q] = o4[e4 + Q];
-          else if (4 == A)
-            for (Q = 0; Q < U; Q++)
-              I[w + (Q >> 1)] |= o4[e4 + Q] << 4 - 4 * (1 & Q);
-          else if (2 == A)
-            for (Q = 0; Q < U; Q++)
-              I[w + (Q >> 2)] |= o4[e4 + Q] << 6 - 2 * (3 & Q);
-          else if (1 == A)
-            for (Q = 0; Q < U; Q++)
-              I[w + (Q >> 3)] |= o4[e4 + Q] << 7 - 1 * (7 & Q);
-        }
-        t4 = I, d = 3, i4 = 1;
-      } else if (0 == v && 1 == b.length) {
-        I = new Uint8Array(U * e3 * 3);
-        const o4 = U * e3;
-        for (w = 0; w < o4; w++) {
-          const e4 = 3 * w, r5 = 4 * w;
-          I[e4] = t4[r5], I[e4 + 1] = t4[r5 + 1], I[e4 + 2] = t4[r5 + 2];
-        }
-        t4 = I, d = 2, i4 = 3, r4 = 3 * U;
-      }
-      B.img = t4, B.bpl = r4, B.bpp = i4;
-    }
-    return { ctype: d, depth: A, plte: E, frames: b };
-  }
-  function _updateFrame(t3, r3, i3, o3, a2, s2, f2) {
-    const l2 = Uint8Array, c2 = Uint32Array, u = new l2(t3[a2 - 1]), h = new c2(t3[a2 - 1]), d = a2 + 1 < t3.length ? new l2(t3[a2 + 1]) : null, A = new l2(t3[a2]), g = new c2(A.buffer);
-    let p = r3, m = i3, w = -1, v = -1;
-    for (let e3 = 0; e3 < s2.height; e3++)
-      for (let t4 = 0; t4 < s2.width; t4++) {
-        const i4 = s2.x + t4, f3 = s2.y + e3, l3 = f3 * r3 + i4, c3 = g[l3];
-        0 == c3 || 0 == o3[a2 - 1].dispose && h[l3] == c3 && (null == d || 0 != d[4 * l3 + 3]) || (i4 < p && (p = i4), i4 > w && (w = i4), f3 < m && (m = f3), f3 > v && (v = f3));
-      }
-    -1 == w && (p = m = w = v = 0), f2 && (1 == (1 & p) && p--, 1 == (1 & m) && m--), s2 = { x: p, y: m, width: w - p + 1, height: v - m + 1 };
-    const b = o3[a2];
-    b.rect = s2, b.blend = 1, b.img = new Uint8Array(s2.width * s2.height * 4), 0 == o3[a2 - 1].dispose ? (e2(u, r3, i3, b.img, s2.width, s2.height, -s2.x, -s2.y, 0), _prepareDiff(A, r3, i3, b.img, s2)) : e2(A, r3, i3, b.img, s2.width, s2.height, -s2.x, -s2.y, 0);
-  }
-  function _prepareDiff(t3, r3, i3, o3, a2) {
-    e2(t3, r3, i3, o3, a2.width, a2.height, -a2.x, -a2.y, 2);
-  }
-  function _filterZero(e3, t3, r3, i3, o3, a2, s2) {
-    const f2 = [];
-    let l2, c2 = [0, 1, 2, 3, 4];
-    -1 != a2 ? c2 = [a2] : (t3 * i3 > 5e5 || 1 == r3) && (c2 = [0]), s2 && (l2 = { level: 0 });
-    const u = UZIP;
-    for (var h = 0; h < c2.length; h++) {
-      for (let a3 = 0; a3 < t3; a3++)
-        _filterLine(o3, e3, a3, i3, r3, c2[h]);
-      f2.push(u.deflate(o3, l2));
-    }
-    let d, A = 1e9;
-    for (h = 0; h < f2.length; h++)
-      f2[h].length < A && (d = h, A = f2[h].length);
-    return f2[d];
-  }
-  function _filterLine(e3, t3, i3, o3, a2, s2) {
-    const f2 = i3 * o3;
-    let l2 = f2 + i3;
-    if (e3[l2] = s2, l2++, 0 == s2)
-      if (o3 < 500)
-        for (var c2 = 0; c2 < o3; c2++)
-          e3[l2 + c2] = t3[f2 + c2];
-      else
-        e3.set(new Uint8Array(t3.buffer, f2, o3), l2);
-    else if (1 == s2) {
-      for (c2 = 0; c2 < a2; c2++)
-        e3[l2 + c2] = t3[f2 + c2];
-      for (c2 = a2; c2 < o3; c2++)
-        e3[l2 + c2] = t3[f2 + c2] - t3[f2 + c2 - a2] + 256 & 255;
-    } else if (0 == i3) {
-      for (c2 = 0; c2 < a2; c2++)
-        e3[l2 + c2] = t3[f2 + c2];
-      if (2 == s2)
-        for (c2 = a2; c2 < o3; c2++)
-          e3[l2 + c2] = t3[f2 + c2];
-      if (3 == s2)
-        for (c2 = a2; c2 < o3; c2++)
-          e3[l2 + c2] = t3[f2 + c2] - (t3[f2 + c2 - a2] >> 1) + 256 & 255;
-      if (4 == s2)
-        for (c2 = a2; c2 < o3; c2++)
-          e3[l2 + c2] = t3[f2 + c2] - r2(t3[f2 + c2 - a2], 0, 0) + 256 & 255;
-    } else {
-      if (2 == s2)
-        for (c2 = 0; c2 < o3; c2++)
-          e3[l2 + c2] = t3[f2 + c2] + 256 - t3[f2 + c2 - o3] & 255;
-      if (3 == s2) {
-        for (c2 = 0; c2 < a2; c2++)
-          e3[l2 + c2] = t3[f2 + c2] + 256 - (t3[f2 + c2 - o3] >> 1) & 255;
-        for (c2 = a2; c2 < o3; c2++)
-          e3[l2 + c2] = t3[f2 + c2] + 256 - (t3[f2 + c2 - o3] + t3[f2 + c2 - a2] >> 1) & 255;
-      }
-      if (4 == s2) {
-        for (c2 = 0; c2 < a2; c2++)
-          e3[l2 + c2] = t3[f2 + c2] + 256 - r2(0, t3[f2 + c2 - o3], 0) & 255;
-        for (c2 = a2; c2 < o3; c2++)
-          e3[l2 + c2] = t3[f2 + c2] + 256 - r2(t3[f2 + c2 - a2], t3[f2 + c2 - o3], t3[f2 + c2 - a2 - o3]) & 255;
-      }
-    }
-  }
-  function quantize(e3, t3) {
-    const r3 = new Uint8Array(e3), i3 = r3.slice(0), o3 = new Uint32Array(i3.buffer), a2 = getKDtree(i3, t3), s2 = a2[0], f2 = a2[1], l2 = r3.length, c2 = new Uint8Array(l2 >> 2);
-    let u;
-    if (r3.length < 2e7)
-      for (var h = 0; h < l2; h += 4) {
-        u = getNearest(s2, d = r3[h] * (1 / 255), A = r3[h + 1] * (1 / 255), g = r3[h + 2] * (1 / 255), p = r3[h + 3] * (1 / 255)), c2[h >> 2] = u.ind, o3[h >> 2] = u.est.rgba;
-      }
-    else
-      for (h = 0; h < l2; h += 4) {
-        var d = r3[h] * (1 / 255), A = r3[h + 1] * (1 / 255), g = r3[h + 2] * (1 / 255), p = r3[h + 3] * (1 / 255);
-        for (u = s2; u.left; )
-          u = planeDst(u.est, d, A, g, p) <= 0 ? u.left : u.right;
-        c2[h >> 2] = u.ind, o3[h >> 2] = u.est.rgba;
-      }
-    return { abuf: i3.buffer, inds: c2, plte: f2 };
-  }
-  function getKDtree(e3, t3, r3) {
-    null == r3 && (r3 = 1e-4);
-    const i3 = new Uint32Array(e3.buffer), o3 = { i0: 0, i1: e3.length, bst: null, est: null, tdst: 0, left: null, right: null };
-    o3.bst = stats(e3, o3.i0, o3.i1), o3.est = estats(o3.bst);
-    const a2 = [o3];
-    for (; a2.length < t3; ) {
-      let t4 = 0, o4 = 0;
-      for (var s2 = 0; s2 < a2.length; s2++)
-        a2[s2].est.L > t4 && (t4 = a2[s2].est.L, o4 = s2);
-      if (t4 < r3)
-        break;
-      const f2 = a2[o4], l2 = splitPixels(e3, i3, f2.i0, f2.i1, f2.est.e, f2.est.eMq255);
-      if (f2.i0 >= l2 || f2.i1 <= l2) {
-        f2.est.L = 0;
-        continue;
-      }
-      const c2 = { i0: f2.i0, i1: l2, bst: null, est: null, tdst: 0, left: null, right: null };
-      c2.bst = stats(e3, c2.i0, c2.i1), c2.est = estats(c2.bst);
-      const u = { i0: l2, i1: f2.i1, bst: null, est: null, tdst: 0, left: null, right: null };
-      u.bst = { R: [], m: [], N: f2.bst.N - c2.bst.N };
-      for (s2 = 0; s2 < 16; s2++)
-        u.bst.R[s2] = f2.bst.R[s2] - c2.bst.R[s2];
-      for (s2 = 0; s2 < 4; s2++)
-        u.bst.m[s2] = f2.bst.m[s2] - c2.bst.m[s2];
-      u.est = estats(u.bst), f2.left = c2, f2.right = u, a2[o4] = c2, a2.push(u);
-    }
-    a2.sort((e4, t4) => t4.bst.N - e4.bst.N);
-    for (s2 = 0; s2 < a2.length; s2++)
-      a2[s2].ind = s2;
-    return [o3, a2];
-  }
-  function getNearest(e3, t3, r3, i3, o3) {
-    if (null == e3.left)
-      return e3.tdst = function dist(e4, t4, r4, i4, o4) {
-        const a3 = t4 - e4[0], s3 = r4 - e4[1], f3 = i4 - e4[2], l3 = o4 - e4[3];
-        return a3 * a3 + s3 * s3 + f3 * f3 + l3 * l3;
-      }(e3.est.q, t3, r3, i3, o3), e3;
-    const a2 = planeDst(e3.est, t3, r3, i3, o3);
-    let s2 = e3.left, f2 = e3.right;
-    a2 > 0 && (s2 = e3.right, f2 = e3.left);
-    const l2 = getNearest(s2, t3, r3, i3, o3);
-    if (l2.tdst <= a2 * a2)
-      return l2;
-    const c2 = getNearest(f2, t3, r3, i3, o3);
-    return c2.tdst < l2.tdst ? c2 : l2;
-  }
-  function planeDst(e3, t3, r3, i3, o3) {
-    const { e: a2 } = e3;
-    return a2[0] * t3 + a2[1] * r3 + a2[2] * i3 + a2[3] * o3 - e3.eMq;
-  }
-  function splitPixels(e3, t3, r3, i3, o3, a2) {
-    for (i3 -= 4; r3 < i3; ) {
-      for (; vecDot(e3, r3, o3) <= a2; )
-        r3 += 4;
-      for (; vecDot(e3, i3, o3) > a2; )
-        i3 -= 4;
-      if (r3 >= i3)
-        break;
-      const s2 = t3[r3 >> 2];
-      t3[r3 >> 2] = t3[i3 >> 2], t3[i3 >> 2] = s2, r3 += 4, i3 -= 4;
-    }
-    for (; vecDot(e3, r3, o3) > a2; )
-      r3 -= 4;
-    return r3 + 4;
-  }
-  function vecDot(e3, t3, r3) {
-    return e3[t3] * r3[0] + e3[t3 + 1] * r3[1] + e3[t3 + 2] * r3[2] + e3[t3 + 3] * r3[3];
-  }
-  function stats(e3, t3, r3) {
-    const i3 = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], o3 = [0, 0, 0, 0], a2 = r3 - t3 >> 2;
-    for (let a3 = t3; a3 < r3; a3 += 4) {
-      const t4 = e3[a3] * (1 / 255), r4 = e3[a3 + 1] * (1 / 255), s2 = e3[a3 + 2] * (1 / 255), f2 = e3[a3 + 3] * (1 / 255);
-      o3[0] += t4, o3[1] += r4, o3[2] += s2, o3[3] += f2, i3[0] += t4 * t4, i3[1] += t4 * r4, i3[2] += t4 * s2, i3[3] += t4 * f2, i3[5] += r4 * r4, i3[6] += r4 * s2, i3[7] += r4 * f2, i3[10] += s2 * s2, i3[11] += s2 * f2, i3[15] += f2 * f2;
-    }
-    return i3[4] = i3[1], i3[8] = i3[2], i3[9] = i3[6], i3[12] = i3[3], i3[13] = i3[7], i3[14] = i3[11], { R: i3, m: o3, N: a2 };
-  }
-  function estats(e3) {
-    const { R: t3 } = e3, { m: r3 } = e3, { N: i3 } = e3, a2 = r3[0], s2 = r3[1], f2 = r3[2], l2 = r3[3], c2 = 0 == i3 ? 0 : 1 / i3, u = [t3[0] - a2 * a2 * c2, t3[1] - a2 * s2 * c2, t3[2] - a2 * f2 * c2, t3[3] - a2 * l2 * c2, t3[4] - s2 * a2 * c2, t3[5] - s2 * s2 * c2, t3[6] - s2 * f2 * c2, t3[7] - s2 * l2 * c2, t3[8] - f2 * a2 * c2, t3[9] - f2 * s2 * c2, t3[10] - f2 * f2 * c2, t3[11] - f2 * l2 * c2, t3[12] - l2 * a2 * c2, t3[13] - l2 * s2 * c2, t3[14] - l2 * f2 * c2, t3[15] - l2 * l2 * c2], h = u, d = o2;
-    let A = [Math.random(), Math.random(), Math.random(), Math.random()], g = 0, p = 0;
-    if (0 != i3)
-      for (let e4 = 0; e4 < 16 && (A = d.multVec(h, A), p = Math.sqrt(d.dot(A, A)), A = d.sml(1 / p, A), !(0 != e4 && Math.abs(p - g) < 1e-9)); e4++)
-        g = p;
-    const m = [a2 * c2, s2 * c2, f2 * c2, l2 * c2];
-    return { Cov: u, q: m, e: A, L: g, eMq255: d.dot(d.sml(255, m), A), eMq: d.dot(A, m), rgba: (Math.round(255 * m[3]) << 24 | Math.round(255 * m[2]) << 16 | Math.round(255 * m[1]) << 8 | Math.round(255 * m[0]) << 0) >>> 0 };
-  }
-  var o2 = { multVec: (e3, t3) => [e3[0] * t3[0] + e3[1] * t3[1] + e3[2] * t3[2] + e3[3] * t3[3], e3[4] * t3[0] + e3[5] * t3[1] + e3[6] * t3[2] + e3[7] * t3[3], e3[8] * t3[0] + e3[9] * t3[1] + e3[10] * t3[2] + e3[11] * t3[3], e3[12] * t3[0] + e3[13] * t3[1] + e3[14] * t3[2] + e3[15] * t3[3]], dot: (e3, t3) => e3[0] * t3[0] + e3[1] * t3[1] + e3[2] * t3[2] + e3[3] * t3[3], sml: (e3, t3) => [e3 * t3[0], e3 * t3[1], e3 * t3[2], e3 * t3[3]] };
-  UPNG.encode = function encode2(e3, t3, r3, i3, o3, a2, s2) {
-    null == i3 && (i3 = 0), null == s2 && (s2 = false);
-    const f2 = compress2(e3, t3, r3, i3, [false, false, false, 0, s2, false]);
-    return compressPNG(f2, -1), _main(f2, t3, r3, o3, a2);
-  }, UPNG.encodeLL = function encodeLL(e3, t3, r3, i3, o3, a2, s2, f2) {
-    const l2 = { ctype: 0 + (1 == i3 ? 0 : 2) + (0 == o3 ? 0 : 4), depth: a2, frames: [] }, c2 = (i3 + o3) * a2, u = c2 * t3;
-    for (let i4 = 0; i4 < e3.length; i4++)
-      l2.frames.push({ rect: { x: 0, y: 0, width: t3, height: r3 }, img: new Uint8Array(e3[i4]), blend: 0, dispose: 1, bpp: Math.ceil(c2 / 8), bpl: Math.ceil(u / 8) });
-    return compressPNG(l2, 0, true), _main(l2, t3, r3, s2, f2);
-  }, UPNG.encode.compress = compress2, UPNG.encode.dither = dither, UPNG.quantize = quantize, UPNG.quantize.getKDtree = getKDtree, UPNG.quantize.getNearest = getNearest;
-}();
-var r = { toArrayBuffer(e2, t2) {
-  const i2 = e2.width, o2 = e2.height, a2 = i2 << 2, s2 = e2.getContext("2d").getImageData(0, 0, i2, o2), f2 = new Uint32Array(s2.data.buffer), l2 = (32 * i2 + 31) / 32 << 2, c2 = l2 * o2, u = 122 + c2, h = new ArrayBuffer(u), d = new DataView(h), A = 1 << 20;
-  let g, p, m, w, v = A, b = 0, y = 0, E = 0;
-  function set16(e3) {
-    d.setUint16(y, e3, true), y += 2;
-  }
-  function set32(e3) {
-    d.setUint32(y, e3, true), y += 4;
-  }
-  function seek(e3) {
-    y += e3;
-  }
-  set16(19778), set32(u), seek(4), set32(122), set32(108), set32(i2), set32(-o2 >>> 0), set16(1), set16(32), set32(3), set32(c2), set32(2835), set32(2835), seek(8), set32(16711680), set32(65280), set32(255), set32(4278190080), set32(1466527264), function convert() {
-    for (; b < o2 && v > 0; ) {
-      for (w = 122 + b * l2, g = 0; g < a2; )
-        v--, p = f2[E++], m = p >>> 24, d.setUint32(w + g, p << 8 | m), g += 4;
-      b++;
-    }
-    E < f2.length ? (v = A, setTimeout(convert, r._dly)) : t2(h);
-  }();
-}, toBlob(e2, t2) {
-  this.toArrayBuffer(e2, (e3) => {
-    t2(new Blob([e3], { type: "image/bmp" }));
-  });
-}, _dly: 9 };
-var i = { CHROME: "CHROME", FIREFOX: "FIREFOX", DESKTOP_SAFARI: "DESKTOP_SAFARI", IE: "IE", IOS: "IOS", ETC: "ETC" };
-var o = { [i.CHROME]: 16384, [i.FIREFOX]: 11180, [i.DESKTOP_SAFARI]: 16384, [i.IE]: 8192, [i.IOS]: 4096, [i.ETC]: 8192 };
-var a = "undefined" != typeof window;
-var s = "undefined" != typeof WorkerGlobalScope && self instanceof WorkerGlobalScope;
-var f = a && window.cordova && window.cordova.require && window.cordova.require("cordova/modulemapper");
-var CustomFile = (a || s) && (f && f.getOriginalSymbol(window, "File") || "undefined" != typeof File && File);
-var CustomFileReader = (a || s) && (f && f.getOriginalSymbol(window, "FileReader") || "undefined" != typeof FileReader && FileReader);
-function getFilefromDataUrl(e2, t2, r2 = Date.now()) {
-  return new Promise((i2) => {
-    const o2 = e2.split(","), a2 = o2[0].match(/:(.*?);/)[1], s2 = globalThis.atob(o2[1]);
-    let f2 = s2.length;
-    const l2 = new Uint8Array(f2);
-    for (; f2--; )
-      l2[f2] = s2.charCodeAt(f2);
-    const c2 = new Blob([l2], { type: a2 });
-    c2.name = t2, c2.lastModified = r2, i2(c2);
-  });
-}
-function getDataUrlFromFile(e2) {
-  return new Promise((t2, r2) => {
-    const i2 = new CustomFileReader();
-    i2.onload = () => t2(i2.result), i2.onerror = (e3) => r2(e3), i2.readAsDataURL(e2);
-  });
-}
-function loadImage(e2) {
-  return new Promise((t2, r2) => {
-    const i2 = new Image();
-    i2.onload = () => t2(i2), i2.onerror = (e3) => r2(e3), i2.src = e2;
-  });
-}
-function getBrowserName() {
-  if (void 0 !== getBrowserName.cachedResult)
-    return getBrowserName.cachedResult;
-  let e2 = i.ETC;
-  const { userAgent: t2 } = navigator;
-  return /Chrom(e|ium)/i.test(t2) ? e2 = i.CHROME : /iP(ad|od|hone)/i.test(t2) && /WebKit/i.test(t2) ? e2 = i.IOS : /Safari/i.test(t2) ? e2 = i.DESKTOP_SAFARI : /Firefox/i.test(t2) ? e2 = i.FIREFOX : (/MSIE/i.test(t2) || true == !!document.documentMode) && (e2 = i.IE), getBrowserName.cachedResult = e2, getBrowserName.cachedResult;
-}
-function approximateBelowMaximumCanvasSizeOfBrowser(e2, t2) {
-  const r2 = getBrowserName(), i2 = o[r2];
-  let a2 = e2, s2 = t2, f2 = a2 * s2;
-  const l2 = a2 > s2 ? s2 / a2 : a2 / s2;
-  for (; f2 > i2 * i2; ) {
-    const e3 = (i2 + a2) / 2, t3 = (i2 + s2) / 2;
-    e3 < t3 ? (s2 = t3, a2 = t3 * l2) : (s2 = e3 * l2, a2 = e3), f2 = a2 * s2;
-  }
-  return { width: a2, height: s2 };
-}
-function getNewCanvasAndCtx(e2, t2) {
-  let r2, i2;
-  try {
-    if (r2 = new OffscreenCanvas(e2, t2), i2 = r2.getContext("2d"), null === i2)
-      throw new Error("getContext of OffscreenCanvas returns null");
-  } catch (e3) {
-    r2 = document.createElement("canvas"), i2 = r2.getContext("2d");
-  }
-  return r2.width = e2, r2.height = t2, [r2, i2];
-}
-function drawImageInCanvas(e2, t2) {
-  const { width: r2, height: i2 } = approximateBelowMaximumCanvasSizeOfBrowser(e2.width, e2.height), [o2, a2] = getNewCanvasAndCtx(r2, i2);
-  return t2 && /jpe?g/.test(t2) && (a2.fillStyle = "white", a2.fillRect(0, 0, o2.width, o2.height)), a2.drawImage(e2, 0, 0, o2.width, o2.height), o2;
-}
-function isIOS() {
-  return void 0 !== isIOS.cachedResult || (isIOS.cachedResult = ["iPad Simulator", "iPhone Simulator", "iPod Simulator", "iPad", "iPhone", "iPod"].includes(navigator.platform) || navigator.userAgent.includes("Mac") && "undefined" != typeof document && "ontouchend" in document), isIOS.cachedResult;
-}
-function drawFileInCanvas(e2, t2 = {}) {
-  return new Promise(function(r2, o2) {
-    let a2, s2;
-    var $Try_2_Post = function() {
-      try {
-        return s2 = drawImageInCanvas(a2, t2.fileType || e2.type), r2([a2, s2]);
-      } catch (e3) {
-        return o2(e3);
-      }
-    }, $Try_2_Catch = function(t3) {
-      try {
-        0;
-        var $Try_3_Catch = function(e3) {
-          try {
-            throw e3;
-          } catch (e4) {
-            return o2(e4);
-          }
-        };
-        try {
-          let t4;
-          return getDataUrlFromFile(e2).then(function(e3) {
-            try {
-              return t4 = e3, loadImage(t4).then(function(e4) {
-                try {
-                  return a2 = e4, function() {
-                    try {
-                      return $Try_2_Post();
-                    } catch (e5) {
-                      return o2(e5);
-                    }
-                  }();
-                } catch (e5) {
-                  return $Try_3_Catch(e5);
-                }
-              }, $Try_3_Catch);
-            } catch (e4) {
-              return $Try_3_Catch(e4);
-            }
-          }, $Try_3_Catch);
-        } catch (e3) {
-          $Try_3_Catch(e3);
-        }
-      } catch (e3) {
-        return o2(e3);
-      }
-    };
-    try {
-      if (isIOS() || [i.DESKTOP_SAFARI, i.MOBILE_SAFARI].includes(getBrowserName()))
-        throw new Error("Skip createImageBitmap on IOS and Safari");
-      return createImageBitmap(e2).then(function(e3) {
-        try {
-          return a2 = e3, $Try_2_Post();
-        } catch (e4) {
-          return $Try_2_Catch();
-        }
-      }, $Try_2_Catch);
-    } catch (e3) {
-      $Try_2_Catch();
-    }
-  });
-}
-function canvasToFile(e2, t2, i2, o2, a2 = 1) {
-  return new Promise(function(s2, f2) {
-    let l2;
-    if ("image/png" === t2) {
-      let c2, u, h;
-      return c2 = e2.getContext("2d"), { data: u } = c2.getImageData(0, 0, e2.width, e2.height), h = UPNG.encode([u.buffer], e2.width, e2.height, 4096 * a2), l2 = new Blob([h], { type: t2 }), l2.name = i2, l2.lastModified = o2, $If_4.call(this);
-    }
-    {
-      let $If_5 = function() {
-        return $If_4.call(this);
-      };
-      if ("image/bmp" === t2)
-        return new Promise((t3) => r.toBlob(e2, t3)).then(function(e3) {
-          try {
-            return l2 = e3, l2.name = i2, l2.lastModified = o2, $If_5.call(this);
-          } catch (e4) {
-            return f2(e4);
-          }
-        }.bind(this), f2);
-      {
-        let $If_6 = function() {
-          return $If_5.call(this);
-        };
-        if ("function" == typeof OffscreenCanvas && e2 instanceof OffscreenCanvas)
-          return e2.convertToBlob({ type: t2, quality: a2 }).then(function(e3) {
-            try {
-              return l2 = e3, l2.name = i2, l2.lastModified = o2, $If_6.call(this);
-            } catch (e4) {
-              return f2(e4);
-            }
-          }.bind(this), f2);
-        {
-          let d;
-          return d = e2.toDataURL(t2, a2), getFilefromDataUrl(d, i2, o2).then(function(e3) {
-            try {
-              return l2 = e3, $If_6.call(this);
-            } catch (e4) {
-              return f2(e4);
-            }
-          }.bind(this), f2);
-        }
-      }
-    }
-    function $If_4() {
-      return s2(l2);
-    }
-  });
-}
-function cleanupCanvasMemory(e2) {
-  e2.width = 0, e2.height = 0;
-}
-function isAutoOrientationInBrowser() {
-  return new Promise(function(e2, t2) {
-    let r2, i2, o2, a2, s2;
-    return void 0 !== isAutoOrientationInBrowser.cachedResult ? e2(isAutoOrientationInBrowser.cachedResult) : (r2 = "data:image/jpeg;base64,/9j/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAD/2wCEAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAf/AABEIAAEAAgMBEQACEQEDEQH/xABKAAEAAAAAAAAAAAAAAAAAAAALEAEAAAAAAAAAAAAAAAAAAAAAAQEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8H//2Q==", getFilefromDataUrl("data:image/jpeg;base64,/9j/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAYAAAAAAAD/2wCEAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAf/AABEIAAEAAgMBEQACEQEDEQH/xABKAAEAAAAAAAAAAAAAAAAAAAALEAEAAAAAAAAAAAAAAAAAAAAAAQEAAAAAAAAAAAAAAAAAAAAAEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/8H//2Q==", "test.jpg", Date.now()).then(function(r3) {
-      try {
-        return i2 = r3, drawFileInCanvas(i2).then(function(r4) {
-          try {
-            return o2 = r4[1], canvasToFile(o2, i2.type, i2.name, i2.lastModified).then(function(r5) {
-              try {
-                return a2 = r5, cleanupCanvasMemory(o2), drawFileInCanvas(a2).then(function(r6) {
-                  try {
-                    return s2 = r6[0], isAutoOrientationInBrowser.cachedResult = 1 === s2.width && 2 === s2.height, e2(isAutoOrientationInBrowser.cachedResult);
-                  } catch (e3) {
-                    return t2(e3);
-                  }
-                }, t2);
-              } catch (e3) {
-                return t2(e3);
-              }
-            }, t2);
-          } catch (e3) {
-            return t2(e3);
-          }
-        }, t2);
-      } catch (e3) {
-        return t2(e3);
-      }
-    }, t2));
-  });
-}
-function getExifOrientation(e2) {
-  return new Promise((t2, r2) => {
-    const i2 = new CustomFileReader();
-    i2.onload = (e3) => {
-      const r3 = new DataView(e3.target.result);
-      if (65496 != r3.getUint16(0, false))
-        return t2(-2);
-      const i3 = r3.byteLength;
-      let o2 = 2;
-      for (; o2 < i3; ) {
-        if (r3.getUint16(o2 + 2, false) <= 8)
-          return t2(-1);
-        const e4 = r3.getUint16(o2, false);
-        if (o2 += 2, 65505 == e4) {
-          if (1165519206 != r3.getUint32(o2 += 2, false))
-            return t2(-1);
-          const e5 = 18761 == r3.getUint16(o2 += 6, false);
-          o2 += r3.getUint32(o2 + 4, e5);
-          const i4 = r3.getUint16(o2, e5);
-          o2 += 2;
-          for (let a2 = 0; a2 < i4; a2++)
-            if (274 == r3.getUint16(o2 + 12 * a2, e5))
-              return t2(r3.getUint16(o2 + 12 * a2 + 8, e5));
-        } else {
-          if (65280 != (65280 & e4))
-            break;
-          o2 += r3.getUint16(o2, false);
-        }
-      }
-      return t2(-1);
-    }, i2.onerror = (e3) => r2(e3), i2.readAsArrayBuffer(e2);
-  });
-}
-function handleMaxWidthOrHeight(e2, t2) {
-  const { width: r2 } = e2, { height: i2 } = e2, { maxWidthOrHeight: o2 } = t2;
-  let a2, s2 = e2;
-  return isFinite(o2) && (r2 > o2 || i2 > o2) && ([s2, a2] = getNewCanvasAndCtx(r2, i2), r2 > i2 ? (s2.width = o2, s2.height = i2 / r2 * o2) : (s2.width = r2 / i2 * o2, s2.height = o2), a2.drawImage(e2, 0, 0, s2.width, s2.height), cleanupCanvasMemory(e2)), s2;
-}
-function followExifOrientation(e2, t2) {
-  const { width: r2 } = e2, { height: i2 } = e2, [o2, a2] = getNewCanvasAndCtx(r2, i2);
-  switch (t2 > 4 && t2 < 9 ? (o2.width = i2, o2.height = r2) : (o2.width = r2, o2.height = i2), t2) {
-    case 2:
-      a2.transform(-1, 0, 0, 1, r2, 0);
-      break;
-    case 3:
-      a2.transform(-1, 0, 0, -1, r2, i2);
-      break;
-    case 4:
-      a2.transform(1, 0, 0, -1, 0, i2);
-      break;
-    case 5:
-      a2.transform(0, 1, 1, 0, 0, 0);
-      break;
-    case 6:
-      a2.transform(0, 1, -1, 0, i2, 0);
-      break;
-    case 7:
-      a2.transform(0, -1, -1, 0, i2, r2);
-      break;
-    case 8:
-      a2.transform(0, -1, 1, 0, 0, r2);
-  }
-  return a2.drawImage(e2, 0, 0, r2, i2), cleanupCanvasMemory(e2), o2;
-}
-function compress(e2, t2, r2 = 0) {
-  return new Promise(function(i2, o2) {
-    let a2, s2, f2, l2, c2, u, h, d, A, g, p, m, w, v, b, y, E, F, _, B;
-    function incProgress(e3 = 5) {
-      if (t2.signal && t2.signal.aborted)
-        throw t2.signal.reason;
-      a2 += e3, t2.onProgress(Math.min(a2, 100));
-    }
-    function setProgress(e3) {
-      if (t2.signal && t2.signal.aborted)
-        throw t2.signal.reason;
-      a2 = Math.min(Math.max(e3, a2), 100), t2.onProgress(a2);
-    }
-    return a2 = r2, s2 = t2.maxIteration || 10, f2 = 1024 * t2.maxSizeMB * 1024, incProgress(), drawFileInCanvas(e2, t2).then(function(r3) {
-      try {
-        return [, l2] = r3, incProgress(), c2 = handleMaxWidthOrHeight(l2, t2), incProgress(), new Promise(function(r4, i3) {
-          var o3;
-          if (!(o3 = t2.exifOrientation))
-            return getExifOrientation(e2).then(function(e3) {
-              try {
-                return o3 = e3, $If_2.call(this);
-              } catch (e4) {
-                return i3(e4);
-              }
-            }.bind(this), i3);
-          function $If_2() {
-            return r4(o3);
-          }
-          return $If_2.call(this);
-        }).then(function(r4) {
-          try {
-            return u = r4, incProgress(), isAutoOrientationInBrowser().then(function(r5) {
-              try {
-                return h = r5 ? c2 : followExifOrientation(c2, u), incProgress(), d = t2.initialQuality || 1, A = t2.fileType || e2.type, canvasToFile(h, A, e2.name, e2.lastModified, d).then(function(r6) {
-                  try {
-                    {
-                      let $Loop_3 = function() {
-                        if (s2-- && (b > f2 || b > w)) {
-                          let t3, r7;
-                          return t3 = B ? 0.95 * _.width : _.width, r7 = B ? 0.95 * _.height : _.height, [E, F] = getNewCanvasAndCtx(t3, r7), F.drawImage(_, 0, 0, t3, r7), d *= "image/png" === A ? 0.85 : 0.95, canvasToFile(E, A, e2.name, e2.lastModified, d).then(function(e3) {
-                            try {
-                              return y = e3, cleanupCanvasMemory(_), _ = E, b = y.size, setProgress(Math.min(99, Math.floor((v - b) / (v - f2) * 100))), $Loop_3;
-                            } catch (e4) {
-                              return o2(e4);
-                            }
-                          }, o2);
-                        }
-                        return [1];
-                      }, $Loop_3_exit = function() {
-                        return cleanupCanvasMemory(_), cleanupCanvasMemory(E), cleanupCanvasMemory(c2), cleanupCanvasMemory(h), cleanupCanvasMemory(l2), setProgress(100), i2(y);
-                      };
-                      if (g = r6, incProgress(), p = g.size > f2, m = g.size > e2.size, !p && !m)
-                        return setProgress(100), i2(g);
-                      var a3;
-                      return w = e2.size, v = g.size, b = v, _ = h, B = !t2.alwaysKeepResolution && p, (a3 = function(e3) {
-                        for (; e3; ) {
-                          if (e3.then)
-                            return void e3.then(a3, o2);
-                          try {
-                            if (e3.pop) {
-                              if (e3.length)
-                                return e3.pop() ? $Loop_3_exit.call(this) : e3;
-                              e3 = $Loop_3;
-                            } else
-                              e3 = e3.call(this);
-                          } catch (e4) {
-                            return o2(e4);
-                          }
-                        }
-                      }.bind(this))($Loop_3);
-                    }
-                  } catch (u2) {
-                    return o2(u2);
-                  }
-                }.bind(this), o2);
-              } catch (e3) {
-                return o2(e3);
-              }
-            }.bind(this), o2);
-          } catch (e3) {
-            return o2(e3);
-          }
-        }.bind(this), o2);
-      } catch (e3) {
-        return o2(e3);
-      }
-    }.bind(this), o2);
-  });
-}
-var l = "\nlet scriptImported = false\nself.addEventListener('message', async (e) => {\n  const { file, id, imageCompressionLibUrl, options } = e.data\n  options.onProgress = (progress) => self.postMessage({ progress, id })\n  try {\n    if (!scriptImported) {\n      // console.log('[worker] importScripts', imageCompressionLibUrl)\n      self.importScripts(imageCompressionLibUrl)\n      scriptImported = true\n    }\n    // console.log('[worker] self', self)\n    const compressedFile = await imageCompression(file, options)\n    self.postMessage({ file: compressedFile, id })\n  } catch (e) {\n    // console.error('[worker] error', e)\n    self.postMessage({ error: e.message + '\\n' + e.stack, id })\n  }\n})\n";
-var c;
-function compressOnWebWorker(e2, t2) {
-  return new Promise((r2, i2) => {
-    c || (c = function createWorkerScriptURL(e3) {
-      const t3 = [];
-      return "function" == typeof e3 ? t3.push(`(${e3})()`) : t3.push(e3), URL.createObjectURL(new Blob(t3));
-    }(l));
-    const o2 = new Worker(c);
-    o2.addEventListener("message", function handler(e3) {
-      if (t2.signal && t2.signal.aborted)
-        o2.terminate();
-      else if (void 0 === e3.data.progress) {
-        if (e3.data.error)
-          return i2(new Error(e3.data.error)), void o2.terminate();
-        r2(e3.data.file), o2.terminate();
-      } else
-        t2.onProgress(e3.data.progress);
-    }), o2.addEventListener("error", i2), t2.signal && t2.signal.addEventListener("abort", () => {
-      i2(t2.signal.reason), o2.terminate();
-    }), o2.postMessage({ file: e2, imageCompressionLibUrl: t2.libURL, options: { ...t2, onProgress: void 0, signal: void 0 } });
-  });
-}
-function imageCompression(e2, t2) {
-  return new Promise(function(r2, i2) {
-    let o2, a2, s2, f2, l2, c2;
-    if (o2 = { ...t2 }, s2 = 0, { onProgress: f2 } = o2, o2.maxSizeMB = o2.maxSizeMB || Number.POSITIVE_INFINITY, l2 = "boolean" != typeof o2.useWebWorker || o2.useWebWorker, delete o2.useWebWorker, o2.onProgress = (e3) => {
-      s2 = e3, "function" == typeof f2 && f2(s2);
-    }, !(e2 instanceof Blob || e2 instanceof CustomFile))
-      return i2(new Error("The file given is not an instance of Blob or File"));
-    if (!/^image/.test(e2.type))
-      return i2(new Error("The file given is not an image"));
-    if (c2 = "undefined" != typeof WorkerGlobalScope && self instanceof WorkerGlobalScope, !l2 || "function" != typeof Worker || c2)
-      return compress(e2, o2).then(function(e3) {
-        try {
-          return a2 = e3, $If_4.call(this);
-        } catch (e4) {
-          return i2(e4);
-        }
-      }.bind(this), i2);
-    var u = function() {
-      try {
-        return $If_4.call(this);
-      } catch (e3) {
-        return i2(e3);
-      }
-    }.bind(this), $Try_1_Catch = function(t3) {
-      try {
-        return compress(e2, o2).then(function(e3) {
-          try {
-            return a2 = e3, u();
-          } catch (e4) {
-            return i2(e4);
-          }
-        }, i2);
-      } catch (e3) {
-        return i2(e3);
-      }
-    };
-    try {
-      return o2.libURL = o2.libURL || "https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js", compressOnWebWorker(e2, o2).then(function(e3) {
-        try {
-          return a2 = e3, u();
-        } catch (e4) {
-          return $Try_1_Catch();
-        }
-      }, $Try_1_Catch);
-    } catch (e3) {
-      $Try_1_Catch();
-    }
-    function $If_4() {
-      try {
-        a2.name = e2.name, a2.lastModified = e2.lastModified;
-      } catch (e3) {
-      }
-      try {
-        o2.preserveExif && "image/jpeg" === e2.type && (!o2.fileType || o2.fileType && o2.fileType === e2.type) && (a2 = copyExifWithoutOrientation(e2, a2));
-      } catch (e3) {
-      }
-      return r2(a2);
-    }
-  });
-}
-imageCompression.getDataUrlFromFile = getDataUrlFromFile, imageCompression.getFilefromDataUrl = getFilefromDataUrl, imageCompression.loadImage = loadImage, imageCompression.drawImageInCanvas = drawImageInCanvas, imageCompression.drawFileInCanvas = drawFileInCanvas, imageCompression.canvasToFile = canvasToFile, imageCompression.getExifOrientation = getExifOrientation, imageCompression.handleMaxWidthOrHeight = handleMaxWidthOrHeight, imageCompression.followExifOrientation = followExifOrientation, imageCompression.cleanupCanvasMemory = cleanupCanvasMemory, imageCompression.isAutoOrientationInBrowser = isAutoOrientationInBrowser, imageCompression.approximateBelowMaximumCanvasSizeOfBrowser = approximateBelowMaximumCanvasSizeOfBrowser, imageCompression.copyExifWithoutOrientation = copyExifWithoutOrientation, imageCompression.getBrowserName = getBrowserName, imageCompression.version = "2.0.2";
-
-// src/Commands/encryption.ts
-var import_js_md5 = __toESM(require_md5());
+// src/Commands/flip.ts
 var import_obsidian14 = require("obsidian");
 
-// src/Modals/Confirm.ts
-var import_obsidian12 = require("obsidian");
-var Confirm = class extends import_obsidian12.Modal {
-  constructor(app, data) {
-    super(app);
-    this.data = data;
-  }
-  onOpen() {
-    const { contentEl } = this;
-    const { title, content, submitText = "\u786E\u5B9A", cancelText = "\u53D6\u6D88", onSubmit } = this.data;
-    title && this.setTitle(title);
-    content && this.setContent(content);
-    new import_obsidian12.Setting(contentEl).addButton(
-      (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
-        this.close();
-        onSubmit(true);
-      })
-    ).addButton(
-      (btn) => btn.setButtonText("\u53D6\u6D88").setCta().onClick(() => {
-        this.close();
-        onSubmit(false);
-      })
-    );
-  }
-  onClose() {
-    let { contentEl } = this;
-    contentEl.empty();
-  }
-};
-
-// src/Modals/InputBox.ts
-var import_obsidian13 = require("obsidian");
-var InputBox = class extends import_obsidian13.Modal {
-  constructor(app, data) {
-    super(app);
-    this.data = data;
-  }
-  onOpen() {
-    let res;
-    const { contentEl } = this;
-    const { title, name, description = "", content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
-    this.setTitle(title);
-    content && this.setContent(content);
-    new import_obsidian13.Setting(contentEl).setDesc(description).setName(name).addText(
-      (text) => text.onChange((value) => {
-        res = value;
-      })
-    );
-    new import_obsidian13.Setting(contentEl).addButton(
-      (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
-        this.close();
-        onSubmit(res);
-      })
-    );
-  }
-  onClose() {
-    editorBlur(this.app);
-    let { contentEl } = this;
-    contentEl.empty();
-  }
-};
-
-// src/Modals/ProgressBarEncryption.ts
-var ProgressBarEncryption = class {
-  constructor() {
-    this.progressBarContainer = document.createElement("div");
-    this.progressBarContainer.style.position = "fixed";
-    this.progressBarContainer.style.top = "0";
-    this.progressBarContainer.style.left = "50%";
-    this.progressBarContainer.style.transform = "translateX(-50%)";
-    this.progressBarContainer.style.width = "100%";
-    this.progressBarContainer.style.backgroundColor = "#f3f3f3";
-    this.progressBarContainer.style.zIndex = "1000";
-    this.progressBarContainer.hide();
-    this.progressBar = document.createElement("div");
-    this.progressBar.style.width = "0%";
-    this.progressBar.style.height = "3px";
-    this.progressBar.style.backgroundColor = "#4caf50";
-    this.progressBar.style.borderRadius = "5px";
-    this.progressBarContainer.appendChild(this.progressBar);
-    this.text = document.createElement("div");
-    this.text.style.position = "absolute";
-    this.text.style.left = "0";
-    this.text.style.top = "100%";
-    this.text.style.fontSize = "1rem";
-    this.text.style.color = "#fff";
-    this.progressBar.appendChild(this.text);
-    document.body.appendChild(this.progressBarContainer);
-  }
-  show() {
-    this.update(0, "");
-    this.progressBarContainer.show();
-  }
-  update(progress2, text) {
-    this.progressBar.style.width = `${progress2}%`;
-    this.text.innerText = text;
-  }
-  hide() {
-    this.progressBarContainer.hide();
-  }
-};
-
-// src/Commands/encryption.ts
-var progress = new ProgressBarEncryption();
-function encryptPopUpCommand(self4) {
-  self4.settings.encryption && self4.addCommand({
-    id: "\u52A0\u5BC6\u7B14\u8BB0",
-    name: "\u52A0\u5BC6\u7B14\u8BB0",
-    icon: "lock",
-    editorCallback: (editor, view) => encryptPopUp(self4, view.file)
-  });
-}
-function decryptPopUpCommand(self4) {
-  self4.settings.encryption && self4.addCommand({
-    id: "\u89E3\u5BC6\u7B14\u8BB0",
-    name: "\u89E3\u5BC6\u7B14\u8BB0",
-    icon: "lock-open",
-    editorCallback: (editor, view) => decryptPopUp(self4, view.file)
-  });
-}
-async function encOrDecPopUp(self4, file) {
-  if (!file)
-    return;
-  const type = self4.settings.encryptionRememberPassMode;
-  const tempPass = self4.encryptionTempData[file.path];
-  const encrypted = isNoteEncrypt(await self4.app.vault.cachedRead(file));
-  let { pass } = self4.settings.plugins.encryption[file.path] || {};
-  if (file.extension === "md" && encrypted && (type === "notSave" || type === "always" && !pass || type === "disposable" && !tempPass)) {
-    await decryptPopUp(self4, file);
-  }
-  if (type === "always" && pass || type === "disposable" && (pass = tempPass)) {
-    new Confirm(self4.app, {
-      title: encrypted ? "\u89E3\u5BC6\u8FD9\u7BC7\u7B14\u8BB0\uFF1F" : "\u52A0\u5BC6\u8FD9\u7BC7\u7B14\u8BB0\uFF1F",
-      onSubmit: (res) => res && encryptionNote(self4, file, pass, !encrypted)
-    }).open();
-  }
-}
-async function toggleEncryptNote(self4, file) {
-  if (!file)
-    return;
-  const content = await self4.app.vault.read(file);
-  const editorViewLine = document.querySelector(".markdown-source-view .cm-content");
-  const previewViewLine = document.querySelector('.markdown-preview-view p[dir="auto"]');
-  if (isNoteEncrypt(content)) {
-    editorViewLine == null ? void 0 : editorViewLine.hide();
-    previewViewLine == null ? void 0 : previewViewLine.hide();
-  } else {
-    editorViewLine == null ? void 0 : editorViewLine.show();
-    previewViewLine == null ? void 0 : previewViewLine.show();
-  }
-}
-function clearNotePass(self4) {
-  for (let key in self4.settings.plugins.encryption) {
-    if (!self4.app.vault.getFiles().find((f2) => f2.path === key))
-      delete self4.settings.plugins.encryption[key];
-    self4.saveSettings();
-  }
-  if (self4.settings.encryptionRememberPassMode !== "always") {
-    for (let key in self4.settings.plugins.encryption) {
-      const data = self4.settings.plugins.encryption[key];
-      if (data)
-        data.pass = "";
-    }
-    self4.saveSettings();
-  }
-}
-async function encryptPopUp(self4, file) {
-  if (!file)
-    return;
-  if (!self4.settings.encryption)
-    return;
-  const onSubmit = (pass) => {
-    new Confirm(self4.app, {
-      content: `\u8BF7\u786E\u8BA4\uFF0C\u52A0\u5BC6\u5BC6\u7801\u4E3A ${pass} `,
-      onSubmit: (res) => res && new Confirm(self4.app, {
-        content: `\u8BF7\u6700\u540E\u4E00\u6B21\u786E\u8BA4\uFF0C\u52A0\u5BC6\u5BC6\u7801\u4E3A ${pass} `,
-        onSubmit: async (res2) => res2 && encryptionNote(self4, file, await AES256Helper.encrypt((0, import_js_md5.md5)(pass), pass))
-      }).open()
-    }).open();
-  };
-  new InputBox(self4.app, {
-    title: "\u52A0\u5BC6\u7B14\u8BB0",
-    name: "\u5BC6\u7801",
-    description: "\u6CE8\u610F\uFF0C\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002\u5C06\u52A0\u5BC6\u7B14\u8BB0\u4E2D\u7684\u6587\u5B57\uFF0C\u56FE\u7247\u4EE5\u53CA\u89C6\u9891\uFF08\u9ED8\u8BA4\u4E0D\u5F00\u542F\uFF09\uFF0C\u52A0\u5BC6\u540E\u7684\u8D44\u6E90\u6587\u4EF6\u8986\u76D6\u6E90\u6587\u4EF6\uFF0C\u4E5F\u8BF7\u505A\u597D\u5907\u4EFD",
-    onSubmit
-  }).open();
-}
-async function decryptPopUp(self4, file) {
-  if (!file)
-    return;
-  if (!self4.settings.encryption)
-    return;
-  new InputBox(self4.app, {
-    title: "\u89E3\u5BC6\u7B14\u8BB0",
-    name: "\u5BC6\u7801",
-    onSubmit: async (pass) => encryptionNote(self4, file, await AES256Helper.encrypt((0, import_js_md5.md5)(pass), pass), false)
-  }).open();
-}
-async function encryptionNote(self4, file, pass, convert = true) {
-  var _a2, _b;
-  if (!file)
-    return;
-  if (!self4.settings.encryption || !pass)
-    return;
-  let content = await self4.app.vault.read(file);
-  if (!content)
-    return;
-  let decryptContent;
-  const isN = isNoteEncrypt(content);
-  if (convert) {
-    const localP = (_a2 = self4.settings.plugins.encryption[file.path]) == null ? void 0 : _a2.pass;
-    const tP = self4.encryptionTempData[file.path];
-    if (self4.settings.encryptionImageCompress && (localP || tP) && pass !== (localP || tP)) {
-      return new import_obsidian14.Notice("\u8BF7\u5148\u5173\u95ED\u56FE\u7247\u538B\u7F29\uFF0C\u4F7F\u7528\u65E7\u5BC6\u7801\u6062\u590D\u539F\u56FE\uFF0C\u518D\u4FEE\u6539\u65B0\u5BC6\u7801");
-    }
-    isN ? new import_obsidian14.Notice("\u7B14\u8BB0\u5DF2\u52A0\u5BC6") : decryptContent = await encrypt(content, pass);
-  } else {
-    try {
-      isN ? decryptContent = await decrypt(content.slice(32 + 1), pass) : new import_obsidian14.Notice("\u7B14\u8BB0\u5DF2\u89E3\u5BC6");
-    } catch (e2) {
-      new import_obsidian14.Notice("\u5BC6\u7801\u53EF\u80FD\u6709\u8BEF");
-    }
-  }
-  let links = isN ? ((_b = self4.settings.plugins.encryption[file.path]) == null ? void 0 : _b.links) || [] : Object.keys(self4.app.metadataCache.resolvedLinks[file.path]);
-  if (decryptContent) {
-    const localLinks = await imageToBase64(self4, links, pass, convert);
-    await self4.app.vault.modify(file, (convert ? (0, import_js_md5.md5)(file.path) + "%" : "") + decryptContent);
-    toggleEncryptNote(self4, file);
-    self4.settings.plugins.encryption[file.path] = {
-      pass: self4.settings.encryptionRememberPassMode === "always" ? pass : "",
-      links: localLinks
-    };
-    if (self4.settings.encryptionRememberPassMode !== "always") {
-      self4.encryptionTempData[file.path] = pass;
-    }
-    await self4.saveSettings();
-  }
-}
-async function imageToBase64(self4, links, pass, convert = true) {
-  let index = 0;
-  const chunkSize = Math.max(self4.settings.encryptionChunkSize, 1024 * 1024);
-  links = links.filter(isImagePath).concat(links.filter(isVideoPath));
-  progress.show();
-  let isN = true;
-  try {
-    for (let link of links) {
-      let file = self4.app.vault.getFiles().find((f2) => f2.path === link);
-      const suffixFile = self4.app.vault.getFiles().find((f2) => f2.path === insertString(file.path, -file.extension.length - 1, "__backup__"));
-      if (!self4.settings.encryptionImageCompress && isImagePath(link) && suffixFile) {
-        await self4.app.vault.delete(file);
-        await self4.app.vault.rename(suffixFile, link);
-        if (convert)
-          continue;
-        link = suffixFile.path;
-        file = suffixFile;
-      }
-      let fileSize = file.stat.size;
-      let data;
-      let offset = 0;
-      index++;
-      progressUpdate(0, index, links.length, link, "\u6B63\u5728\u8BFB\u53D6");
-      let arrayBuffer = await self4.app.vault.adapter.readBinary(file.path);
-      if (convert) {
-        if (self4.settings.encryptionImageCompress && isImagePath(link) && !suffixFile) {
-          const compressArrayBuffer = await fileToArrayBuffer(
-            await imageCompression(arrayBufferToFile(arrayBuffer, link, `image/${file.extension}`), {
-              maxSizeMB: self4.settings.encryptionImageCompressMaxSize,
-              maxWidthOrHeight: await isLongScreenshot(arrayBuffer, self4.settings.encryptionImageCompressLongScreenshotRatio) ? void 0 : 720,
-              preserveExif: self4.settings.encryptionImageCompressPreserveExif,
-              initialQuality: 0.4,
-              useWebWorker: true,
-              maxIteration: 10,
-              onProgress: (n) => progressUpdate(n, index, links.length, link, `\u6B63\u5728\u538B\u7F29 / ${n}%`)
-            })
-          );
-          const backupPath = insertString(file.path, -file.extension.length - 1, "__backup__");
-          await self4.app.vault.rename(file, backupPath);
-          self4.settings.encryptionImageCompress = false;
-          progress.hide();
-          await imageToBase64(self4, [backupPath], pass, convert);
-          progress.show();
-          self4.settings.encryptionImageCompress = true;
-          await self4.app.vault.adapter.writeBinary(link, compressArrayBuffer);
-          arrayBuffer = compressArrayBuffer;
-          file = self4.app.vault.getFiles().find((f2) => f2.path === link);
-          ;
-          fileSize = file.stat.size;
-        }
-        while (offset < fileSize) {
-          progressUpdate(computedProgress(offset, fileSize), index, links.length, link, `\u6B63\u5728\u52A0\u5BC6 / ${computedProgress(offset, fileSize)}%`);
-          const chunk = arrayBuffer.slice(offset, offset + chunkSize);
-          const chunkString = new TextDecoder().decode(chunk);
-          if (isResourceEncrypt(chunkString)) {
-            isN = false;
-            new import_obsidian14.Notice(`${file.basename} \u5DF2\u52A0\u5BC6`);
-            break;
-          }
-          const base64Chunk = (0, import_obsidian14.arrayBufferToBase64)(chunk);
-          const encryptedChunk = await encrypt(base64Chunk, pass);
-          const chunkLength = encryptedChunk.length.toString().padStart(8, "0");
-          const encryptedArrayBuffer = new TextEncoder().encode(chunkLength + encryptedChunk);
-          data = data ? mergeArrayBuffers(data, encryptedArrayBuffer) : encryptedArrayBuffer;
-          offset += chunkSize;
-        }
-      } else {
-        while (offset < fileSize) {
-          progressUpdate(computedProgress(offset, fileSize), index, links.length, link, `\u6B63\u5728\u89E3\u5BC6 / ${computedProgress(offset, fileSize)}%`);
-          const chunkLength = parseInt(new TextDecoder().decode(arrayBuffer.slice(offset, offset + 8)), 10);
-          offset += 8;
-          const encryptedChunk = new TextDecoder().decode(arrayBuffer.slice(offset, offset + chunkLength));
-          if (!isResourceEncrypt(encryptedChunk)) {
-            isN = false;
-            new import_obsidian14.Notice(`${file.basename} \u5DF2\u89E3\u5BC6`);
-            break;
-          }
-          const decryptedChunk = await decrypt(encryptedChunk, pass);
-          const decryptedArrayBuffer = (0, import_obsidian14.base64ToArrayBuffer)(decryptedChunk);
-          data = data ? mergeArrayBuffers(data, decryptedArrayBuffer) : decryptedArrayBuffer;
-          offset += chunkLength;
-        }
-      }
-      if (isN) {
-        progressUpdate(100, index, links.length, link, "\u6B63\u5728\u5199\u5165");
-        const tempFilePath = `${file.path}.tmp`;
-        const tempFile = await createFile(self4.app, tempFilePath, true);
-        await self4.app.vault.adapter.writeBinary(tempFilePath, data);
-        if (tempFile) {
-          await self4.app.vault.delete(file);
-          await self4.app.vault.rename(tempFile, file.path);
-        }
-      }
-    }
-  } catch (e2) {
-    new import_obsidian14.Notice("\u8B66\u544A\uFF1A\u7B14\u8BB0\u4E2D\u53EF\u80FD\u5B58\u5728\u5DF2\u635F\u574F\u8D44\u6E90\u6587\u4EF6\uFF0C\u4E5F\u6709\u53EF\u80FD\u88AB\u79FB\u52A8\u6216\u5220\u9664\uFF0C\u8BF7\u6392\u67E5");
-  }
-  progress.hide();
-  return links;
-}
-function progressUpdate(n, index, linksLength, link, message) {
-  progress.update(Math.min(n, 100), `[${index}/${linksLength}] ${getBasename(link)} - ${message}`);
-}
-function computedProgress(offset, fileSize) {
-  return Math.min(Math.floor(offset / fileSize * 100), 100);
-}
-async function encrypt(text, pass) {
-  if (!text || !pass)
-    return;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(text);
-  const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(pass), "PBKDF2", false, ["deriveKey"]);
-  const key = await crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: encoder.encode("salt"),
-      iterations: 1e5,
-      hash: "SHA-256"
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"]
-  );
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
-  const buffer = new Uint8Array(encrypted);
-  const ivHex = Array.from(iv).map((b) => b.toString(16).padStart(2, "0")).join("");
-  const encryptedHex = Array.from(buffer).map((b) => b.toString(16).padStart(2, "0")).join("");
-  return ivHex + ":" + encryptedHex;
-}
-async function decrypt(encryptedText, pass) {
-  if (!encryptedText || !pass)
-    return;
-  const [ivHex, encryptedHex] = encryptedText.split(":");
-  const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
-  const encrypted = new Uint8Array(encryptedHex.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
-  const encoder = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(pass), "PBKDF2", false, ["deriveKey"]);
-  const key = await crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: encoder.encode("salt"),
-      iterations: 1e5,
-      hash: "SHA-256"
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    true,
-    ["encrypt", "decrypt"]
-  );
-  const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
-  const decoder = new TextDecoder();
-  return decoder.decode(decrypted);
-}
-var AES256Helper = class {
-  static async getKeyMaterial(password) {
-    const enc = new TextEncoder();
-    return crypto.subtle.importKey("raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]);
-  }
-  static async getKey(keyMaterial) {
-    const salt = new Uint8Array(16);
-    return crypto.subtle.deriveKey(
-      {
-        name: "PBKDF2",
-        salt,
-        iterations: 1e5,
-        hash: "SHA-256"
-      },
-      keyMaterial,
-      { name: "AES-GCM", length: 256 },
-      true,
-      ["encrypt", "decrypt"]
-    );
-  }
-  static async encrypt(password, data) {
-    const iv = new Uint8Array(12);
-    const keyMaterial = await AES256Helper.getKeyMaterial(password);
-    const key = await AES256Helper.getKey(keyMaterial);
-    const enc = new TextEncoder();
-    const encrypted = await crypto.subtle.encrypt(
-      {
-        name: "AES-GCM",
-        iv
-      },
-      key,
-      enc.encode(data)
-    );
-    return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-  }
-  static async decrypt(password, encryptedData) {
-    const iv = new Uint8Array(12);
-    const data = new Uint8Array(
-      atob(encryptedData).split("").map((char) => char.charCodeAt(0))
-    );
-    const keyMaterial = await AES256Helper.getKeyMaterial(password);
-    const key = await AES256Helper.getKey(keyMaterial);
-    const decrypted = await crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv
-      },
-      key,
-      data
-    );
-    const dec = new TextDecoder();
-    return dec.decode(decrypted);
-  }
-};
-function arrayBufferToFile(arrayBuffer, filename2, mimeType) {
-  const blob = new Blob([arrayBuffer], { type: mimeType });
-  return new File([blob], filename2, { type: mimeType });
-}
-function fileToArrayBuffer(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result);
-    };
-    reader.onerror = () => {
-      reject(new Error("File reading failed"));
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-// src/Commands/flip.ts
-var import_obsidian17 = require("obsidian");
-
 // src/Modals/PanelExhibition.ts
-var import_obsidian15 = require("obsidian");
-var PanelExhibition = class extends import_obsidian15.Modal {
+var import_obsidian11 = require("obsidian");
+var PanelExhibition = class extends import_obsidian11.Modal {
   constructor(app, title, content, onSubmit = null) {
     super(app);
     this.title = title;
@@ -9883,7 +7248,7 @@ var PanelExhibition = class extends import_obsidian15.Modal {
     titleEl.setText(this.title);
     render(this.app, this.content, contentEl);
     if (this.onSubmit) {
-      new import_obsidian15.Setting(contentEl).addButton(
+      new import_obsidian11.Setting(contentEl).addButton(
         (btn) => btn.setButtonText("\u67E5\u770B").setCta().onClick(() => {
           this.close();
           this.onSubmit();
@@ -9898,8 +7263,8 @@ var PanelExhibition = class extends import_obsidian15.Modal {
 };
 
 // src/Modals/PanelExhibitionHlight.ts
-var import_obsidian16 = require("obsidian");
-var PanelExhibitionHlight = class extends import_obsidian16.Modal {
+var import_obsidian12 = require("obsidian");
+var PanelExhibitionHlight = class extends import_obsidian12.Modal {
   constructor(app, title, content, onTrash = null, onEdit = null) {
     super(app);
     this.title = title;
@@ -9911,7 +7276,7 @@ var PanelExhibitionHlight = class extends import_obsidian16.Modal {
     const { contentEl, titleEl } = this;
     titleEl.setText(this.title);
     render(this.app, this.content, contentEl);
-    new import_obsidian16.Setting(contentEl).addButton(
+    new import_obsidian12.Setting(contentEl).addButton(
       (btn) => btn.setIcon("trash").onClick(() => {
         this.close();
         this.onTrash();
@@ -9920,6 +7285,36 @@ var PanelExhibitionHlight = class extends import_obsidian16.Modal {
       (btn) => btn.setIcon("pencil-line").setDisabled(true).onClick(() => {
         this.close();
         this.onTrash();
+      })
+    );
+  }
+  onClose() {
+    let { contentEl } = this;
+    contentEl.empty();
+  }
+};
+
+// src/Modals/Confirm.ts
+var import_obsidian13 = require("obsidian");
+var Confirm = class extends import_obsidian13.Modal {
+  constructor(app, data) {
+    super(app);
+    this.data = data;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    const { title, content, submitText = "\u786E\u5B9A", cancelText = "\u53D6\u6D88", onSubmit } = this.data;
+    title && this.setTitle(title);
+    content && this.setContent(content);
+    new import_obsidian13.Setting(contentEl).addButton(
+      (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
+        this.close();
+        onSubmit(true);
+      })
+    ).addButton(
+      (btn) => btn.setButtonText("\u53D6\u6D88").setCta().onClick(() => {
+        this.close();
+        onSubmit(false);
       })
     );
   }
@@ -10050,11 +7445,11 @@ var ReadingDataManager = class {
 // src/Commands/flip.ts
 var self2;
 var pageTurner;
-function flipEvent(f2, file) {
+function flipEvent(f, file) {
   var _a2;
-  if (!f2.settings.flip)
+  if (!f.settings.flip)
     return;
-  const command = f2.addCommand({
+  const command = f.addCommand({
     id: "\u5207\u6362\u9605\u8BFB/\u7F16\u8F91\u6A21\u5F0F",
     name: "\u5207\u6362\u9605\u8BFB/\u7F16\u8F91\u6A21\u5F0F",
     // icon: pageTurner?.destroyed ? 'circle-dashed' : 'circle',
@@ -10065,7 +7460,7 @@ function flipEvent(f2, file) {
       pageTurner.destroyed = !pageTurner.destroyed;
     }
   });
-  self2 = f2;
+  self2 = f;
   const statusBar = document.querySelector(STATUS_BAR_CLASS);
   fullScreen(0, false);
   pageTurner && pageTurner.destroy();
@@ -10085,7 +7480,7 @@ function flipEvent(f2, file) {
 }
 function flip(event, el, file, direction = true) {
   const target = event.target;
-  const should = !pageTurner.isTouchMoving && import_obsidian17.Platform.isMobile || event.type !== "wheel";
+  const should = !pageTurner.isTouchMoving && import_obsidian14.Platform.isMobile || event.type !== "wheel";
   if (should) {
     if (target.hasClass(COMMENT_CLASS.slice(1)))
       handleCommentClick(target, file);
@@ -10105,19 +7500,19 @@ function scrollPage(el, direction, file) {
 }
 function fullScreen(mode = null, save = true) {
   var _a2;
-  if (!import_obsidian17.Platform.isMobile)
+  if (!import_obsidian14.Platform.isMobile)
     return;
   if ((_a2 = pageTurner == null ? void 0 : pageTurner.keyboardWatcher) == null ? void 0 : _a2.isKeyboardVisible)
     return;
-  const t2 = document.querySelector(MOBILE_HEADER_CLASS);
+  const t = document.querySelector(MOBILE_HEADER_CLASS);
   const b = document.querySelector(MOBILE_NAVBAR_CLASS);
   const fullScreenModeStatus = mode === -1 ? self2.settings.fullScreenModeStatus : mode === null ? !self2.settings.fullScreenModeStatus : mode;
   if (self2.settings.fullScreenMode && fullScreenModeStatus) {
     b == null ? void 0 : b.hide();
-    t2 == null ? void 0 : t2.hide();
+    t == null ? void 0 : t.hide();
   } else {
     b == null ? void 0 : b.show();
-    t2 == null ? void 0 : t2.show();
+    t == null ? void 0 : t.show();
   }
   if (save) {
     self2.settings.fullScreenModeStatus = Boolean(fullScreenModeStatus);
@@ -10126,7 +7521,7 @@ function fullScreen(mode = null, save = true) {
   }
 }
 function pageTurnerLongPress(event) {
-  if (import_obsidian17.Platform.isMobile && event.type === "touchstart") {
+  if (import_obsidian14.Platform.isMobile && event.type === "touchstart") {
     if (pageTurner.lock)
       pageTurner.destroyed = pageTurner.keyboardWatcher.isKeyboardVisible;
     else
@@ -10272,7 +7667,7 @@ var PageTurner = class {
         editorBlur(self2.app);
       }
     );
-    if (import_obsidian17.Platform.isMobile) {
+    if (import_obsidian14.Platform.isMobile) {
       this.element.addEventListener("touchstart", this.handleTouchStart, this.eventOptions);
       this.element.addEventListener("touchmove", this.handleTouchMove, this.eventOptions);
       this.element.addEventListener("touchend", this.handleTouchEnd, this.eventOptions);
@@ -10407,23 +7802,9 @@ var KeyboardObserver = class {
   }
 };
 
-// src/Commands/gallery.ts
-function gallery(self4) {
-  if (!self4.settings.gallery)
-    return;
-  self4.registerMarkdownCodeBlockProcessor("t-gallery", (source, el, ctx) => {
-    const { path } = codeBlockParamParse(source);
-    if (path) {
-      const files = self4.app.vault.getFiles().filter((file) => new RegExp(`^${path}`).test(file.path)).filter((file) => imageSuffix.includes(file.extension));
-      const content = files.map((file) => self4.app.vault.adapter.getResourcePath(file.path)).reduce((res, ret) => res += `<img alt="" src="${ret}">`, "");
-      el.innerHTML = content;
-    }
-  });
-}
-
 // src/Modals/PanelHighlight.ts
-var import_obsidian18 = require("obsidian");
-var PanelHighlight = class extends import_obsidian18.Modal {
+var import_obsidian15 = require("obsidian");
+var PanelHighlight = class extends import_obsidian15.Modal {
   constructor(app, content, onSubmit) {
     super(app);
     this.content = content;
@@ -10435,17 +7816,17 @@ var PanelHighlight = class extends import_obsidian18.Modal {
     const { contentEl } = this;
     this.setTitle("\u5212\u7EBF");
     this.setContent(this.content);
-    new import_obsidian18.Setting(contentEl).setName("\u60F3\u6CD5").addText(
+    new import_obsidian15.Setting(contentEl).setName("\u60F3\u6CD5").addText(
       (text) => text.onChange((value) => {
         res = value;
       })
     );
-    new import_obsidian18.Setting(contentEl).setName("\u6807\u6CE8\uFF08\u53EF\u9009\uFF09").addText(
+    new import_obsidian15.Setting(contentEl).setName("\u6807\u6CE8\uFF08\u53EF\u9009\uFF09").addText(
       (text) => text.onChange((value) => {
         tagging = value;
       })
     );
-    new import_obsidian18.Setting(contentEl).addButton(
+    new import_obsidian15.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("\u5212\u7EBF").setCta().onClick(() => {
         this.close();
         this.onSubmit(res, tagging);
@@ -10481,7 +7862,7 @@ function highlight(self4, editor, file) {
 }
 
 // src/Commands/passwordCreator.ts
-var import_obsidian19 = require("obsidian");
+var import_obsidian16 = require("obsidian");
 function passwordCreatorCommand(self4) {
   self4.settings.passwordCreator && self4.addCommand({
     id: "\u5BC6\u7801\u521B\u5EFA\u5668",
@@ -10495,11 +7876,11 @@ async function passwordCreator(self4) {
     return;
   const pass = pick(self4.settings.passwordCreatorMixedContent.split(""), self4.settings.passwordCreatorLength).join("");
   window.navigator.clipboard.writeText(pass);
-  new import_obsidian19.Notice("\u5BC6\u7801\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
+  new import_obsidian16.Notice("\u5BC6\u7801\u5DF2\u590D\u5236\u81F3\u526A\u5207\u677F\uFF01");
 }
 
 // src/Commands/polysemy.ts
-var import_obsidian20 = require("obsidian");
+var import_obsidian17 = require("obsidian");
 function polysemy(self4, file) {
   var _a2;
   if (!self4.settings.polysemy)
@@ -10518,13 +7899,13 @@ function polysemy(self4, file) {
     return;
   const view = self4.app.workspace.getLeaf(true);
   view.openFile(targetFile);
-  new import_obsidian20.Notice(`\u300A${file.basename}\u300B\u662F\u4E00\u7BC7\u591A\u4E49\u7B14\u8BB0\uFF0C\u5DF2\u8F6C\u8DF3\u81F3\u300A${filename2}\u300B `);
+  new import_obsidian17.Notice(`\u300A${file.basename}\u300B\u662F\u4E00\u7BC7\u591A\u4E49\u7B14\u8BB0\uFF0C\u5DF2\u8F6C\u8DF3\u81F3\u300A${filename2}\u300B `);
 }
 
 // src/Commands/poster.ts
-var import_obsidian21 = require("obsidian");
+var import_obsidian18 = require("obsidian");
 function poster(self4, element) {
-  if (!self4.settings.poster || !import_obsidian21.Platform.isMobile)
+  if (!self4.settings.poster || !import_obsidian18.Platform.isMobile)
     return;
   const processVideos = (element2) => {
     const videoElements = element2.querySelectorAll('video, .internal-embed[src$=".mp4"]');
@@ -10555,13 +7936,13 @@ function poster(self4, element) {
 }
 
 // src/Commands/relationshipDiagram.ts
-var import_obsidian22 = require("obsidian");
+var import_obsidian19 = require("obsidian");
 var self3;
 var separator = getId();
 var hideBranchNames = [];
 var filename = "";
-function relationshipDiagramCommand(f2) {
-  self3 = f2;
+function relationshipDiagramCommand(f) {
+  self3 = f;
   self3.settings.gitChart && self3.addCommand({
     id: "\u6253\u5F00\u5173\u7CFB\u56FE",
     name: "\u6253\u5F00\u5173\u7CFB\u56FE",
@@ -10628,15 +8009,15 @@ gitGraph TB:`
   }
   return commands.slice(0, -1).join("\n") + "\n```\n\n";
 }
-function transformChainNotIncludingOneself(child, i2, parent) {
+function transformChainNotIncludingOneself(child, i, parent) {
   transformChain(child);
-  placeholder(child, i2, parent);
+  placeholder(child, i, parent);
 }
 function transformChain(child) {
   const children = child.children;
-  for (let i2 = 0; i2 < children.length - 1; i2++) {
-    const currentNode = children[i2];
-    const nextNode = children[i2 + 1];
+  for (let i = 0; i < children.length - 1; i++) {
+    const currentNode = children[i];
+    const nextNode = children[i + 1];
     currentNode.children.push(nextNode);
     nextNode.parent = currentNode;
     nextNode.branchName = currentNode.branchId;
@@ -10644,12 +8025,12 @@ function transformChain(child) {
   }
   child.children = [child.children[0]].filter(Boolean);
 }
-function placeholder(child, i2, parent) {
-  parent.children.splice(i2, 1, ...child.children);
-  child.children.forEach((c2) => {
-    c2.parent = parent;
-    c2.level--;
-    c2.branchName = parent.branchId;
+function placeholder(child, i, parent) {
+  parent.children.splice(i, 1, ...child.children);
+  child.children.forEach((c) => {
+    c.parent = parent;
+    c.level--;
+    c.branchName = parent.branchId;
   });
 }
 async function joinTree(node, root) {
@@ -10659,15 +8040,15 @@ async function joinTree(node, root) {
       const file = self3.getFileByShort(filename2);
       if (file) {
         const content = await self3.app.vault.read(file);
-        const r2 = parseListToTree(content);
-        const d = findTree(r2, id, "id");
+        const r = parseListToTree(content);
+        const d = findTree(r, id, "id");
         if (d) {
           d.parent = child;
           child.children = child.children.concat(d.children);
           child.link = d.link;
-          child.children.forEach((c2) => {
-            c2.parent = child;
-            c2.branchName = child.branchId;
+          child.children.forEach((c) => {
+            c.parent = child;
+            c.branchName = child.branchId;
           });
           removeTree(root, id, "id");
         }
@@ -10679,10 +8060,10 @@ async function joinTree(node, root) {
   }
 }
 function forEachTree(node, type, callback) {
-  for (let i2 = 0; i2 < node.children.length; i2++) {
-    const child = node.children[i2];
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i];
     if (child.type === type) {
-      callback(child, i2, node);
+      callback(child, i, node);
     }
     if (child.children.length > 0) {
       forEachTree(child, type, callback);
@@ -10730,7 +8111,7 @@ function parseListToTree(str2) {
   const lines = str2.split("\n");
   const root = { children: [] };
   const stack = [{ node: root, level: -1 }];
-  for (const [i2, line] of Array.from(lines).entries()) {
+  for (const [i, line] of Array.from(lines).entries()) {
     if (line.trim() === "")
       continue;
     let lineData = parseLine(line);
@@ -10741,7 +8122,7 @@ function parseListToTree(str2) {
       stack.pop();
     }
     const parent = stack[stack.length - 1].node;
-    const newNode = Object.assign({}, lineData, { line: i2, children: [], branchName: (parent == null ? void 0 : parent.branchId) || "default", parent: level === 0 ? null : parent });
+    const newNode = Object.assign({}, lineData, { line: i, children: [], branchName: (parent == null ? void 0 : parent.branchId) || "default", parent: level === 0 ? null : parent });
     parent.children.push(newNode);
     stack.push({ node: newNode, level });
   }
@@ -10776,10 +8157,10 @@ function findTree(originalRoot, targetName, key = "name") {
   return null;
 }
 function removeTree(originalRoot, targetName, key = "name") {
-  for (let i2 = 0; i2 < originalRoot.children.length; i2++) {
-    const child = originalRoot.children[i2];
+  for (let i = 0; i < originalRoot.children.length; i++) {
+    const child = originalRoot.children[i];
     if (child[key] === targetName) {
-      originalRoot.children.splice(i2, 1);
+      originalRoot.children.splice(i, 1);
       return child;
     }
     if (child.children.length > 0) {
@@ -10852,7 +8233,7 @@ async function createTempRelationGraph(title, content, gitChartData, part) {
   self3.registerView(tempViewType, (leaf2) => new TempRelationView(leaf2, title, content, gitChartData, part));
   self3.app.workspace.revealLeaf(leaf);
 }
-var TempRelationView = class extends import_obsidian22.ItemView {
+var TempRelationView = class extends import_obsidian19.ItemView {
   constructor(leaf, title, content, gitChart, part) {
     super(leaf);
     this.splitLeaf = null;
@@ -10947,19 +8328,19 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     this.containerEl.children[1].empty();
     this.zoom.destroy();
   }
-  async onclick(e2) {
-    const target = e2.target;
+  async onclick(e) {
+    const target = e.target;
     const { name, link, branchId } = target.dataset;
     if (target.hasClass("commit-label")) {
-      if (e2.ctrlKey)
+      if (e.ctrlKey)
         this.truncation(name, branchId);
-      else if (e2.altKey)
+      else if (e.altKey)
         this.logicalChain(name, branchId);
       else
         this.openLink(link);
     }
     if (target.hasClass("commit")) {
-      const target2 = e2.target;
+      const target2 = e.target;
       const name2 = target2.classList[target2.classList.length - 2];
       const id = name2.split(separator)[6];
       if (!name2)
@@ -10967,8 +8348,8 @@ var TempRelationView = class extends import_obsidian22.ItemView {
       this.exhibitionBranch(id);
     }
   }
-  onmouseover(e2) {
-    const target = e2.target;
+  onmouseover(e) {
+    const target = e.target;
     if (!target.hasClass("commit-label"))
       return;
     const name = target.textContent;
@@ -10980,8 +8361,8 @@ var TempRelationView = class extends import_obsidian22.ItemView {
     target.style.textDecorationLine = "underline";
     target.style.cursor = "pointer";
   }
-  onmouseout(e2) {
-    const target = e2.target;
+  onmouseout(e) {
+    const target = e.target;
     if (!target.hasClass("commit-label"))
       return;
     target.style.textDecorationLine = "none";
@@ -11049,12 +8430,12 @@ var TempRelationView = class extends import_obsidian22.ItemView {
 var ZoomDrag = class {
   constructor(element) {
     this.elementEventHandlers = /* @__PURE__ */ new WeakMap();
-    this.handleMouseMove = (e2) => {
+    this.handleMouseMove = (e) => {
       const element = this.element;
       const state = element.zoomDragState;
       if (state.isDragging) {
-        state.x = e2.clientX - state.startX;
-        state.y = e2.clientY - state.startY;
+        state.x = e.clientX - state.startX;
+        state.y = e.clientY - state.startY;
         this.applyTransform(element);
       }
     };
@@ -11084,7 +8465,7 @@ var ZoomDrag = class {
     const mouseDownHandler = this.handleMouseDown.bind(this);
     element.addEventListener("mousedown", mouseDownHandler);
     eventHandlers.push({ type: "mousedown", handler: mouseDownHandler });
-    const contextMenuHandler = (e2) => e2.preventDefault();
+    const contextMenuHandler = (e) => e.preventDefault();
     element.addEventListener("contextmenu", contextMenuHandler);
     eventHandlers.push({ type: "contextmenu", handler: contextMenuHandler });
     const touchStartHandler = this.handleTouchStart.bind(this);
@@ -11098,14 +8479,14 @@ var ZoomDrag = class {
     eventHandlers.push({ type: "touchend", handler: touchEndHandler });
     this.elementEventHandlers.set(element, eventHandlers);
   }
-  handleWheel(e2) {
-    e2.preventDefault();
-    const element = e2.currentTarget;
+  handleWheel(e) {
+    e.preventDefault();
+    const element = e.currentTarget;
     const state = element.zoomDragState;
     const rect = element.getBoundingClientRect();
-    const mouseX = e2.clientX - rect.left;
-    const mouseY = e2.clientY - rect.top;
-    const delta = e2.deltaY > 0 ? 0.95 : 1.05;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const delta = e.deltaY > 0 ? 0.95 : 1.05;
     const newScale = state.scale * delta;
     if (newScale < 0.1 || newScale > 100)
       return;
@@ -11114,22 +8495,22 @@ var ZoomDrag = class {
     state.scale = newScale;
     this.applyTransform(element);
   }
-  handleMouseDown(e2) {
-    if (e2.button === 2 || e2.button === 0 && e2.code === "Space") {
-      const element = e2.currentTarget;
+  handleMouseDown(e) {
+    if (e.button === 2 || e.button === 0 && e.code === "Space") {
+      const element = e.currentTarget;
       const state = element.zoomDragState;
       state.isDragging = true;
-      state.startX = e2.clientX - state.x;
-      state.startY = e2.clientY - state.y;
+      state.startX = e.clientX - state.x;
+      state.startY = e.clientY - state.y;
       document.addEventListener("mousemove", this.handleMouseMove);
       document.addEventListener("mouseup", this.handleMouseUp);
     }
   }
-  handleTouchStart(e2) {
-    e2.stopImmediatePropagation();
-    const element = e2.currentTarget;
+  handleTouchStart(e) {
+    e.stopImmediatePropagation();
+    const element = e.currentTarget;
     const state = element.zoomDragState;
-    const touches = e2.touches;
+    const touches = e.touches;
     if (touches.length === 1) {
       state.isDragging = true;
       state.startX = touches[0].clientX - state.x;
@@ -11141,11 +8522,11 @@ var ZoomDrag = class {
       state.startY = center.y - state.y;
     }
   }
-  handleTouchMove(e2) {
-    e2.stopImmediatePropagation();
-    const element = e2.currentTarget;
+  handleTouchMove(e) {
+    e.stopImmediatePropagation();
+    const element = e.currentTarget;
     const state = element.zoomDragState;
-    const touches = e2.touches;
+    const touches = e.touches;
     if (touches.length === 1 && state.isDragging) {
       state.x = touches[0].clientX - state.startX;
       state.y = touches[0].clientY - state.startY;
@@ -11247,6 +8628,28 @@ function deepClone(obj, map = /* @__PURE__ */ new WeakMap()) {
   return clone;
 }
 
+// src/Commands/renumberFootnote.ts
+var import_obsidian20 = require("obsidian");
+function renumberFootnoteCommand(self4) {
+  self4.settings.footnoteRenumbering && self4.addCommand({
+    id: "\u811A\u6CE8\u91CD\u7F16\u53F7",
+    name: "\u811A\u6CE8\u91CD\u7F16\u53F7",
+    icon: "footprints",
+    editorCallback: async (editor, view) => renumberFootnote(self4, view.file)
+  });
+}
+async function renumberFootnote(self4, file) {
+  if (!self4.settings.footnoteRenumbering)
+    return;
+  let content = await self4.app.vault.read(file);
+  let footnoteIndex = 1;
+  let referenceIndex = 1;
+  content = content.replace(/\[\^(\d+)\][^:]/g, () => `[^${footnoteIndex++}]`);
+  content = content.replace(/\[\^(\d+)\]:/g, () => `[^${referenceIndex++}]:`);
+  await self4.app.vault.modify(file, content);
+  new import_obsidian20.Notice(`\u5DF2\u4E3A${footnoteIndex - 1}\u4E2A\u811A\u6CE8\u91CD\u65B0\u7F16\u53F7`);
+}
+
 // src/Commands/reviewOfReadingNote.ts
 function reviewOfReadingNote(self4) {
   if (!self4.settings.reviewOfReadingNotes)
@@ -11262,9 +8665,9 @@ function reviewOfReadingNote(self4) {
           highlights = highlights.concat(highlight2.map((h) => ({ text: h, file })));
       }
       const content = pick(highlights, count, true).reduce((res, ret) => {
-        const [a2, b, c2] = /\[(.*)\]\((.*)\)/g.exec(ret.text);
+        const [a, b, c] = /\[(.*)\]\((.*)\)/g.exec(ret.text);
         res += `<div data-callout-metadata="" data-callout-fold="" data-callout="quote" class="callout"><div class="callout-title" dir="auto"><div class="callout-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-quote"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path></svg></div><div class="callout-title-inner"><a class="internal-link" data-href="${ret.file.path}" href="${ret.file.path}" target="_blank" rel="noopener">\u300A${ret.file.basename}\u300B</a> </div></div><div class="callout-content">
-<p dir="auto"><a class="internal-link" data-href="${c2}" href="${c2}" target="_blank" rel="noopener">${b.slice(9)}</a></p>
+<p dir="auto"><a class="internal-link" data-href="${c}" href="${c}" target="_blank" rel="noopener">${b.slice(9)}</a></p>
 </div></div>`;
         return res;
       }, "");
@@ -11274,11 +8677,11 @@ function reviewOfReadingNote(self4) {
 }
 
 // src/Commands/searchForWord.ts
-var import_obsidian24 = require("obsidian");
+var import_obsidian22 = require("obsidian");
 
 // src/Modals/PanelSearchForWord.ts
-var import_obsidian23 = require("obsidian");
-var PanelSearchForWord = class extends import_obsidian23.Modal {
+var import_obsidian21 = require("obsidian");
+var PanelSearchForWord = class extends import_obsidian21.Modal {
   constructor(self4, title, content, onSubmit) {
     super(self4.app);
     this.chatContent = "";
@@ -11294,7 +8697,7 @@ var PanelSearchForWord = class extends import_obsidian23.Modal {
     titleEl.setText(this.title);
     contentEl.setText(this.content);
     contentEl.appendChild(this.chatArea = createChatArea());
-    new import_obsidian23.Setting(contentEl).addButton(
+    new import_obsidian21.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("\u5199\u751F\u8BCD").setCta().onClick(() => {
         this.close();
         this.onSubmit("words", this.chatContent);
@@ -11351,7 +8754,7 @@ async function searchForWord(self4, editor) {
   const h1 = createElement("h1", "\u6C49\u5178");
   const hanDianUrl = "https://www.zdic.net/hans/" + word;
   h1.innerHTML = `<a href="${hanDianUrl}" target="_blank">\u6C49\u5178</a>`;
-  const notice = new import_obsidian24.Notice("\u6B63\u5728\u67E5\u8BE2\u6C49\u5178\u548C\u767E\u5EA6\u767E\u79D1\uFF0C\u8BF7\u7A0D\u7B49");
+  const notice = new import_obsidian22.Notice("\u6B63\u5728\u67E5\u8BE2\u6C49\u5178\u548C\u767E\u5EA6\u767E\u79D1\uFF0C\u8BF7\u7A0D\u7B49");
   try {
     const html = await requestUrlToHTML(hanDianUrl);
     jnr = html.querySelector(".jnr");
@@ -11368,18 +8771,18 @@ async function searchForWord(self4, editor) {
   new PanelSearchForWord(self4, `${word} ${pinyin}`, div || "\u7A7A\u7A7A\u5982\u4E5F", async (type, chatContent) => {
     let file, content, folder;
     if (type === "words") {
-      const meanings = removeDuplicates(Array.from(jnr.querySelectorAll(".cino, .encs")).map((el) => el.parentNode.textContent)).map((text) => filterChineseAndPunctuation(text)).map((text) => trimNonChineseChars(text)).map((text) => text.replace(";", "\uFF1B")).join("\uFF1B") || (0, import_obsidian24.htmlToMarkdown)(jnr.textContent);
+      const meanings = removeDuplicates(Array.from(jnr.querySelectorAll(".cino, .encs")).map((el) => el.parentNode.textContent)).map((text) => filterChineseAndPunctuation(text)).map((text) => trimNonChineseChars(text)).map((text) => text.replace(";", "\uFF1B")).join("\uFF1B") || (0, import_obsidian22.htmlToMarkdown)(jnr.textContent);
       content = `${word}\`/${pinyin}/\`\uFF1A${meanings}\u3002`;
       folder = self4.settings.wordsSaveFolder;
     } else if (type === "card") {
       const html = JSummary == null ? void 0 : JSummary.textContent;
-      content = html ? (0, import_obsidian24.htmlToMarkdown)(html) : "";
+      content = html ? (0, import_obsidian22.htmlToMarkdown)(html) : "";
       content = content.replace(/\[\d+\]/g, "");
       folder = self4.settings.cardSaveFolder;
     }
     file = self4.app.vault.getMarkdownFiles().find((file2) => isFileInDirectory(file2, folder) && file2.basename === word);
     if (file) {
-      new import_obsidian24.Notice(type === "words" ? "\u8BCD\u8BED\u5DF2\u5B58\u5728" : "\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
+      new import_obsidian22.Notice(type === "words" ? "\u8BCD\u8BED\u5DF2\u5B58\u5728" : "\u5361\u7247\u7B14\u8BB0\u5DF2\u5B58\u5728");
     } else {
       const filepath = `${folder}/${word}.md`;
       file = await self4.app.vault.create(filepath, chatContent || content || "");
@@ -11400,8 +8803,8 @@ function removeDuplicates(arr) {
 }
 
 // src/Commands/syncNote.ts
-var import_js_md52 = __toESM(require_md5());
-var import_obsidian25 = require("obsidian");
+var import_js_md5 = __toESM(require_md5());
+var import_obsidian23 = require("obsidian");
 function asyncNoteCommand(self4) {
   self4.settings.readingNotes && self4.addCommand({
     id: "\u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0",
@@ -11432,13 +8835,13 @@ async function syncNote(self4, file) {
 
 # \u4E66\u8BC4 
 
- > [!tip] ${bookReview}${self4.settings.blockId ? " ^" + (0, import_js_md52.md5)(bookReview) : ""}`);
+ > [!tip] ${bookReview}${self4.settings.blockId ? " ^" + (0, import_js_md5.md5)(bookReview) : ""}`);
   if (self4.settings.discuss) {
-    const d = (markdown.match(/==dialogue==[\s\S]*?==dialogue==/g) || []).reverse().map((t3) => t3.replace(/==dialogue==/g, "")).map((t3) => {
-      const c2 = t3.split("\n");
-      const [title, id] = c2[2].split("^");
-      c2[2] = `## [${title}](${file.path}#^${id})`;
-      return c2.slice(0, -2).join("\n");
+    const d = (markdown.match(/==dialogue==[\s\S]*?==dialogue==/g) || []).reverse().map((t2) => t2.replace(/==dialogue==/g, "")).map((t2) => {
+      const c = t2.split("\n");
+      const [title, id] = c[2].split("^");
+      c[2] = `## [${title}](${file.path}#^${id})`;
+      return c.slice(0, -2).join("\n");
     });
     if (d.length) {
       dialogue2 = d.length;
@@ -11448,7 +8851,7 @@ async function syncNote(self4, file) {
       }, "");
     }
   }
-  const t2 = (markdown.match(/<span class="__comment[\S\s]+?<\/span>|#{1,6} .+/gm) || []).map((b) => b.replace(/\r?\n|\r/g, "")).map((b) => {
+  const t = (markdown.match(/<span class="__comment[\S\s]+?<\/span>|#{1,6} .+/gm) || []).map((b) => b.replace(/\r?\n|\r/g, "")).map((b) => {
     const isTitle = b[0] === "#";
     let res = { isTitle };
     if (!isTitle) {
@@ -11457,7 +8860,7 @@ async function syncNote(self4, file) {
       const el = div.firstChild;
       const { comment, id, tagging, date } = el.dataset;
       const text = el.textContent;
-      res.text = `> [!quote] [${text}${tagging ? "\uFF08" + tagging + "\uFF09" : ""}](${file.path}#^${id}) ${comment ? "\n\u{1F4AC} " + comment + (self4.settings.syncDate ? " *" + date + "*" : "") : ""}${self4.settings.blockId ? " ^" + (0, import_js_md52.md5)(text) : ""}`;
+      res.text = `> [!quote] [${text}${tagging ? "\uFF08" + tagging + "\uFF09" : ""}](${file.path}#^${id}) ${comment ? "\n\u{1F4AC} " + comment + (self4.settings.syncDate ? " *" + date + "*" : "") : ""}${self4.settings.blockId ? " ^" + (0, import_js_md5.md5)(text) : ""}`;
       highlights++;
       if (comment)
         thinks++;
@@ -11465,33 +8868,33 @@ async function syncNote(self4, file) {
       res.text = b;
     }
     return res;
-  }).filter((o2, i2, arr) => {
+  }).filter((o, i, arr) => {
     var _a3;
-    return o2.isTitle ? !((_a3 = arr[i2 + 1]) == null ? void 0 : _a3.isTitle) : true;
+    return o.isTitle ? !((_a3 = arr[i + 1]) == null ? void 0 : _a3.isTitle) : true;
   });
-  if (t2 && t2.length) {
-    t2[t2.length - 1].isTitle && t2.pop();
-    if (t2.length) {
+  if (t && t.length) {
+    t[t.length - 1].isTitle && t.pop();
+    if (t.length) {
       content += "\n\n# \u5212\u7EBF \n\n";
-      t2.forEach(({ text }) => content += text + "\n\n");
+      t.forEach(({ text }) => content += text + "\n\n");
     }
   }
   const readingNotePath = self4.settings.readingNotesToFolder + "/" + file.name;
   const readingNoteFile = self4.app.vault.getAbstractFileByPath(readingNotePath);
   if (readingNoteFile) {
     const sourceContent = await self4.app.vault.read(readingNoteFile);
-    const t3 = (_a2 = self4.readingManager.load(file.path)) == null ? void 0 : _a2.readingTime;
-    const isSameReadingTime = t3 !== readingTime;
+    const t2 = (_a2 = self4.readingManager.load(file.path)) == null ? void 0 : _a2.readingTime;
+    const isSameReadingTime = t2 !== readingTime;
     if (sourceContent !== content || isSameReadingTime) {
       self4.app.vault.modify(readingNoteFile, content);
       self4.updateMetadata(file, outlinks, highlights, thinks, dialogue2);
       readingDataSync(self4, file);
-      new import_obsidian25.Notice(file.name + " - \u5DF2\u540C\u6B65");
+      new import_obsidian23.Notice(file.name + " - \u5DF2\u540C\u6B65");
     }
   } else {
     self4.app.vault.create(readingNotePath, content);
     self4.updateMetadata(file, outlinks, highlights, thinks, dialogue2);
-    new import_obsidian25.Notice(file.name + " - \u5DF2\u540C\u6B65");
+    new import_obsidian23.Notice(file.name + " - \u5DF2\u540C\u6B65");
   }
 }
 
@@ -11521,6 +8924,38 @@ async function repositionBilibiliAISummary(self4, file) {
   await self4.app.vault.modify(file, content);
 }
 
+// src/Modals/InputBox.ts
+var import_obsidian24 = require("obsidian");
+var InputBox = class extends import_obsidian24.Modal {
+  constructor(app, data) {
+    super(app);
+    this.data = data;
+  }
+  onOpen() {
+    let res;
+    const { contentEl } = this;
+    const { title, name, description = "", content, submitText = "\u786E\u5B9A", onSubmit } = this.data;
+    this.setTitle(title);
+    content && this.setContent(content);
+    new import_obsidian24.Setting(contentEl).setDesc(description).setName(name).addText(
+      (text) => text.onChange((value) => {
+        res = value;
+      })
+    );
+    new import_obsidian24.Setting(contentEl).addButton(
+      (btn) => btn.setButtonText(submitText).setCta().onClick(() => {
+        this.close();
+        onSubmit(res);
+      })
+    );
+  }
+  onClose() {
+    editorBlur(this.app);
+    let { contentEl } = this;
+    contentEl.empty();
+  }
+};
+
 // src/CustomizedCommands/repositionVideo.ts
 async function repositionVideo(self4, file) {
   var _a2;
@@ -11543,7 +8978,7 @@ async function repositionVideo(self4, file) {
 }
 
 // src/CustomizedCommands/resourceTo.ts
-var import_obsidian26 = require("obsidian");
+var import_obsidian25 = require("obsidian");
 function resourcesToCommand(self4) {
   self4.settings.resourceTo && self4.addCommand({
     id: "\u79FB\u52A8\u5F53\u524D\u7B14\u8BB0\u4E2D\u7684\u8D44\u6E90\u81F3\u6307\u5B9A\u6587\u4EF6\u5939",
@@ -11566,32 +9001,32 @@ async function resourceTo(self4, file, targetFolder) {
     return;
   let content = await self4.app.vault.read(file);
   const paths = Object.keys(self4.app.metadataCache.resolvedLinks[file.path]).filter((path) => path.indexOf(targetFolder) === -1).map((path) => {
-    const targetPath = targetFolder + "/" + self4.app.vault.getFiles().find((f2) => f2.path === path).name;
+    const targetPath = targetFolder + "/" + self4.app.vault.getFiles().find((f) => f.path === path).name;
     content = content.replace(path, targetPath);
     self4.app.vault.adapter.rename(path, targetPath);
   });
   self4.app.vault.modify(file, content);
-  paths.length && new import_obsidian26.Notice(`\u5DF2\u79FB\u52A8 ${paths.length} \u81F3 ${targetFolder}`);
+  paths.length && new import_obsidian25.Notice(`\u5DF2\u79FB\u52A8 ${paths.length} \u81F3 ${targetFolder}`);
 }
 
 // src/CustomizedCommands/searchForPlant.ts
-var import_obsidian28 = require("obsidian");
+var import_obsidian27 = require("obsidian");
 
 // src/Modals/PanelSearchForPlants.ts
-var import_obsidian27 = require("obsidian");
-var PanelSearchForPlants = class extends import_obsidian27.Modal {
+var import_obsidian26 = require("obsidian");
+var PanelSearchForPlants = class extends import_obsidian26.Modal {
   constructor(app, onSubmit) {
     super(app);
     this.onSubmit = onSubmit;
   }
   onOpen() {
     const { contentEl, titleEl } = this;
-    new import_obsidian27.Setting(contentEl).addText(
+    new import_obsidian26.Setting(contentEl).addText(
       (text) => text.onChange((value) => {
         this.result = value;
       })
     );
-    new import_obsidian27.Setting(contentEl).addButton(
+    new import_obsidian26.Setting(contentEl).addButton(
       (btn) => btn.setButtonText("\u67E5\u690D\u7269").setCta().onClick(() => {
         this.close();
         this.onSubmit(this.result);
@@ -11624,11 +9059,11 @@ async function searchForPlant(self4) {
     let alias = (_c = (_b = html.querySelector(".infomore>div")) == null ? void 0 : _b.firstChild) == null ? void 0 : _c.textContent;
     let other = (_d = html.querySelector(".infomore>.spantxt")) == null ? void 0 : _d.textContent;
     if (latinName.trim() === "" && other) {
-      new import_obsidian28.Notice(`${name}\uFF1F\u60A8\u662F\u5426\u5728\u627E ${other}`);
+      new import_obsidian27.Notice(`${name}\uFF1F\u60A8\u662F\u5426\u5728\u627E ${other}`);
       return;
     }
     if (id === "") {
-      new import_obsidian28.Notice(`${name}\uFF1F\u60A8\u53EF\u80FD\u8F93\u5165\u9519\u8BEF\u6216\u690D\u7269\u667A\u4E0D\u5B58\u5728\u76F8\u5173\u690D\u7269`);
+      new import_obsidian27.Notice(`${name}\uFF1F\u60A8\u53EF\u80FD\u8F93\u5165\u9519\u8BEF\u6216\u690D\u7269\u667A\u4E0D\u5B58\u5728\u76F8\u5173\u690D\u7269`);
       return;
     }
     if (alias.indexOf("\u4FD7\u540D") > -1) {
@@ -11636,9 +9071,9 @@ async function searchForPlant(self4) {
     } else {
       alias = " ";
     }
-    const classsys = extractChineseParts(JSON.parse(await (0, import_obsidian28.request)(`https://www.iplant.cn/ashx/getspinfos.ashx?spid=${id}&type=classsys`)).classsys.find((text) => Object.keys(plantClassificationSystem).some((name2) => text.indexOf(name2) > -1)));
-    const plantIntelligence = await (0, import_obsidian28.request)(`https://www.iplant.cn/ashx/getfrps.ashx?key=${latinName.split(" ").join("+")}`);
-    const lifestyleForm = plantIntelligence ? (0, import_obsidian28.htmlToMarkdown)(JSON.parse(plantIntelligence).frpsdesc).replace(/^[^\n]*\n[^\n]*\n[^\n]*\n/, "") : "\u300A\u690D\u7269\u667A\u300B\u672A\u6536\u5F55\u3002";
+    const classsys = extractChineseParts(JSON.parse(await (0, import_obsidian27.request)(`https://www.iplant.cn/ashx/getspinfos.ashx?spid=${id}&type=classsys`)).classsys.find((text) => Object.keys(plantClassificationSystem).some((name2) => text.indexOf(name2) > -1)));
+    const plantIntelligence = await (0, import_obsidian27.request)(`https://www.iplant.cn/ashx/getfrps.ashx?key=${latinName.split(" ").join("+")}`);
+    const lifestyleForm = plantIntelligence ? (0, import_obsidian27.htmlToMarkdown)(JSON.parse(plantIntelligence).frpsdesc).replace(/^[^\n]*\n[^\n]*\n[^\n]*\n/, "") : "\u300A\u690D\u7269\u667A\u300B\u672A\u6536\u5F55\u3002";
     const content = `---
 \u4E2D\u6587\u540D: ${name}
 \u62C9\u4E01\u5B66\u540D: ${latinName}
@@ -11648,9 +9083,9 @@ ${classsys}
 ---
 ${lifestyleForm}`;
     const filepath = "\u5361\u7247\u76D2/\u5F52\u6863/" + name + ".md";
-    let file = self4.app.vault.getFiles().find((f2) => f2.path === filepath) || self4.app.vault.getFiles().find((f2) => f2.path === "\u5361\u7247\u76D2/" + name + ".md");
+    let file = self4.app.vault.getFiles().find((f) => f.path === filepath) || self4.app.vault.getFiles().find((f) => f.path === "\u5361\u7247\u76D2/" + name + ".md");
     if (file) {
-      new import_obsidian28.Notice("\u67E5\u8BE2\u7684\u690D\u7269\u7B14\u8BB0\u5DF2\u5B58\u5728");
+      new import_obsidian27.Notice("\u67E5\u8BE2\u7684\u690D\u7269\u7B14\u8BB0\u5DF2\u5B58\u5728");
     } else {
       file = await self4.app.vault.create(filepath, content);
     }
@@ -11672,8 +9107,8 @@ function extractChineseParts(inputString) {
   const yamlObject = {};
   const sy = chineseParts.shift();
   const keys2 = ["\u4E9A\u95E8", "\u7EB2", "\u4E9A\u7EB2", "\u8D85\u76EE", "\u79D1", "\u5C5E"];
-  for (let i2 = 0; i2 < keys2.length; i2++) {
-    yamlObject[keys2[i2]] = chineseParts.find((text) => text.indexOf(keys2[i2]) > -1) || "";
+  for (let i = 0; i < keys2.length; i++) {
+    yamlObject[keys2[i]] = chineseParts.find((text) => text.indexOf(keys2[i]) > -1) || "";
   }
   yamlObject["\u76EE"] = chineseParts.find((text) => text.slice(-1) === "\u76EE" && text.slice(-2) !== "\u8D85\u76EE") || "";
   return `${plantClassificationSystem[sy]}
@@ -11709,7 +9144,7 @@ function switchLibrary(self4) {
   });
 }
 function categoryText(occurrences, name) {
-  return occurrences.sort((a2, b) => b[1] - a2[1]).reduce((ret, res) => ret += `<span class="__library cm-hashtag cm-hashtag-end cm-meta cm-tag- cm-formatting cm-formatting-hashtag cm-hashtag cm-hashtag-begin cm-meta cm-tag-" data-name="${res[0]}" data-count=${res[1]} style="font-size: 1.1rem; margin-bottom: 10px; display: inline-block; color: ${name === res[0] ? "#f58231" : ""}">${res[0]} ${res[1]}</span> `, "");
+  return occurrences.sort((a, b) => b[1] - a[1]).reduce((ret, res) => ret += `<span class="__library cm-hashtag cm-hashtag-end cm-meta cm-tag- cm-formatting cm-formatting-hashtag cm-hashtag cm-hashtag-begin cm-meta cm-tag-" data-name="${res[0]}" data-count=${res[1]} style="font-size: 1.1rem; margin-bottom: 10px; display: inline-block; color: ${name === res[0] ? "#f58231" : ""}">${res[0]} ${res[1]}</span> `, "");
 }
 function dataviewJsContent(field, name) {
   return `\`\`\`dataview
@@ -11726,7 +9161,7 @@ sort top DESC, file.mtime DESC
 }
 
 // src/settings.ts
-var import_obsidian29 = require("obsidian");
+var import_obsidian28 = require("obsidian");
 var DEFAULT_SETTINGS = {
   plugins: {
     encryption: {},
@@ -11775,24 +9210,12 @@ var DEFAULT_SETTINGS = {
   completionDelay: 100,
   completionMaxLength: 128,
   blockReference: false,
-  encryption: false,
-  encryptionSupportImage: true,
-  encryptionImageCompress: false,
-  encryptionImageCompressMaxSize: 2,
-  encryptionImageCompressLongScreenshotRatio: 3,
-  encryptionImageCompressPreserveExif: true,
-  encryptionSupportVideo: false,
-  encryptionChunkSize: 1024 * 1024 * 1024,
-  encryptionRememberPassMode: "notSave",
-  gallery: false,
   poster: false,
   footnoteRenumbering: false,
   gitChart: false,
   gitChartMultiColorLabel: false,
   gitChartPartition: false,
   gitChartPartitionFolding: false,
-  sandbox: false,
-  sandboxFolder: "",
   resourceTo: false,
   searchForPlants: false,
   searchForPlantsFolder: "",
@@ -11801,7 +9224,7 @@ var DEFAULT_SETTINGS = {
   bilibiliAISummaryFormat: false,
   bilibiliAISummaryFormatFolder: ""
 };
-var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
+var ToolboxSettingTab = class extends import_obsidian28.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
@@ -11810,7 +9233,7 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
     let { containerEl } = this;
     containerEl.empty();
     containerEl.createEl("h1", { text: this.plugin.manifest.name });
-    new import_obsidian29.Setting(containerEl).setName("\u{1F550} \u9605\u8BFB\u6570\u636E\u8DDF\u8E2A").setDesc("\u9605\u8BFB\u8FDB\u5EA6\u3001\u65F6\u957F\uFF0C\u672A\u8BFB\u4EE5\u53CA\u8BFB\u5B8C").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F550} \u9605\u8BFB\u6570\u636E\u8DDF\u8E2A").setDesc("\u9605\u8BFB\u8FDB\u5EA6\u3001\u65F6\u957F\uFF0C\u672A\u8BFB\u4EE5\u53CA\u8BFB\u5B8C").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.readDataTracking).onChange(async (value) => {
         this.plugin.settings.readDataTracking = value;
         await this.plugin.saveSettings();
@@ -11818,20 +9241,20 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       })
     );
     if (this.plugin.settings.readDataTracking) {
-      new import_obsidian29.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
         (cd) => cd.setValue("" + this.plugin.settings.readDataTrackingFolder).onChange(async (value) => {
           this.plugin.settings.readDataTrackingFolder = value;
           await this.plugin.saveSettings();
         })
       );
-      const setting = new import_obsidian29.Setting(containerEl).setName(`\u8D85\u65F6 (${this.plugin.settings.readDataTrackingTimeout / 36e3}m)`).setDesc(`\u8D85\u8FC7\u4E00\u6BB5\u65F6\u95F4\u672A\u7FFB\u9875\u5C06\u6682\u505C\u8DDF\u8E2A\u9605\u8BFB\u65F6\u957F\uFF0C\u4EE5\u83B7\u5F97\u66F4\u51C6\u786E\u7684\u6570\u636E\u3002`).addSlider(
+      const setting = new import_obsidian28.Setting(containerEl).setName(`\u8D85\u65F6 (${this.plugin.settings.readDataTrackingTimeout / 36e3}m)`).setDesc(`\u8D85\u8FC7\u4E00\u6BB5\u65F6\u95F4\u672A\u7FFB\u9875\u5C06\u6682\u505C\u8DDF\u8E2A\u9605\u8BFB\u65F6\u957F\uFF0C\u4EE5\u83B7\u5F97\u66F4\u51C6\u786E\u7684\u6570\u636E\u3002`).addSlider(
         (slider) => slider.setLimits(36e3 * 5, 36e4, 36e3).setValue(this.plugin.settings.readDataTrackingTimeout).onChange(async (value) => {
           this.plugin.settings.readDataTrackingTimeout = Number(value);
           await this.plugin.saveSettings();
           setting.setName(`\u8D85\u65F6 (${value / 36e3}m)`);
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u5B9E\u65F6\u540C\u6B65").setDesc("\u5728\u67D0\u4E9B\u8001\u65E7\u6C34\u58A8\u5C4F\u8BBE\u5907\u6216\u8005\u5355\u6587\u4EF6\u4F53\u79EF\u8FC7\u5927\uFF0C\u6BCF\u6B21\u5B9E\u65F6\u540C\u6B65\u8DDF\u8E2A\u6570\u636E\u90FD\u4F1A\u5BFC\u81F4\u7FFB\u9875\u660E\u663E\u6EDE\u540E\uFF0C\u8BF7\u5173\u95ED\u6B64\u9009\u9879").setHeading().addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u5B9E\u65F6\u540C\u6B65").setDesc("\u5728\u67D0\u4E9B\u8001\u65E7\u6C34\u58A8\u5C4F\u8BBE\u5907\u6216\u8005\u5355\u6587\u4EF6\u4F53\u79EF\u8FC7\u5927\uFF0C\u6BCF\u6B21\u5B9E\u65F6\u540C\u6B65\u8DDF\u8E2A\u6570\u636E\u90FD\u4F1A\u5BFC\u81F4\u7FFB\u9875\u660E\u663E\u6EDE\u540E\uFF0C\u8BF7\u5173\u95ED\u6B64\u9009\u9879").setHeading().addToggle(
         (cd) => cd.setValue(this.plugin.settings.readDataTrackingSync).onChange(async (value) => {
           this.plugin.settings.readDataTrackingSync = value;
           await this.plugin.saveSettings();
@@ -11839,7 +9262,7 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         })
       );
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F447}\u{1F3FC} \u7FFB\u9875").setDesc("\uFF08\u79FB\u52A8\u7AEF\uFF09\u70B9\u51FB\u7FFB\u9875\uFF0C\u5DE6\u6ED1\u4E0B\u7FFB\uFF0C\u53F3\u6ED1\u4E0A\u7FFB\uFF0C\u957F\u63090.5s\u8FDB\u5165\u7F16\u8F91\u6A21\u5F0F\uFF0C\u957F\u63092.5s\u8FDB\u5165\u5168\u5C4F\u6A21\u5F0F\uFF0C\u6536\u8D77\u8F6F\u952E\u76D8\u8FDB\u5165\u9605\u8BFB\u6A21\u5F0F\u3002\uFF08\u684C\u9762\u7AEF\uFF09\u70B9\u51FB\u548C\u9F20\u6807\u6EDA\u8F6E\u7FFB\u9875\uFF0C\u9F20\u6807\u53F3\u952E\u5207\u6362\u6A21\u5F0F").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F447}\u{1F3FC} \u7FFB\u9875").setDesc("\uFF08\u79FB\u52A8\u7AEF\uFF09\u70B9\u51FB\u7FFB\u9875\uFF0C\u5DE6\u6ED1\u4E0B\u7FFB\uFF0C\u53F3\u6ED1\u4E0A\u7FFB\uFF0C\u957F\u63090.5s\u8FDB\u5165\u7F16\u8F91\u6A21\u5F0F\uFF0C\u957F\u63092.5s\u8FDB\u5165\u5168\u5C4F\u6A21\u5F0F\uFF0C\u6536\u8D77\u8F6F\u952E\u76D8\u8FDB\u5165\u9605\u8BFB\u6A21\u5F0F\u3002\uFF08\u684C\u9762\u7AEF\uFF09\u70B9\u51FB\u548C\u9F20\u6807\u6EDA\u8F6E\u7FFB\u9875\uFF0C\u9F20\u6807\u53F3\u952E\u5207\u6362\u6A21\u5F0F").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.flip).onChange(async (value) => {
         this.plugin.settings.flip = value;
         await this.plugin.saveSettings();
@@ -11847,21 +9270,21 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       })
     );
     if (this.plugin.settings.flip) {
-      new import_obsidian29.Setting(containerEl).setName("\u4FEE\u6B63\u503C").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u4FEE\u6B63\u503C").addText(
         (cd) => cd.setValue("" + this.plugin.settings.fileCorrect).onChange(async (value) => {
           this.plugin.settings.fileCorrect = Number(value);
           await this.plugin.saveSettings();
         })
       );
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F917} \u5168\u5C4F\u6A21\u5F0F").setDesc("\u957F\u6309 2.5s \u6253\u5F00\u6216\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F917} \u5168\u5C4F\u6A21\u5F0F").setDesc("\u957F\u6309 2.5s \u6253\u5F00\u6216\u5173\u95ED\u5168\u5C4F\u6A21\u5F0F").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.fullScreenMode).onChange(async (value) => {
         this.plugin.settings.fullScreenMode = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian29.Setting(containerEl).setName("\u{1F50E} \u67E5\u8BCD").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F50E} \u67E5\u8BCD").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.searchForWords).onChange(async (value) => {
         this.plugin.settings.searchForWords = value;
         await this.plugin.saveSettings();
@@ -11869,34 +9292,34 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       })
     );
     if (this.plugin.settings.searchForWords) {
-      new import_obsidian29.Setting(containerEl).setName("\u751F\u8BCD\u653E\u5728\u54EA\u4E2A\u6587\u4EF6\u5939\uFF1F").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u751F\u8BCD\u653E\u5728\u54EA\u4E2A\u6587\u4EF6\u5939\uFF1F").addText(
         (cd) => cd.setValue("" + this.plugin.settings.wordsSaveFolder).onChange(async (value) => {
           this.plugin.settings.wordsSaveFolder = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u5361\u7247\u7B14\u8BB0\u653E\u5728\u54EA\u4E2A\u6587\u4EF6\u5939\uFF1F").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u5361\u7247\u7B14\u8BB0\u653E\u5728\u54EA\u4E2A\u6587\u4EF6\u5939\uFF1F").addText(
         (cd) => cd.setValue("" + this.plugin.settings.cardSaveFolder).onChange(async (value) => {
           this.plugin.settings.cardSaveFolder = value;
           await this.plugin.saveSettings();
         })
       );
     }
-    new import_obsidian29.Setting(containerEl).setName("\u270F\uFE0F \u5212\u7EBF").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u270F\uFE0F \u5212\u7EBF").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.highlight).onChange(async (value) => {
         this.plugin.settings.highlight = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian29.Setting(containerEl).setName("\u{1F514} \u8BA8\u8BBA").setDesc("\u5728\u5F53\u524D\u884C\u4E0B\u65B9\u6DFB\u52A0\u5BF9\u672C\u7AE0\u8282\u6216\u672C\u4E66\u7684\u89C1\u89E3").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F514} \u8BA8\u8BBA").setDesc("\u5728\u5F53\u524D\u884C\u4E0B\u65B9\u6DFB\u52A0\u5BF9\u672C\u7AE0\u8282\u6216\u672C\u4E66\u7684\u89C1\u89E3").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.dialogue).onChange(async (value) => {
         this.plugin.settings.dialogue = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian29.Setting(containerEl).setName("\u{1F575}\uFE0F\u200D\u2640\uFE0F \u4EBA\u7269\u5173\u7CFB").setHeading().setDesc("\u6839\u636E\u9605\u8BFB\u8FDB\u5EA6\u521B\u5EFA\u591A\u5F20\u4EBA\u7269\u5173\u7CFB\u7684 mermaid \u56FE").addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F575}\uFE0F\u200D\u2640\uFE0F \u4EBA\u7269\u5173\u7CFB").setHeading().setDesc("\u6839\u636E\u9605\u8BFB\u8FDB\u5EA6\u521B\u5EFA\u591A\u5F20\u4EBA\u7269\u5173\u7CFB\u7684 mermaid \u56FE").addToggle(
       (cd) => cd.setValue(this.plugin.settings.characterRelationships).onChange(async (value) => {
         this.plugin.settings.characterRelationships = value;
         await this.plugin.saveSettings();
@@ -11904,14 +9327,14 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       })
     );
     if (this.plugin.settings.characterRelationships) {
-      new import_obsidian29.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u8DDF\u8E2A\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
         (cd) => cd.setValue("" + this.plugin.settings.characterRelationshipsFolder).onChange(async (value) => {
           this.plugin.settings.characterRelationshipsFolder = value;
           await this.plugin.saveSettings();
         })
       );
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F4D9} \u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F4D9} \u540C\u6B65\u8BFB\u4E66\u7B14\u8BB0").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.readingNotes).onChange(async (value) => {
         this.plugin.settings.readingNotes = value;
         await this.plugin.saveSettings();
@@ -11919,44 +9342,44 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       })
     );
     if (this.plugin.settings.readingNotes) {
-      new import_obsidian29.Setting(containerEl).setName("\u540C\u6B65\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u540C\u6B65\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
         (cd) => cd.setValue("" + this.plugin.settings.readingNotesToFolder).onChange(async (value) => {
           this.plugin.settings.readingNotesToFolder = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u540C\u6B65\u51FA\u94FE").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u540C\u6B65\u51FA\u94FE").addToggle(
         (cd) => cd.setValue(this.plugin.settings.outLink).onChange(async (value) => {
           this.plugin.settings.outLink = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u540C\u6B65\u8BA8\u8BBA").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u540C\u6B65\u8BA8\u8BBA").addToggle(
         (cd) => cd.setValue(this.plugin.settings.discuss).onChange(async (value) => {
           this.plugin.settings.discuss = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u540C\u6B65\u5143\u5B57\u6BB5").setDesc("\u6DFB\u52A0\u5212\u7EBF\uFF0C\u60F3\u6CD5\u548C\u51FA\u94FE\u6570\u91CF\u5143\u5B57\u6BB5").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u540C\u6B65\u5143\u5B57\u6BB5").setDesc("\u6DFB\u52A0\u5212\u7EBF\uFF0C\u60F3\u6CD5\u548C\u51FA\u94FE\u6570\u91CF\u5143\u5B57\u6BB5").addToggle(
         (cd) => cd.setValue(this.plugin.settings.frontmatter).onChange(async (value) => {
           this.plugin.settings.frontmatter = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u540C\u6B65\u65E5\u671F").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u540C\u6B65\u65E5\u671F").addToggle(
         (cd) => cd.setValue(this.plugin.settings.syncDate).onChange(async (value) => {
           this.plugin.settings.syncDate = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u6DFB\u52A0\u5757id").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u6DFB\u52A0\u5757id").addToggle(
         (cd) => cd.setValue(this.plugin.settings.blockId).onChange(async (value) => {
           this.plugin.settings.blockId = value;
           await this.plugin.saveSettings();
         })
       );
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F388} \u9605\u8BFB\u9875\u9762").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F388} \u9605\u8BFB\u9875\u9762").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.readingPageStyles).onChange(async (value) => {
         this.plugin.settings.readingPageStyles = value;
         await this.plugin.saveSettings();
@@ -11964,7 +9387,7 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       })
     );
     if (this.plugin.settings.readingPageStyles) {
-      const setting = new import_obsidian29.Setting(containerEl).setName(`\u5B57\u4F53\u5927\u5C0F (${this.plugin.settings.fontSize}px)`).addSlider(
+      const setting = new import_obsidian28.Setting(containerEl).setName(`\u5B57\u4F53\u5927\u5C0F (${this.plugin.settings.fontSize}px)`).addSlider(
         (slider) => slider.setLimits(18, 46, 1).setValue(this.plugin.settings.fontSize).onChange(async (value) => {
           this.plugin.settings.fontSize = Number(value);
           await this.plugin.saveSettings();
@@ -11972,14 +9395,14 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         })
       );
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F4D6} \u8BFB\u4E66\u7B14\u8BB0\u56DE\u987E").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F4D6} \u8BFB\u4E66\u7B14\u8BB0\u56DE\u987E").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.reviewOfReadingNotes).onChange(async (value) => {
         this.plugin.settings.reviewOfReadingNotes = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    const AIChatEl = new import_obsidian29.Setting(containerEl).setName("\u{1F916} AI Chat").setHeading();
+    const AIChatEl = new import_obsidian28.Setting(containerEl).setName("\u{1F916} AI Chat").setHeading();
     AIChatEl.addToggle(
       (cd) => cd.setValue(this.plugin.settings.chat).onChange(async (value) => {
         this.plugin.settings.chat = value;
@@ -12007,44 +9430,44 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
           }
         });
       }
-      new import_obsidian29.Setting(containerEl).setName("Url").addText(
+      new import_obsidian28.Setting(containerEl).setName("Url").addText(
         (cd) => cd.setValue("" + this.plugin.settings.chatUrl).onChange(async (value) => {
           this.plugin.settings.chatUrl = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("Key").addText(
+      new import_obsidian28.Setting(containerEl).setName("Key").addText(
         (cd) => cd.setValue("" + this.plugin.settings.chatKey).onChange(async (value) => {
           this.plugin.settings.chatKey = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("Model").addText(
+      new import_obsidian28.Setting(containerEl).setName("Model").addText(
         (cd) => cd.setValue("" + this.plugin.settings.chatModel).onChange(async (value) => {
           this.plugin.settings.chatModel = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("Promats Folder").addText(
+      new import_obsidian28.Setting(containerEl).setName("Promats Folder").addText(
         (cd) => cd.setValue("" + this.plugin.settings.chatPromptFolder).onChange(async (value) => {
           this.plugin.settings.chatPromptFolder = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u5C06\u5BF9\u8BDD\u4FDD\u5B58\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u5C06\u5BF9\u8BDD\u4FDD\u5B58\u81F3\u54EA\u4E2A\u6587\u4EF6\u5939").addText(
         (cd) => cd.setValue("" + this.plugin.settings.chatSaveFolder).onChange(async (value) => {
           this.plugin.settings.chatSaveFolder = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u9ED8\u8BA4\u6DF1\u5EA6\u601D\u8003").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u9ED8\u8BA4\u6DF1\u5EA6\u601D\u8003").addToggle(
         (cd) => cd.setValue(this.plugin.settings.chatDefaultUsingR1).onChange(async (value) => {
           this.plugin.settings.chatDefaultUsingR1 = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u7F51\u9875\u526A\u85CF").setDesc("\u4E3A\u7F51\u9875\u526A\u85CF\u7B14\u8BB0\u751F\u6210\u6838\u5FC3\u6458\u8981\u548C\u5438\u5F15\u4EBA\u7684\u6807\u9898").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u7F51\u9875\u526A\u85CF").setDesc("\u4E3A\u7F51\u9875\u526A\u85CF\u7B14\u8BB0\u751F\u6210\u6838\u5FC3\u6458\u8981\u548C\u5438\u5F15\u4EBA\u7684\u6807\u9898").addToggle(
         (cd) => cd.setValue(this.plugin.settings.chatWebPageClipping).onChange(async (value) => {
           this.plugin.settings.chatWebPageClipping = value;
           await this.plugin.saveSettings();
@@ -12052,14 +9475,14 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         })
       );
       if (this.plugin.settings.chatWebPageClipping) {
-        new import_obsidian29.Setting(containerEl).setName("\u7F51\u9875\u526A\u85CF - \u8DDF\u8E2A\u6587\u4EF6\u5939").addTextArea(
+        new import_obsidian28.Setting(containerEl).setName("\u7F51\u9875\u526A\u85CF - \u8DDF\u8E2A\u6587\u4EF6\u5939").addTextArea(
           (cd) => cd.setValue("" + this.plugin.settings.chatWebPageClippingFolder).onChange(async (value) => {
             this.plugin.settings.chatWebPageClippingFolder = value;
             await this.plugin.saveSettings();
           })
         );
       }
-      new import_obsidian29.Setting(containerEl).setName("\u81EA\u52A8\u8865\u5168").setDesc("\u6839\u636E\u5F53\u524D\u6BB5\u843D\u5185\u5BB9\uFF0C\u81EA\u52A8\u8865\u5168\u63A5\u4E0B\u6765\u7684\u7B14\u8BB0\u5185\u5BB9\u3002\u684C\u9762\u7AEF\u6309\u7A7A\u683C\u952E\u8865\u5168\u5EFA\u8BAE\u5185\u5BB9\u63D2\u5165\u5230\u5149\u6807\u4F4D\u7F6E\uFF0C\u79FB\u52A8\u7AEF\u70B9\u51FB\u8865\u5168\u5EFA\u8BAE\u5185\u5BB9\u63D2\u5165\u5230\u5149\u6807\u4F4D\u7F6E\u3002").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u81EA\u52A8\u8865\u5168").setDesc("\u6839\u636E\u5F53\u524D\u6BB5\u843D\u5185\u5BB9\uFF0C\u81EA\u52A8\u8865\u5168\u63A5\u4E0B\u6765\u7684\u7B14\u8BB0\u5185\u5BB9\u3002\u684C\u9762\u7AEF\u6309\u7A7A\u683C\u952E\u8865\u5168\u5EFA\u8BAE\u5185\u5BB9\u63D2\u5165\u5230\u5149\u6807\u4F4D\u7F6E\uFF0C\u79FB\u52A8\u7AEF\u70B9\u51FB\u8865\u5168\u5EFA\u8BAE\u5185\u5BB9\u63D2\u5165\u5230\u5149\u6807\u4F4D\u7F6E\u3002").addToggle(
         (cd) => cd.setValue(this.plugin.settings.completion).onChange(async (value) => {
           this.plugin.settings.completion = value;
           await this.plugin.saveSettings();
@@ -12067,13 +9490,13 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         })
       );
       if (this.plugin.settings.completion) {
-        new import_obsidian29.Setting(containerEl).setName("\u81EA\u52A8\u8865\u5168 - \u5EF6\u8FDF\uFF08ms\uFF09").setDesc("\u4E0D\u4F4E\u4E8E 100ms").addText(
+        new import_obsidian28.Setting(containerEl).setName("\u81EA\u52A8\u8865\u5168 - \u5EF6\u8FDF\uFF08ms\uFF09").setDesc("\u4E0D\u4F4E\u4E8E 100ms").addText(
           (cd) => cd.setValue("" + this.plugin.settings.completionDelay).onChange(async (value) => {
             this.plugin.settings.completionDelay = Number(value);
             await this.plugin.saveSettings();
           })
         );
-        new import_obsidian29.Setting(containerEl).setName("\u81EA\u52A8\u8865\u5168 - \u6700\u5927\u5B57\u8282").addText(
+        new import_obsidian28.Setting(containerEl).setName("\u81EA\u52A8\u8865\u5168 - \u6700\u5927\u5B57\u8282").addText(
           (cd) => cd.setValue("" + this.plugin.settings.completionMaxLength).onChange(async (value) => {
             this.plugin.settings.completionMaxLength = Number(value);
             await this.plugin.saveSettings();
@@ -12081,73 +9504,7 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         );
       }
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F512} \u7B14\u8BB0\u52A0\u5BC6").setDesc("\u672C\u529F\u80FD\u8FD8\u5904\u4E8E\u6D4B\u8BD5\u9636\u6BB5\uFF0C\u8BF7\u505A\u597D\u5907\u4EFD\uFF0C\u907F\u514D\u56E0\u610F\u5916\u60C5\u51B5\u5BFC\u81F4\u6570\u636E\u635F\u574F\u6216\u4E22\u5931\u3002").setHeading().addToggle(
-      (cd) => cd.setValue(this.plugin.settings.encryption).onChange(async (value) => {
-        this.plugin.settings.encryption = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-    if (this.plugin.settings.encryption) {
-      new import_obsidian29.Setting(containerEl).setName("\u8BB0\u4F4F\u5BC6\u7801").addDropdown(
-        (cd) => cd.addOption("notSave", "\u4E0D\u4FDD\u5B58").addOption("disposable", "\u8F6F\u4EF6\u8FD0\u884C\u65F6").addOption("always", "\u6C38\u4E45").setValue(this.plugin.settings.encryptionRememberPassMode).onChange(async (value) => {
-          this.plugin.settings.encryptionRememberPassMode = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-      new import_obsidian29.Setting(containerEl).setName("\u652F\u6301\u56FE\u7247").addToggle(
-        (cd) => cd.setValue(this.plugin.settings.encryptionSupportImage).onChange(async (value) => {
-          this.plugin.settings.encryptionSupportImage = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-      if (this.plugin.settings.encryptionSupportImage) {
-        new import_obsidian29.Setting(containerEl).setName("\u538B\u7F29\u56FE\u7247").setDesc("\u6709\u635F\u538B\u7F29\uFF0C\u5927\u5E45\u63D0\u5347\u52A0\u89E3\u5BC6\u901F\u5EA6\u3002\u5F00\u542F\u6B64\u9009\u9879\uFF0C\u539F\u56FE\u5C06\u5907\u4EFD\uFF0C\u7B14\u8BB0\u5185\u7684\u56FE\u7247\u6362\u4E3A\u538B\u7F29\u56FE\uFF0C\u9996\u6B21\u52A0\u5BC6\u4F1A\u8017\u65F6\u66F4\u957F\u3002\u5173\u95ED\u6B64\u9009\u9879\uFF0C\u518D\u8FDB\u884C\u4E00\u6B21\u52A0\u5BC6\u6216\u89E3\u5BC6\u540E\u8FD8\u539F\u539F\u56FE\u3002").addToggle(
-          (cd) => cd.setValue(this.plugin.settings.encryptionImageCompress).onChange(async (value) => {
-            this.plugin.settings.encryptionImageCompress = value;
-            await this.plugin.saveSettings();
-            this.display();
-          })
-        );
-        if (this.plugin.settings.encryptionImageCompress) {
-          new import_obsidian29.Setting(containerEl).setName("\u538B\u7F29\u56FE\u7247 - \u538B\u7F29\u540E\u7684\u56FE\u7247\u5927\u5C0F\u5C3D\u91CF\u4E0D\u8D85\u8FC7\uFF08mb\uFF09").addText(
-            (cd) => cd.setValue("" + this.plugin.settings.encryptionImageCompressMaxSize).onChange(async (value) => {
-              this.plugin.settings.encryptionImageCompressMaxSize = Number(value);
-              await this.plugin.saveSettings();
-            })
-          );
-          new import_obsidian29.Setting(containerEl).setName("\u538B\u7F29\u56FE\u7247 - \u957F\u56FE\u6BD4\u7387").setDesc("\u5BF9\u957F\u56FE\u8FDB\u884C\u6D45\u538B\u7F29\uFF0C\u4EE5\u907F\u514D\u8FC7\u4E8E\u6A21\u7CCA").addText(
-            (cd) => cd.setValue("" + this.plugin.settings.encryptionImageCompressLongScreenshotRatio).onChange(async (value) => {
-              this.plugin.settings.encryptionImageCompressLongScreenshotRatio = Number(value);
-              await this.plugin.saveSettings();
-            })
-          );
-          new import_obsidian29.Setting(containerEl).setName("\u538B\u7F29\u56FE\u7247 - \u4FDD\u7559exif").setDesc("\u56FE\u50CF\u7684\u5143\u6570\u636E\u3002\u5982\u7126\u8DDD\uFF0C\u5730\u7406\u4F4D\u7F6E\u4FE1\u606F\u7B49").addToggle(
-            (cd) => cd.setValue(this.plugin.settings.encryptionImageCompressPreserveExif).onChange(async (value) => {
-              this.plugin.settings.encryptionImageCompressPreserveExif = value;
-              await this.plugin.saveSettings();
-              this.display();
-            })
-          );
-        }
-      }
-      new import_obsidian29.Setting(containerEl).setName("\u652F\u6301\u89C6\u9891").addToggle(
-        (cd) => cd.setValue(this.plugin.settings.encryptionSupportVideo).onChange(async (value) => {
-          this.plugin.settings.encryptionSupportVideo = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
-      new import_obsidian29.Setting(containerEl).setName("\u5206\u5757\u91CF\uFF08mb\uFF09").setDesc("\u684C\u9762\u7AEF\uFF08100-300\uFF09\uFF0C\u79FB\u52A8\u7AEF\uFF081-5\uFF09\uFF0C\u5982\u679C\u5904\u7406\u5668\u6027\u80FD\u4F18\u8D8A\uFF0C\u503C\u53EF\u4EE5\u66F4\u5927\uFF0C\u7528\u65F6\u66F4\u77ED").addText(
-        (cd) => cd.setValue("" + this.plugin.settings.encryptionChunkSize / 1024 / 1024).onChange(async (value) => {
-          this.plugin.settings.encryptionChunkSize = Number(value) * 1024 * 1024;
-          await this.plugin.saveSettings();
-        })
-      );
-    }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F511} \u5BC6\u7801\u521B\u5EFA\u5668").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F511} \u5BC6\u7801\u521B\u5EFA\u5668").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.passwordCreator).onChange(async (value) => {
         this.plugin.settings.passwordCreator = value;
         await this.plugin.saveSettings();
@@ -12155,49 +9512,42 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       })
     );
     if (this.plugin.settings.passwordCreator) {
-      new import_obsidian29.Setting(containerEl).setName("\u4ECE\u6307\u5B9A\u5B57\u7B26\u96C6\u4E2D\u968F\u673A\u751F\u6210\u5BC6\u7801").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u4ECE\u6307\u5B9A\u5B57\u7B26\u96C6\u4E2D\u968F\u673A\u751F\u6210\u5BC6\u7801").addText(
         (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorMixedContent).onChange(async (value) => {
           this.plugin.settings.passwordCreatorMixedContent = value;
           await this.plugin.saveSettings();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u751F\u6210\u5BC6\u7801\u7684\u957F\u5EA6").addText(
+      new import_obsidian28.Setting(containerEl).setName("\u751F\u6210\u5BC6\u7801\u7684\u957F\u5EA6").addText(
         (cd) => cd.setValue("" + this.plugin.settings.passwordCreatorLength).onChange(async (value) => {
           this.plugin.settings.passwordCreatorLength = Number(value);
           await this.plugin.saveSettings();
         })
       );
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F517} \u591A\u4E49\u7B14\u8BB0\u8F6C\u8DF3").setDesc('to: "[[filename or path]]"').setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F517} \u591A\u4E49\u7B14\u8BB0\u8F6C\u8DF3").setDesc('to: "[[filename or path]]"').setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.polysemy).onChange(async (value) => {
         this.plugin.settings.polysemy = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian29.Setting(containerEl).setName("\u{1F3F7}\uFE0F \u811A\u6CE8\u91CD\u7F16\u53F7").addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F3F7}\uFE0F \u811A\u6CE8\u91CD\u7F16\u53F7").addToggle(
       (cd) => cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async (value) => {
         this.plugin.settings.footnoteRenumbering = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian29.Setting(containerEl).setName("\u{1F4CC} \u5757\u5F15\u7528").setDesc("\u83B7\u53D6\u5149\u6807\u6240\u5728\u884C\uFF08\u5757\uFF09\u7684\u53CC\u94FE\uFF0C\u65B9\u4FBF\u590D\u5236\u5230\u5730\u65B9\u4F7F\u7528").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F4CC} \u5757\u5F15\u7528").setDesc("\u83B7\u53D6\u5149\u6807\u6240\u5728\u884C\uFF08\u5757\uFF09\u7684\u53CC\u94FE\uFF0C\u65B9\u4FBF\u590D\u5236\u5230\u5730\u65B9\u4F7F\u7528").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.blockReference).onChange(async (value) => {
         this.plugin.settings.blockReference = value;
         await this.plugin.saveSettings();
         this.display();
       })
     );
-    new import_obsidian29.Setting(containerEl).setName("\u{1F4F8} \u753B\u5ECA").setHeading().addToggle(
-      (cd) => cd.setValue(this.plugin.settings.gallery).onChange(async (value) => {
-        this.plugin.settings.gallery = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-    if (import_obsidian29.Platform.isMobile) {
-      new import_obsidian29.Setting(containerEl).setName("\u{1F3DE}\uFE0F \u6D77\u62A5").setDesc("\u5C06\u89C6\u9891\u7B2C\u4E00\u5E27\u4F5C\u4E3A\u6D77\u62A5").setHeading().addToggle(
+    if (import_obsidian28.Platform.isMobile) {
+      new import_obsidian28.Setting(containerEl).setName("\u{1F3DE}\uFE0F \u6D77\u62A5").setDesc("\u5C06\u89C6\u9891\u7B2C\u4E00\u5E27\u4F5C\u4E3A\u6D77\u62A5").setHeading().addToggle(
         (cd) => cd.setValue(this.plugin.settings.poster).onChange(async (value) => {
           this.plugin.settings.poster = value;
           await this.plugin.saveSettings();
@@ -12205,7 +9555,7 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         })
       );
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F9EE} Mermaid GitGraph").setDesc("\u5C06\u65E0\u5E8F\u5217\u8868\u751F\u6210 Mermaid GitGraph").setHeading().addToggle(
+    new import_obsidian28.Setting(containerEl).setName("\u{1F9EE} Mermaid GitGraph").setDesc("\u5C06\u65E0\u5E8F\u5217\u8868\u751F\u6210 Mermaid GitGraph").setHeading().addToggle(
       (cd) => cd.setValue(this.plugin.settings.gitChart).onChange(async (value) => {
         this.plugin.settings.gitChart = value;
         await this.plugin.saveSettings();
@@ -12213,14 +9563,14 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
       })
     );
     if (this.plugin.settings.gitChart) {
-      new import_obsidian29.Setting(containerEl).setName("\u5F69\u8272\u6587\u672C").setDesc("\u6587\u672C\u989C\u8272\u8DDF\u968F\u5206\u652F\u989C\u8272").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u5F69\u8272\u6587\u672C").setDesc("\u6587\u672C\u989C\u8272\u8DDF\u968F\u5206\u652F\u989C\u8272").addToggle(
         (cd) => cd.setValue(this.plugin.settings.gitChartMultiColorLabel).onChange(async (value) => {
           this.plugin.settings.gitChartMultiColorLabel = value;
           await this.plugin.saveSettings();
           this.display();
         })
       );
-      new import_obsidian29.Setting(containerEl).setName("\u5206\u533A").setDesc("\u5F53\u751F\u6210\u5B8C\u6574\u56FE\u8868\u65F6\uFF0C\u6839\u636E\u5B50\u5217\u8868\u5206\u6210\u591A\u4E2A\u56FE\u8868").addToggle(
+      new import_obsidian28.Setting(containerEl).setName("\u5206\u533A").setDesc("\u5F53\u751F\u6210\u5B8C\u6574\u56FE\u8868\u65F6\uFF0C\u6839\u636E\u5B50\u5217\u8868\u5206\u6210\u591A\u4E2A\u56FE\u8868").addToggle(
         (cd) => cd.setValue(this.plugin.settings.gitChartPartition).onChange(async (value) => {
           this.plugin.settings.gitChartPartition = value;
           this.plugin.settings.gitChartPartitionFolding = value;
@@ -12229,7 +9579,7 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         })
       );
       if (this.plugin.settings.gitChartPartition) {
-        new import_obsidian29.Setting(containerEl).setName("\u5206\u533A - \u9ED8\u8BA4\u6298\u53E0").setDesc("\u63D0\u5347\u6E32\u67D3\u6027\u80FD").addToggle(
+        new import_obsidian28.Setting(containerEl).setName("\u5206\u533A - \u9ED8\u8BA4\u6298\u53E0").setDesc("\u63D0\u5347\u6E32\u67D3\u6027\u80FD").addToggle(
           (cd) => cd.setValue(this.plugin.settings.gitChartPartitionFolding).onChange(async (value) => {
             this.plugin.settings.gitChartPartitionFolding = value;
             await this.plugin.saveSettings();
@@ -12238,54 +9588,16 @@ var ToolboxSettingTab = class extends import_obsidian29.PluginSettingTab {
         );
       }
     }
-    new import_obsidian29.Setting(containerEl).setName("\u{1F4E6} \u6C99\u7BB1\uFF08Beta\uFF09").setDesc("\u5916\u90E8\u811A\u672C\u6CE8\u5165\uFF0C\u53EF\u5B9E\u73B0\u66F4\u4E30\u5BCC\u7684\u529F\u80FD").setHeading().addToggle(
-      (cd) => cd.setValue(this.plugin.settings.sandbox).onChange(async (value) => {
-        this.plugin.settings.sandbox = value;
-        await this.plugin.saveSettings();
-        this.display();
-      })
-    );
-    if (this.plugin.settings.sandbox) {
-      new import_obsidian29.Setting(containerEl).setName("\u811A\u672C\u6240\u5728\u6587\u4EF6\u5939").addText(
-        (cd) => cd.setValue("" + this.plugin.settings.sandboxFolder).onChange(async (value) => {
-          this.plugin.settings.sandboxFolder = value;
-          await this.plugin.saveSettings();
-        })
-      );
-    }
   }
 };
 
-// src/Commands/renumberFootnote.ts
-var import_obsidian30 = require("obsidian");
-function renumberFootnoteCommand(self4) {
-  self4.settings.footnoteRenumbering && self4.addCommand({
-    id: "\u811A\u6CE8\u91CD\u7F16\u53F7",
-    name: "\u811A\u6CE8\u91CD\u7F16\u53F7",
-    icon: "footprints",
-    editorCallback: async (editor, view) => renumberFootnote(self4, view.file)
-  });
-}
-async function renumberFootnote(self4, file) {
-  if (!self4.settings.footnoteRenumbering)
-    return;
-  let content = await self4.app.vault.read(file);
-  let footnoteIndex = 1;
-  let referenceIndex = 1;
-  content = content.replace(/\[\^(\d+)\][^:]/g, () => `[^${footnoteIndex++}]`);
-  content = content.replace(/\[\^(\d+)\]:/g, () => `[^${referenceIndex++}]:`);
-  await self4.app.vault.modify(file, content);
-  new import_obsidian30.Notice(`\u5DF2\u4E3A${footnoteIndex - 1}\u4E2A\u811A\u6CE8\u91CD\u65B0\u7F16\u53F7`);
-}
-
 // src/main.ts
-var Toolbox = class extends import_obsidian31.Plugin {
+var Toolbox = class extends import_obsidian29.Plugin {
   async onload() {
     await this.loadSettings();
     this.encryptionTempData = {};
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
     this.readingManager = new ReadingDataManager(this);
-    gallery(this);
     reviewOfReadingNote(this);
     poster(this, document.body);
     highlightCommand(this);
@@ -12293,8 +9605,6 @@ var Toolbox = class extends import_obsidian31.Plugin {
     createCharacterRelationshipCommand(this);
     searchForWordCommand(this);
     asyncNoteCommand(this);
-    encryptPopUpCommand(this);
-    decryptPopUpCommand(this);
     passwordCreatorCommand(this);
     renumberFootnoteCommand(this);
     blockReferenceCommand(this);
@@ -12311,9 +9621,6 @@ var Toolbox = class extends import_obsidian31.Plugin {
         polysemy(this, file);
         adjustReadingPageStyle(this, file);
         flipEvent(this, file);
-        encOrDecPopUp(this, file);
-        toggleEncryptNote(this, file);
-        clearNotePass(this);
         switchCharacterRelationship(this, file);
         chatWebPageClipping(this, file);
       })
@@ -12325,12 +9632,11 @@ var Toolbox = class extends import_obsidian31.Plugin {
         if (!file)
           return;
         adjustReadingPageStyle(this, file);
-        toggleEncryptNote(this, file);
       })
     );
     this.registerEvent(
-      this.app.vault.on("modify", (f2) => {
-        const file = f2;
+      this.app.vault.on("modify", (f) => {
+        const file = f;
         resourceTo(this, file, null);
         repositionVideo(this, file);
         repositionBilibiliAISummary(this, file);
@@ -12354,7 +9660,7 @@ var Toolbox = class extends import_obsidian31.Plugin {
     this.updateFrontmatter(file, "dialogue", dialogue2);
   }
   getView() {
-    return this.app.workspace.getActiveViewOfType(import_obsidian31.MarkdownView);
+    return this.app.workspace.getActiveViewOfType(import_obsidian29.MarkdownView);
   }
   getEditor() {
     var _a2;
@@ -12385,7 +9691,7 @@ var Toolbox = class extends import_obsidian31.Plugin {
     await this.saveData(this.settings);
   }
   async test() {
-    await Test_default.run(this);
+    await test.run(this);
   }
 };
 /*! Bundled license information:

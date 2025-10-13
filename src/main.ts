@@ -1,6 +1,4 @@
 import { MarkdownView, Plugin, TFile } from 'obsidian';
-import 'test';
-import test from 'test/Test';
 import adjustReadingPageStyle from './Commands/adjustReadingPageStyle';
 import Block from './Commands/Block';
 import blockReferenceCommand from './Commands/blockReference';
@@ -9,15 +7,14 @@ import chatWebPageClipping from './Commands/chatWebPageClipping';
 import completionCommand, { completion } from './Commands/completion';
 import createCharacterRelationshipCommand, { switchCharacterRelationship } from './Commands/createCharacterRelationship';
 import dialogueCommand from './Commands/dialogue';
-import { clearNotePass, decryptPopUpCommand, encOrDecPopUp, encryptPopUpCommand, toggleEncryptNote } from './Commands/encryption';
 import { flipEvent } from './Commands/flip';
-import gallery from './Commands/gallery';
 import highlightCommand from './Commands/highlight';
 import passwordCreatorCommand from './Commands/passwordCreator';
 import polysemy from './Commands/polysemy';
 import poster from './Commands/poster';
 import { ReadingDataManager } from './Commands/readingDataTracking';
 import relationshipDiagramCommand from './Commands/relationshipDiagram';
+import renumberFootnoteCommand from './Commands/renumberFootnote';
 import reviewOfReadingNote from './Commands/reviewOfReadingNote';
 import searchForWordCommand from './Commands/searchForWord';
 import asyncNoteCommand from './Commands/syncNote';
@@ -28,7 +25,6 @@ import searchForPlantCommand from './CustomizedCommands/searchForPlant';
 import switchLibrary from './CustomizedCommands/switchLibrary';
 import { isFileInDirectory } from './helpers';
 import { DEFAULT_SETTINGS, ToolboxSettings, ToolboxSettingTab } from './settings';
-import renumberFootnoteCommand from './Commands/renumberFootnote';
 
 export default class Toolbox extends Plugin {
   encryptionTempData: any;
@@ -41,8 +37,6 @@ export default class Toolbox extends Plugin {
     this.encryptionTempData = {};
     this.addSettingTab(new ToolboxSettingTab(this.app, this));
     this.readingManager = new ReadingDataManager(this);
-    // 画廊
-    gallery(this);
     // 读书笔记回顾
     reviewOfReadingNote(this);
     // 将视频第一帧作为海报
@@ -57,11 +51,6 @@ export default class Toolbox extends Plugin {
     searchForWordCommand(this);
     // 同步读书笔记
     asyncNoteCommand(this);
-    // 加密笔记
-    encryptPopUpCommand(this);
-    // 解密笔记
-    decryptPopUpCommand(this);
-    // 密码创建器
     passwordCreatorCommand(this);
     // 脚注重编号
     renumberFootnoteCommand(this);
@@ -79,8 +68,6 @@ export default class Toolbox extends Plugin {
     completionCommand(this);
     // 打开关系图
     relationshipDiagramCommand(this);
-    // 沙箱
-    // sandbox(this);
 
     this.registerEvent(
       this.app.workspace.on('file-open', async file => {
@@ -93,12 +80,6 @@ export default class Toolbox extends Plugin {
         adjustReadingPageStyle(this, file);
         // 翻页
         flipEvent(this, file);
-        // 自动弹出解密或解密输入框
-        encOrDecPopUp(this, file);
-        // 加密笔记后隐藏其内容，防止意外改动
-        toggleEncryptNote(this, file);
-        // 根据记住密码的行为判断是否清空本地存储的笔记密码
-        clearNotePass(this);
         // 切换人物关系视图
         switchCharacterRelationship(this, file);
         // 为笔记生成标题和摘要
@@ -111,7 +92,6 @@ export default class Toolbox extends Plugin {
         const file = this.getView()?.file;
         if (!file) return;
         adjustReadingPageStyle(this, file);
-        toggleEncryptNote(this, file);
       })
     );
 
@@ -132,13 +112,6 @@ export default class Toolbox extends Plugin {
         completion(this);
       })
     );
-
-    // this.addCommand({
-    //   id: '单元测试',
-    //   name: '单元测试',
-    //   icon: 'clipboard-check',
-    //   callback: () => this.test()
-    // });
   }
 
   async updateFrontmatter(file: TFile, key: string, value: string | number) {
