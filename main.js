@@ -10111,8 +10111,8 @@ function fullScreen(mode = null, save = true) {
     return;
   const t2 = document.querySelector(MOBILE_HEADER_CLASS);
   const b = document.querySelector(MOBILE_NAVBAR_CLASS);
-  const fullScreenMode = mode === -1 ? self2.settings.fullScreenMode : mode === null ? !self2.settings.fullScreenMode : mode;
-  if (fullScreenMode) {
+  const fullScreenModeStatus = mode === -1 ? self2.settings.fullScreenModeStatus : mode === null ? !self2.settings.fullScreenModeStatus : mode;
+  if (self2.settings.fullScreenMode && fullScreenModeStatus) {
     b == null ? void 0 : b.hide();
     t2 == null ? void 0 : t2.hide();
   } else {
@@ -10120,7 +10120,7 @@ function fullScreen(mode = null, save = true) {
     t2 == null ? void 0 : t2.show();
   }
   if (save) {
-    self2.settings.fullScreenMode = Boolean(fullScreenMode);
+    self2.settings.fullScreenModeStatus = Boolean(fullScreenModeStatus);
     self2.saveSettings();
     pageTurner && (pageTurner.destroyed = false);
   }
@@ -11742,6 +11742,7 @@ var DEFAULT_SETTINGS = {
   flip: false,
   fileCorrect: -35,
   fullScreenMode: false,
+  fullScreenModeStatus: false,
   readDataTracking: false,
   readDataTrackingFolder: "\u4E66\u5E93",
   readDataTrackingTimeout: 300 * 1e3,

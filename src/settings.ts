@@ -1,4 +1,4 @@
-import { App, Platform, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { App, Platform, PluginSettingTab, Setting } from 'obsidian';
 import Toolbox from './main';
 
 export interface ToolboxSettings {
@@ -27,6 +27,7 @@ export interface ToolboxSettings {
   fileCorrect: number;
 
   fullScreenMode: boolean;
+  fullScreenModeStatus: boolean;
 
   readDataTracking: boolean;
   readDataTrackingFolder: string;
@@ -123,6 +124,7 @@ export const DEFAULT_SETTINGS: ToolboxSettings = {
   fileCorrect: -35,
 
   fullScreenMode: false,
+  fullScreenModeStatus: false,
 
   readDataTracking: false,
   readDataTrackingFolder: '书库',
@@ -715,14 +717,14 @@ export class ToolboxSettingTab extends PluginSettingTab {
           this.display();
         })
       );
-      
-      new Setting(containerEl).setName('🏷️ 脚注重编号').addToggle(cd =>
-        cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async value => {
-          this.plugin.settings.footnoteRenumbering = value;
-          await this.plugin.saveSettings();
-          this.display();
-        })
-      );
+
+    new Setting(containerEl).setName('🏷️ 脚注重编号').addToggle(cd =>
+      cd.setValue(this.plugin.settings.footnoteRenumbering).onChange(async value => {
+        this.plugin.settings.footnoteRenumbering = value;
+        await this.plugin.saveSettings();
+        this.display();
+      })
+    );
 
     new Setting(containerEl)
       .setName('📌 块引用')
@@ -833,4 +835,3 @@ export class ToolboxSettingTab extends PluginSettingTab {
     }
   }
 }
-

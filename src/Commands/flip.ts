@@ -68,9 +68,9 @@ function fullScreen(mode: boolean | number = null, save = true) {
   const t = document.querySelector(MOBILE_HEADER_CLASS) as HTMLElement;
   const b = document.querySelector(MOBILE_NAVBAR_CLASS) as HTMLElement;
 
-  const fullScreenMode = mode === -1 ? self.settings.fullScreenMode : mode === null ? !self.settings.fullScreenMode : mode;
+  const fullScreenModeStatus = mode === -1 ? self.settings.fullScreenModeStatus : mode === null ? !self.settings.fullScreenModeStatus : mode;
 
-  if (fullScreenMode) {
+  if (self.settings.fullScreenMode && fullScreenModeStatus) {
     b?.hide();
     t?.hide();
   } else {
@@ -79,7 +79,7 @@ function fullScreen(mode: boolean | number = null, save = true) {
   }
 
   if (save) {
-    self.settings.fullScreenMode = Boolean(fullScreenMode);
+    self.settings.fullScreenModeStatus = Boolean(fullScreenModeStatus);
     self.saveSettings();
     pageTurner && (pageTurner.destroyed = false);
   }
