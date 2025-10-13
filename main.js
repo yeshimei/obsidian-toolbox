@@ -6557,8 +6557,8 @@ function chatCommand(self4) {
   self4.addCommand({
     id: "AI\u6DA6\u8272",
     name: "AI\u6DA6\u8272",
-    icon: "brush",
-    callback: () => AiQuick(self4, "AI\u6DA6\u8272", "\u4F60\u662F\u4E00\u4F4D\u4E13\u4E1A\u7684\u6587\u672C\u6DA6\u8272\u52A9\u624B\uFF0C\u81F4\u529B\u4E8E\u63D0\u5347\u6587\u672C\u7684\u6E05\u6670\u5EA6\u3001\u6D41\u7545\u6027\u548C\u5438\u5F15\u529B\u3002\u8BC6\u522B\u5E76\u4FEE\u6B63\u8BED\u6CD5\u9519\u8BEF\u3001\u62FC\u5199\u9519\u8BEF\u548C\u6807\u70B9\u9519\u8BEF\u3002\u4F18\u5316\u53E5\u5B50\u7ED3\u6784\uFF0C\u4F7F\u8868\u8FBE\u66F4\u52A0\u7B80\u6D01\u6709\u529B\u3002\u63D0\u5347\u6587\u672C\u7684\u903B\u8F91\u6027\u548C\u8FDE\u8D2F\u6027\uFF0C\u786E\u4FDD\u5185\u5BB9\u6613\u4E8E\u7406\u89E3\u3002")
+    icon: "brush-cleaning",
+    callback: () => AiQuick(self4, "AI\u6DA6\u8272", "\u4F60\u662F\u4E00\u4F4D\u4E13\u4E1A\u7684\u6587\u672C\u6DA6\u8272\u52A9\u624B\uFF0C\u81F4\u529B\u4E8E\u63D0\u5347\u6587\u672C\u7684\u6E05\u6670\u5EA6\u3001\u6D41\u7545\u6027\u548C\u5438\u5F15\u529B\u3002\u8BC6\u522B\u5E76\u4FEE\u6B63\u8BED\u6CD5\u9519\u8BEF\u3001\u62FC\u5199\u9519\u8BEF\u548C\u6807\u70B9\u9519\u8BEF\u3002\u4F18\u5316\u53E5\u5B50\u7ED3\u6784\uFF0C\u4F7F\u8868\u8FBE\u66F4\u52A0\u7B80\u6D01\u6709\u529B\u3002\u63D0\u5347\u6587\u672C\u7684\u903B\u8F91\u6027\u548C\u8FDE\u8D2F\u6027\uFF0C\u786E\u4FDD\u5185\u5BB9\u6613\u4E8E\u7406\u89E3\u3002\u76F4\u63A5\u8F93\u51FA\u5185\u5BB9\uFF0C\u4E0D\u8981\u505A\u4EFB\u4F55\u591A\u4F59\u7684\u89E3\u91CA")
   });
 }
 async function AiQuick(toolbox, operationName, promptDescription) {
@@ -6599,11 +6599,7 @@ async function AiQuick(toolbox, operationName, promptDescription) {
     }
     if (messageType === "stop") {
       const processedContent = isWikiLink ? `[[${targetFileName}#^${targetBlockId}|${accumulatedResult}]] ` : accumulatedResult;
-      activeEditor.replaceRange(
-        processedContent,
-        { line: cursorPosition.line, ch: 0 },
-        { line: cursorPosition.line, ch: currentLineText.length }
-      );
+      activeEditor.replaceRange(processedContent, { line: cursorPosition.line, ch: 0 }, { line: cursorPosition.line, ch: currentLineText.length });
     }
   });
 }

@@ -4,40 +4,37 @@ import Toolbox from 'src/main';
 import FuzzySuggest from 'src/Modals/FuzzySuggest';
 import actions from './AIChatAction';
 import inPrompts from './AIChatInPrompt';
-import { MESSAGE_TYPE } from './AIChatManager';
-import AIChatManager from './AIChatManager';
+import AIChatManager, { MESSAGE_TYPE } from './AIChatManager';
 
 export default function chatCommand(self: Toolbox) {
-  
-  if (!self.settings.chat) return
-    self.addCommand({
-      id: 'AI Chat',
-      name: 'AI Chat',
-      icon: 'bot',
-      callback: () => chat(self, null)
-    });
+  if (!self.settings.chat) return;
+  self.addCommand({
+    id: 'AI Chat',
+    name: 'AI Chat',
+    icon: 'bot',
+    callback: () => chat(self, null)
+  });
 
-    self.addCommand({
-      id: 'AI总结',
-      name: 'AI总结',
-      icon: 'book-minus',
-      callback: () => AiQuick(self, 'AI总结', '使用一段话生成简洁明了的摘要，保持对原文的信息完整，不要遗漏，也不要多增内容')
-    });
+  self.addCommand({
+    id: 'AI总结',
+    name: 'AI总结',
+    icon: 'book-minus',
+    callback: () => AiQuick(self, 'AI总结', '使用一段话生成简洁明了的摘要，保持对原文的信息完整，不要遗漏，也不要多增内容')
+  });
 
-    self.addCommand({
-      id: 'AI润色',
-      name: 'AI润色',
-      icon: 'brush',
-      callback: () => AiQuick(self, 'AI润色', '你是一位专业的文本润色助手，致力于提升文本的清晰度、流畅性和吸引力。识别并修正语法错误、拼写错误和标点错误。优化句子结构，使表达更加简洁有力。提升文本的逻辑性和连贯性，确保内容易于理解。')
-    });
+  self.addCommand({
+    id: 'AI润色',
+    name: 'AI润色',
+    icon: 'brush-cleaning',
+    callback: () => AiQuick(self, 'AI润色', '你是一位专业的文本润色助手，致力于提升文本的清晰度、流畅性和吸引力。识别并修正语法错误、拼写错误和标点错误。优化句子结构，使表达更加简洁有力。提升文本的逻辑性和连贯性，确保内容易于理解。直接输出内容，不要做任何多余的解释')
+  });
 }
-
 
 async function AiQuick(toolbox: Toolbox, operationName: string, promptDescription: string) {
   const aiProcessor = new AIChatManager(toolbox);
   const activeEditor = toolbox.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
   if (!activeEditor) return;
-  
+
   const cursorPosition = activeEditor.getCursor();
   const currentLineText = activeEditor.getLine(cursorPosition.line);
   let contentToProcess = currentLineText;
@@ -46,12 +43,12 @@ async function AiQuick(toolbox: Toolbox, operationName: string, promptDescriptio
   const WIKI_LINK_PATTERN = /\[\[([^#\|]*?)(?:#\^([\w-]+))?(?:\|.*?)?\]\]/;
   const wikiLinkMatch = currentLineText.match(WIKI_LINK_PATTERN);
   const [_, targetFileName, targetBlockId] = wikiLinkMatch || [];
-  let linkedFile
+  let linkedFile;
   if (wikiLinkMatch) {
     isWikiLink = true;
     linkedFile = toolbox.app.metadataCache.getFirstLinkpathDest(targetFileName, '');
     if (!linkedFile) return;
-    
+
     const fileContent = await toolbox.app.vault.read(linkedFile);
     contentToProcess = findBlockContent(fileContent, targetBlockId);
   }
@@ -59,24 +56,18 @@ async function AiQuick(toolbox: Toolbox, operationName: string, promptDescriptio
   contentToProcess = contentToProcess.replace(/%%.+?%%/g, '');
   let accumulatedResult = '';
   aiProcessor.promptContent = promptDescription;
-  aiProcessor.data.save = false
-  const noticeBaseMessage = `${linkedFile ? '《' + linkedFile.basename + '》\n\n' : ''}${contentToProcess}\n\n[${operationName}]\n`
+  aiProcessor.data.save = false;
+  const noticeBaseMessage = `${linkedFile ? '《' + linkedFile.basename + '》\n\n' : ''}${contentToProcess}\n\n[${operationName}]\n`;
   const notice = new Notice(noticeBaseMessage, 0);
   aiProcessor.openChat(contentToProcess, async (contentChunk, messageType) => {
     if (messageType === 'content') {
       accumulatedResult += contentChunk;
-      notice.setMessage(noticeBaseMessage + accumulatedResult)
+      notice.setMessage(noticeBaseMessage + accumulatedResult);
     }
     if (messageType === 'stop') {
-      const processedContent = isWikiLink 
-        ? `[[${targetFileName}#^${targetBlockId}|${accumulatedResult}]] `
-        : accumulatedResult;
+      const processedContent = isWikiLink ? `[[${targetFileName}#^${targetBlockId}|${accumulatedResult}]] ` : accumulatedResult;
 
-      activeEditor.replaceRange(
-        processedContent,
-        { line: cursorPosition.line, ch: 0 },
-        { line: cursorPosition.line, ch: currentLineText.length }
-      );
+      activeEditor.replaceRange(processedContent, { line: cursorPosition.line, ch: 0 }, { line: cursorPosition.line, ch: currentLineText.length });
     }
   });
 }
@@ -88,7 +79,7 @@ function findBlockContent(content: string, blockId: string): string {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
     if (blockRegex.test(line)) {
-      return line.replace(/\s*\^[\w-]+$/, '').trim()
+      return line.replace(/\s*\^[\w-]+$/, '').trim();
     }
   }
 }
@@ -128,12 +119,12 @@ class PanelChat extends Modal {
   onOpen() {
     const { contentEl } = this;
     this.setTitle(this.promptName);
-    
+
     contentEl.appendChild((this.chatArea = createChatArea()));
     contentEl.appendChild((this.fileArea = createChatArea()));
-    this.chatArea.style.overflow = 'auto'
+    this.chatArea.style.overflow = 'auto';
 
-    this.chat.model = this.self.settings.chatDefaultUsingR1 ? 'deepseek-reasoner' : null
+    this.chat.model = this.self.settings.chatDefaultUsingR1 ? 'deepseek-reasoner' : null;
 
     new Setting(contentEl)
       .addTextArea(text => this.setTextArea(text))
@@ -166,7 +157,6 @@ class PanelChat extends Modal {
           this.sendBtn.setDisabled(!size);
         }
       }
-      
     };
   }
 
@@ -267,8 +257,7 @@ class PanelChat extends Modal {
         btn.setCta();
         btn.setIcon('circle-dot-dashed');
       }
-    })
-
+    });
   }
 
   setAttachment(btn: ButtonComponent) {
@@ -353,40 +342,39 @@ class PanelChat extends Modal {
     const message: MESSAGE_TYPE = { role: 'user', content: question, type: 'question', files: [] };
     this.textArea.setValue('');
     for (let file of this.files) {
-      const content = await this.self.app.vault.cachedRead(file)
+      const content = await this.self.app.vault.cachedRead(file);
       message.content = content + '\n\n' + message.content;
       message.files.push(file.path);
       list += `📄 ${file.path}\n`;
     }
     this.chatArea.innerHTML += `<hr>${list}<b><i>叫我包仔：</i></b>\n${this.question}\n\n<b><i>${this.promptName}：</i></b>\n`;
     this.question = '';
-    let isReasoningContent = true
-    let isContent = true
-    let reasoningContentEl: HTMLElement
+    let isReasoningContent = true;
+    let isContent = true;
+    let reasoningContentEl: HTMLElement;
     this.sendBtn.setIcon('circle-slash');
     await this.chat.openChat(message, (text, type) => {
       this.files.clear();
       this.fileArea.innerHTML = '';
       if (type === 'reasoning_content') {
         if (isReasoningContent) {
-          reasoningContentEl = document.createElement('span') as HTMLElement
-          reasoningContentEl.style.opacity = '.5'
+          reasoningContentEl = document.createElement('span') as HTMLElement;
+          reasoningContentEl.style.opacity = '.5';
           this.chatArea.appendChild(reasoningContentEl);
-          isReasoningContent = false
+          isReasoningContent = false;
         }
         reasoningContentEl.innerText += text;
-      } 
-      else if (type === 'content') {
+      } else if (type === 'content') {
         if (!isReasoningContent && isContent) {
           text = '\n\n' + text;
-          isContent = false
+          isContent = false;
         }
         this.updateChat(text);
       } else if (type === 'title') {
         this.chat.title && this.setTitle(this.chat.title);
       } else if (type === 'stop') {
-        isReasoningContent = true
-        isContent = true
+        isReasoningContent = true;
+        isContent = true;
         this.sendBtn.setIcon('send');
         this.sendBtn.setDisabled(!this.question);
       }
